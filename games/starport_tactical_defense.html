@@ -1,0 +1,2147 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>星际港湾：战术防御 | STARPORT: TACTICAL DEFENSE</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@600;800;900&family=Noto+Sans+SC:wght@400;500;700;900&display=swap');
+
+        :root {
+            --bg-space: #070b14;
+            --panel-bg: rgba(13, 21, 38, 0.92);
+            --panel-border: rgba(56, 189, 248, 0.28);
+            --cyan: #38bdf8;
+            --cyan-glow: rgba(56, 189, 248, 0.45);
+            --amber: #fbbf24;
+            --magenta: #f43f5e;
+            --emerald: #10b981;
+            --purple: #a855f7;
+            --text-main: #f1f5f9;
+            --text-dim: #94a3b8;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-space);
+            background-image: 
+                radial-gradient(circle at 20% 20%, rgba(56, 189, 248, 0.08) 0%, transparent 45%),
+                radial-gradient(circle at 80% 80%, rgba(244, 63, 94, 0.07) 0%, transparent 45%);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+        }
+
+        /* 顶部全息状态栏 */
+        #top-bar {
+            height: 58px;
+            padding: 0 18px;
+            background: var(--panel-bg);
+            border-bottom: 1px solid var(--panel-border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 20;
+            flex-shrink: 0;
+        }
+
+        .brand {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .brand-title {
+            font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+            font-weight: 900;
+            font-size: 1.15rem;
+            letter-spacing: 1px;
+            color: var(--cyan);
+            text-shadow: 0 0 12px var(--cyan-glow);
+        }
+
+        .status-pills {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .pill {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1px solid rgba(148, 163, 184, 0.25);
+            border-radius: 10px;
+            padding: 5px 12px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 0.85rem;
+            font-weight: 700;
+        }
+
+        .pill-val {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 1rem;
+            font-weight: 800;
+        }
+
+        .pill.energy { border-color: rgba(251, 191, 36, 0.45); color: var(--amber); }
+        .pill.core { border-color: rgba(16, 185, 129, 0.45); color: var(--emerald); }
+        .pill.wave { border-color: rgba(56, 189, 248, 0.45); color: var(--cyan); }
+
+        .top-actions {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .mini-btn {
+            background: rgba(30, 41, 59, 0.85);
+            border: 1px solid rgba(56, 189, 248, 0.35);
+            color: var(--text-main);
+            border-radius: 8px;
+            padding: 6px 11px;
+            font-size: 0.8rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        .mini-btn:hover {
+            background: rgba(56, 189, 248, 0.2);
+            border-color: var(--cyan);
+        }
+
+        /* 主战场布局 */
+        #main-stage {
+            flex: 1;
+            display: flex;
+            overflow: hidden;
+            position: relative;
+        }
+
+        /* 左侧/悬浮情报栏 */
+        #intel-sidebar {
+            width: 245px;
+            background: rgba(10, 16, 30, 0.86);
+            border-right: 1px solid var(--panel-border);
+            padding: 12px;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
+            overflow-y: auto;
+            z-index: 10;
+            flex-shrink: 0;
+        }
+
+        .intel-card {
+            background: rgba(15, 23, 42, 0.78);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 10px;
+        }
+
+        .intel-header {
+            font-size: 0.78rem;
+            font-weight: 900;
+            color: var(--cyan);
+            letter-spacing: 1px;
+            margin-bottom: 6px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+
+        .intel-body {
+            font-size: 0.8rem;
+            line-height: 1.48;
+            color: var(--text-dim);
+        }
+
+        .intel-body strong {
+            color: var(--text-main);
+        }
+
+        .relic-list {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 5px;
+            margin-top: 4px;
+        }
+
+        .relic-tag {
+            background: rgba(168, 85, 247, 0.18);
+            border: 1px solid rgba(168, 85, 247, 0.5);
+            color: #e9d5ff;
+            font-size: 0.72rem;
+            padding: 2px 7px;
+            border-radius: 6px;
+            font-weight: 700;
+        }
+
+        /* 中央战术画布区 */
+        #canvas-area {
+            flex: 1;
+            position: relative;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 10px;
+            overflow: hidden;
+        }
+
+        canvas#tacticalCanvas {
+            display: block;
+            border-radius: 12px;
+            box-shadow: 0 0 35px rgba(0, 0, 0, 0.65), inset 0 0 20px rgba(56, 189, 248, 0.08);
+            cursor: crosshair;
+        }
+
+        /* 顶部战术提示条 */
+        #tactical-banner {
+            position: absolute;
+            top: 14px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(15, 23, 42, 0.92);
+            border: 1px solid var(--cyan);
+            color: var(--cyan);
+            padding: 5px 16px;
+            border-radius: 99px;
+            font-size: 0.82rem;
+            font-weight: 700;
+            pointer-events: none;
+            box-shadow: 0 4px 16px rgba(0, 0, 0, 0.5);
+            white-space: nowrap;
+            z-index: 15;
+            transition: opacity 0.2s ease;
+        }
+
+        /* 底部建造与回合控制栏 */
+        #bottom-deck {
+            background: var(--panel-bg);
+            border-top: 1px solid var(--panel-border);
+            padding: 10px 16px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
+            z-index: 20;
+            flex-shrink: 0;
+        }
+
+        .build-cards {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            overflow-x: auto;
+            padding-bottom: 2px;
+            flex: 1;
+        }
+
+        .unit-card {
+            background: rgba(15, 23, 42, 0.9);
+            border: 1.5px solid rgba(148, 163, 184, 0.28);
+            border-radius: 12px;
+            padding: 7px 11px;
+            min-width: 118px;
+            cursor: pointer;
+            transition: all 0.14s ease;
+            display: flex;
+            flex-direction: column;
+            gap: 3px;
+            position: relative;
+        }
+
+        .unit-card:hover {
+            transform: translateY(-2px);
+            border-color: var(--cyan);
+        }
+
+        .unit-card.selected {
+            background: rgba(56, 189, 248, 0.16);
+            border-color: var(--cyan);
+            box-shadow: 0 0 15px rgba(56, 189, 248, 0.35);
+        }
+
+        .unit-card.disabled {
+            opacity: 0.48;
+        }
+
+        .card-top {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            font-weight: 900;
+            font-size: 0.84rem;
+        }
+
+        .cost-badge {
+            background: rgba(251, 191, 36, 0.2);
+            border: 1px solid rgba(251, 191, 36, 0.6);
+            color: var(--amber);
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.74rem;
+            padding: 1px 6px;
+            border-radius: 6px;
+        }
+
+        .card-desc {
+            font-size: 0.7rem;
+            color: var(--text-dim);
+            white-space: nowrap;
+        }
+
+        .turn-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-shrink: 0;
+        }
+
+        #sell-btn {
+            background: rgba(244, 63, 94, 0.15);
+            border: 1.5px solid rgba(244, 63, 94, 0.5);
+            color: #fda4af;
+            border-radius: 12px;
+            padding: 10px 14px;
+            font-size: 0.84rem;
+            font-weight: 700;
+            cursor: pointer;
+            transition: all 0.15s ease;
+        }
+
+        #sell-btn.selected, #sell-btn:hover {
+            background: rgba(244, 63, 94, 0.32);
+            color: #fff;
+            border-color: var(--magenta);
+        }
+
+        #end-turn-btn {
+            background: linear-gradient(135deg, #0284c7 0%, #2563eb 100%);
+            border: 1px solid #7dd3fc;
+            color: #fff;
+            border-radius: 12px;
+            padding: 11px 22px;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 0.98rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            cursor: pointer;
+            box-shadow: 0 0 20px rgba(2, 132, 199, 0.5);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        #end-turn-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 0 28px rgba(56, 189, 248, 0.8);
+        }
+
+        #end-turn-btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+        }
+
+        /* 全息模态弹窗（肉鸽3选1 / 规则 / 胜负结算） */
+        .modal-backdrop {
+            position: fixed;
+            inset: 0;
+            background: rgba(4, 7, 15, 0.84);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 100;
+        }
+
+        .modal-backdrop.hidden {
+            display: none;
+        }
+
+        .holo-modal {
+            background: linear-gradient(180deg, #0f172a 0%, #090e1a 100%);
+            border: 1.5px solid var(--cyan);
+            border-radius: 18px;
+            padding: 24px;
+            width: 100%;
+            max-width: 680px;
+            box-shadow: 0 0 45px rgba(56, 189, 248, 0.25);
+            text-align: center;
+        }
+
+        .modal-subtitle {
+            font-family: 'Orbitron', sans-serif;
+            font-size: 0.78rem;
+            letter-spacing: 3px;
+            color: var(--cyan);
+            margin-bottom: 6px;
+        }
+
+        .modal-title {
+            font-size: 1.55rem;
+            font-weight: 900;
+            margin-bottom: 16px;
+            color: #fff;
+        }
+
+        /* 肉鸽三选一卡片网格 */
+        .rogue-grid {
+            display: grid;
+            grid-template-columns: repeat(3, 1fr);
+            gap: 14px;
+            margin-top: 14px;
+        }
+
+        .rogue-card {
+            background: rgba(30, 41, 59, 0.75);
+            border: 1.5px solid rgba(168, 85, 247, 0.45);
+            border-radius: 14px;
+            padding: 18px 14px;
+            cursor: pointer;
+            transition: all 0.18s ease;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 10px;
+            text-align: center;
+        }
+
+        .rogue-card:hover {
+            transform: translateY(-4px);
+            background: rgba(168, 85, 247, 0.2);
+            border-color: #d8b4fe;
+            box-shadow: 0 8px 25px rgba(168, 85, 247, 0.35);
+        }
+
+        .rogue-icon {
+            font-size: 2.1rem;
+        }
+
+        .rogue-name {
+            font-size: 1rem;
+            font-weight: 900;
+            color: var(--amber);
+        }
+
+        .rogue-desc {
+            font-size: 0.82rem;
+            color: var(--text-dim);
+            line-height: 1.45;
+        }
+
+        .rules-grid {
+            text-align: left;
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 20px;
+            font-size: 0.84rem;
+            line-height: 1.5;
+            color: var(--text-dim);
+        }
+
+        .rule-box {
+            background: rgba(30, 41, 59, 0.55);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 10px;
+            padding: 12px;
+        }
+
+        .rule-box h4 {
+            color: var(--cyan);
+            margin-bottom: 4px;
+            font-size: 0.9rem;
+        }
+
+        @media (max-width: 860px) {
+            #intel-sidebar { display: none; }
+            .brand-title { font-size: 0.95rem; }
+            .rogue-grid { grid-template-columns: 1fr; }
+            .rules-grid { grid-template-columns: 1fr; }
+            #bottom-deck { flex-direction: column; align-items: stretch; padding: 8px 10px; }
+            .turn-controls { justify-content: space-between; }
+            #end-turn-btn { flex: 1; }
+        }
+    </style>
+</head>
+<body>
+
+    <!-- 顶部状态栏 -->
+    <header id="top-bar">
+        <div class="brand">
+            <span style="font-size: 1.4rem;">🛰️</span>
+            <span class="brand-title">星际港湾：战术防御</span>
+        </div>
+
+        <div class="status-pills">
+            <div class="pill energy" title="每回合恢复基础能量 + 矿脉增幅">
+                <span>⚡ 能量</span>
+                <span class="pill-val" id="energy-display">5 / 5</span>
+            </div>
+            <div class="pill core" title="右侧能源核心完整度">
+                <span>🛡️ 核心</span>
+                <span class="pill-val" id="core-hp-display">10</span>
+            </div>
+            <div class="pill wave">
+                <span>📡 波次</span>
+                <span class="pill-val" id="wave-display">1 / 10</span>
+            </div>
+        </div>
+
+        <div class="top-actions">
+            <button class="mini-btn" id="rules-btn">📖 战术手册</button>
+            <button class="mini-btn" id="restart-top-btn">🔄 重开</button>
+            <button class="mini-btn" id="audio-btn">🔊 音效</button>
+        </div>
+    </header>
+
+    <!-- 主战场区域 -->
+    <div id="main-stage">
+        <!-- 左侧战术情报面板 -->
+        <aside id="intel-sidebar">
+            <div class="intel-card">
+                <div class="intel-header">
+                    <span>🔍 悬停格子 / 单位情报</span>
+                </div>
+                <div class="intel-body" id="hover-intel">
+                    将鼠标悬停在网格上查看地形、炮台数据或敌方虫群的行动意图。
+                </div>
+            </div>
+
+            <div class="intel-card">
+                <div class="intel-header">
+                    <span>👾 下波虫潮预警</span>
+                    <span id="next-wave-tag" style="color: var(--amber);">第 2 波</span>
+                </div>
+                <div class="intel-body" id="next-wave-intel">
+                    侦察中...
+                </div>
+            </div>
+
+            <div class="intel-card">
+                <div class="intel-header">
+                    <span>🧬 已激活战术模块</span>
+                </div>
+                <div class="intel-body">
+                    <div class="relic-list" id="active-relics">
+                        <span style="font-size:0.75rem; color:#64748b;">每通关2波可空投强化</span>
+                    </div>
+                </div>
+            </div>
+        </aside>
+
+        <!-- 中央战术网格画布 -->
+        <main id="canvas-area">
+            <div id="tactical-banner">提示：放置【能量路障】可实时改变敌军行进路线！</div>
+            <canvas id="tacticalCanvas"></canvas>
+        </main>
+    </div>
+
+    <!-- 底部建造与回合控制台 -->
+    <footer id="bottom-deck">
+        <div class="build-cards" id="build-cards-container"></div>
+
+        <div class="turn-controls">
+            <button id="sell-btn" title="点击后选择场上建筑进行拆除（返还50%能量）">🔧 拆除/升级</button>
+            <button id="end-turn-btn">结束回合 ⏭️</button>
+        </div>
+    </footer>
+
+    <!-- 肉鸽战术空投 (3选1) 弹窗 -->
+    <div id="rogue-modal" class="modal-backdrop hidden">
+        <div class="holo-modal">
+            <div class="modal-subtitle">TACTICAL AIRDROP // 轨道补给</div>
+            <h2 class="modal-title">选择一项常驻战术强化模块</h2>
+            <div class="rogue-grid" id="rogue-options"></div>
+        </div>
+    </div>
+
+    <!-- 战术手册弹窗 -->
+    <div id="rules-modal" class="modal-backdrop hidden">
+        <div class="holo-modal">
+            <div class="modal-subtitle">COMMANDER BRIEFING</div>
+            <h2 class="modal-title">星际港湾防御指南</h2>
+            <div class="rules-grid">
+                <div class="rule-box">
+                    <h4>🧱 动态迷宫改道 (核心策略)</h4>
+                    敌人会沿最短路径从左侧虫洞前往右侧能源核心。放置<strong>【能量路障】</strong>可迫使敌人绕远路，反复穿过你的火力交叉区！（系统会自动阻止完全堵死路径）
+                </div>
+                <div class="rule-box">
+                    <h4>⚡ 经济与能源矿脉</h4>
+                    每回合自动恢复能量。在发光的<strong>金色矿脉格</strong>上建造<strong>【采矿增幅塔】</strong>可永久提升每回合能量上限，但会占用关键输出站位。
+                </div>
+                <div class="rule-box">
+                    <h4>🎯 炮台克制与升级</h4>
+                    <strong>脉冲机枪</strong>克制轻甲且回合末补射；<strong>重型磁轨炮</strong>十字直线穿透无视护甲；<strong>低温力场</strong>减速+30%易伤；<strong>弧光迫击炮</strong>远程溅射。点击已有炮台消耗能量可<strong>升级强化</strong>！
+                </div>
+                <div class="rule-box">
+                    <h4>🧬 10波虫潮与肉鸽空投</h4>
+                    全游戏共 10 波攻势，第 10 波将迎来终极 BOSS<strong>“利维坦母舰”</strong>。每击退 2 波虫潮即可从 3 项肉鸽科技中任选 1 项强化全军。
+                </div>
+            </div>
+            <button class="mini-btn" style="padding: 10px 32px; font-size: 0.95rem; background: var(--cyan); color: #050811;" id="close-rules-btn">明白，进入指挥席</button>
+        </div>
+    </div>
+
+    <!-- 胜负结算弹窗 -->
+    <div id="endgame-modal" class="modal-backdrop hidden">
+        <div class="holo-modal" style="max-width: 440px;">
+            <div class="modal-subtitle" id="endgame-sub">MISSION REPORT</div>
+            <h2 class="modal-title" id="endgame-title">星际港湾防线失守</h2>
+            <p id="endgame-desc" style="color: var(--text-dim); margin-bottom: 22px; line-height: 1.6;"></p>
+            <button class="mini-btn" style="padding: 12px 36px; font-size: 1rem; background: var(--cyan); color: #050811;" id="play-again-btn">重新部署防线</button>
+        </div>
+    </div>
+
+<script>
+/**
+ * ============================================================================
+ * Web Audio API 科幻战术合成音效引擎
+ * ============================================================================
+ */
+class SciFiAudio {
+    constructor() {
+        this.ctx = null;
+        this.muted = false;
+    }
+    init() {
+        if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') this.ctx.resume();
+    }
+    toggle() {
+        this.muted = !this.muted;
+        document.getElementById('audio-btn').textContent = this.muted ? '🔇 静音' : '🔊 音效';
+    }
+    playClick() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(720, now);
+        osc.frequency.exponentialRampToValueAtTime(1100, now + 0.05);
+        gain.gain.setValueAtTime(0.12, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.06);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now); osc.stop(now + 0.06);
+    }
+    playBuild() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'triangle';
+        osc.frequency.setValueAtTime(240, now);
+        osc.frequency.exponentialRampToValueAtTime(580, now + 0.14);
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.15);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now); osc.stop(now + 0.15);
+    }
+    playLaser() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(980, now);
+        osc.frequency.exponentialRampToValueAtTime(220, now + 0.09);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.09);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now); osc.stop(now + 0.09);
+    }
+    playRailgun() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'square';
+        osc.frequency.setValueAtTime(180, now);
+        osc.frequency.exponentialRampToValueAtTime(42, now + 0.28);
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now); osc.stop(now + 0.28);
+    }
+    playCryo() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(1250, now);
+        osc.frequency.linearRampToValueAtTime(850, now + 0.18);
+        gain.gain.setValueAtTime(0.1, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+        osc.connect(gain); gain.connect(this.ctx.destination);
+        osc.start(now); osc.stop(now + 0.18);
+    }
+    playExplosion() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const bufSize = this.ctx.sampleRate * 0.25;
+        const buf = this.ctx.createBuffer(1, bufSize, this.ctx.sampleRate);
+        const data = buf.getChannelData(0);
+        for (let i = 0; i < bufSize; i++) data[i] = Math.random() * 2 - 1;
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buf;
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'lowpass';
+        filter.frequency.setValueAtTime(520, now);
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.25);
+        noise.connect(filter); filter.connect(gain); gain.connect(this.ctx.destination);
+        noise.start(now);
+    }
+}
+const audio = new SciFiAudio();
+
+/**
+ * ============================================================================
+ * 游戏核心数据配置：建筑、敌人、10波编排与肉鸽强化池
+ * ============================================================================
+ */
+const COLS = 8;
+const ROWS = 6;
+const SPAWN_CELL = { c: 0, r: 2 };
+const CORE_CELL  = { c: 7, r: 3 };
+
+const BUILDING_TYPES = {
+    wall: {
+        id: 'wall', name: '能量路障', cost: 1, icon: '🧱', color: '#38bdf8',
+        shortDesc: '1能量 · 迫使敌军改道',
+        detail: '阻挡地面行进并重算敌人最短路径。不能完全封死通道。路障拥有 35 点耐久。'
+    },
+    miner: {
+        id: 'miner', name: '采矿增幅塔', cost: 2, icon: '⛏️', color: '#fbbf24',
+        shortDesc: '2能量 · 每回合能量+1',
+        detail: '必须建在【金色能源矿脉】上！每回合额外提供 +1 点能量恢复，并使相邻炮台伤害 +15%。'
+    },
+    gatling: {
+        id: 'gatling', name: '脉冲机枪塔', cost: 2, icon: '🔫', color: '#34d399',
+        shortDesc: '2能量 · 射程2 · 轻甲克星',
+        detail: '射程2格（切比雪夫距离）。基础伤害14，对无护甲目标额外+6伤害；回合结束对周围1格额外压制射击。'
+    },
+    railgun: {
+        id: 'railgun', name: '重型磁轨炮', cost: 3, icon: '⚡', color: '#60a5fa',
+        shortDesc: '3能量 · 十字4格直线穿透',
+        detail: '向前后左右十字方向发射高能磁轨弹（射程4格），穿透整条直线所有敌人，造成 26 点无视护甲伤害！'
+    },
+    cryo: {
+        id: 'cryo', name: '低温力场塔', cost: 2, icon: '❄️', color: '#22d3ee',
+        shortDesc: '2能量 · 周围1格减速+易伤',
+        detail: '释放低温力场，使周围1格内所有敌人移动步数减半（至少1步），并附加【易伤】（受到伤害+30%）。'
+    },
+    mortar: {
+        id: 'mortar', name: '弧光迫击炮', cost: 4, icon: '💣', color: '#f43f5e',
+        shortDesc: '4能量 · 2-4格远程范围轰炸',
+        detail: '射程2~4格（无法攻击贴身1格），对目标及周围1格范围内所有敌人造成 22 点范围溅射伤害。'
+    }
+};
+
+const ENEMY_TYPES = {
+    scout:   { id: 'scout',   name: '迅捷侦察虫', hp: 28,  armor: 0, shield: 0, speed: 3, color: '#4ade80', icon: '🦗', desc: '高移速(3格/回合)，无护甲，易被机枪塔克制。' },
+    tank:    { id: 'tank',    name: '重装甲壳虫', hp: 65,  armor: 8, shield: 0, speed: 1, color: '#fb923c', icon: '🪲', desc: '高护甲(每次受击减免8点非穿透伤害)，移速缓慢(1格)。' },
+    splitter:{ id: 'splitter',name: '分裂母体',   hp: 48,  armor: 0, shield: 0, speed: 2, color: '#c084fc', icon: '🦠', desc: '移速2格，被击杀时会在原地分裂出 2 只微型幼虫！' },
+    mite:    { id: 'mite',    name: '分裂幼虫',   hp: 16,  armor: 0, shield: 0, speed: 2, color: '#e879f9', icon: '🐛', desc: '由分裂母体孵化的小型单位。' },
+    elite:   { id: 'elite',   name: '护盾精英',   hp: 55,  armor: 3, shield: 25,speed: 2, color: '#38bdf8', icon: '🛸', desc: '自带25点能量护盾，且每回合行动结束恢复10点护盾。' },
+    boss:    { id: 'boss',    name: '利维坦母舰', hp: 320, armor: 10,shield: 60,speed: 1, color: '#f43f5e', icon: '👾', desc: '第10波终极首领！超高血量与护盾，碾压沿途路障。' }
+};
+
+// 10波虫潮编排
+const WAVES_CONFIG = [
+    { desc: '3只 迅捷侦察虫', enemies: ['scout', 'scout', 'scout'] },
+    { desc: '2只 侦察虫 + 2只 重装甲壳虫', enemies: ['scout', 'tank', 'scout', 'tank'] },
+    { desc: '2只 分裂母体 + 2只 侦察虫', enemies: ['splitter', 'scout', 'splitter', 'scout'] },
+    { desc: '3只 重装甲壳虫 + 1只 护盾精英', enemies: ['tank', 'tank', 'elite', 'tank'] },
+    { desc: '2只 分裂母体 + 2只 护盾精英', enemies: ['splitter', 'elite', 'splitter', 'elite'] },
+    { desc: '4只 侦察虫 + 2只 重装甲壳虫 + 1只 精英', enemies: ['scout', 'scout', 'tank', 'elite', 'scout', 'tank', 'scout'] },
+    { desc: '3只 分裂母体 + 2只 护盾精英', enemies: ['splitter', 'splitter', 'elite', 'splitter', 'elite'] },
+    { desc: '3只 重装甲壳虫 + 3只 护盾精英', enemies: ['tank', 'elite', 'tank', 'elite', 'tank', 'elite'] },
+    { desc: '2只 分裂母体 + 2只 装甲虫 + 3只 精英', enemies: ['splitter', 'tank', 'elite', 'splitter', 'elite', 'tank', 'elite'] },
+    { desc: '【最终决战】利维坦母舰 + 护卫虫群', enemies: ['boss', 'elite', 'splitter', 'tank'] }
+];
+
+// 肉鸽战术强化池
+const ROGUE_POOL = [
+    { id: 'rail_range',   icon: '🔭', name: '超导磁轨加速', desc: '【重型磁轨炮】射程 +1 格（增至5格），且伤害 +6 点。' },
+    { id: 'cryo_burn',    icon: '🔥', name: '热能逆转力场', desc: '【低温力场塔】在回合结束时对周围1格敌人造成 10 点热能灼烧伤害。' },
+    { id: 'kill_energy',  icon: '⚡', name: '战场能量回收', desc: '每击杀 1 名敌人，有 30% 概率立即返还 +1 点当前能量。' },
+    { id: 'wall_bomb',    icon: '💥', name: '高爆反应路障', desc: '【能量路障】被摧毁或主动拆除时，对周围1格敌人造成 24 点爆炸伤害。' },
+    { id: 'gatling_fury', icon: '⚙️', name: '双联装脉冲管', desc: '【脉冲机枪塔】基础伤害 +5，且回合末压制射击范围扩大至 2 格。' },
+    { id: 'mortar_stun',  icon: '🌩️', name: 'EMP 震荡炮弹', desc: '【弧光迫击炮】命中敌人时有 50% 概率使其下回合移动力 -1。' },
+    { id: 'max_ap',       icon: '🔋', name: '星港反应堆超频', desc: '永久提升每回合基础能量上限 +1 点，并立即恢复满能量。' }
+];
+
+/**
+ * ============================================================================
+ * 游戏核心状态机
+ * ============================================================================
+ */
+let grid = []; // 6x8 网格：terrain ('normal' | 'rock' | 'ore'), building (null | obj)
+let enemies = [];
+let spawnQueue = [];
+let projectiles = [];
+let floatingTexts = [];
+let particles = [];
+
+let waveIndex = 0; // 0 ~ 9
+let baseMaxEnergy = 4;
+let energy = 4;
+let coreHp = 10;
+let selectedTool = 'wall'; // 'wall' | 'miner' | 'gatling' | 'railgun' | 'cryo' | 'mortar' | 'inspect'
+let hoverCell = null;
+let isBusy = false; // 动画结算中锁定操作
+let gameOver = false;
+let activeRelics = new Set();
+
+// 缓存路径用于预览
+let currentPaths = [];
+let previewPaths = null;
+
+const canvas = document.getElementById('tacticalCanvas');
+const ctx = canvas.getContext('2d');
+let tileSize = 68;
+let boardOffsetX = 0;
+let boardOffsetY = 0;
+
+/**
+ * ============================================================================
+ * 初始化战场与地形生成
+ * ============================================================================
+ */
+function initGame() {
+    waveIndex = 0;
+    baseMaxEnergy = 4;
+    energy = 4;
+    coreHp = 10;
+    selectedTool = 'wall';
+    isBusy = false;
+    gameOver = false;
+    activeRelics.clear();
+    enemies = [];
+    projectiles = [];
+    floatingTexts = [];
+    particles = [];
+
+    // 构建 6x8 战术网格
+    grid = Array.from({ length: ROWS }, (_, r) =>
+        Array.from({ length: COLS }, (_, c) => ({
+            c, r,
+            terrain: 'normal',
+            building: null
+        }))
+    );
+
+    // 预设具有策略深度的陨石障碍与能源矿脉（确保起点到终点必然连通）
+    const rocks = [
+        { c: 2, r: 1 }, { c: 2, r: 4 },
+        { c: 5, r: 1 }, { c: 5, r: 4 }
+    ];
+    rocks.forEach(p => grid[p.r][p.c].terrain = 'rock');
+
+    const ores = [
+        { c: 1, r: 0 }, { c: 3, r: 2 }, { c: 4, r: 3 }, { c: 6, r: 5 }
+    ];
+    ores.forEach(p => grid[p.r][p.c].terrain = 'ore');
+
+    renderBuildCards();
+    renderRelicsUI();
+    prepareWave(0);
+    recalcAllEnemyPaths();
+    updateTopHUD();
+    resizeCanvas();
+
+    document.getElementById('endgame-modal').classList.add('hidden');
+    document.getElementById('rogue-modal').classList.add('hidden');
+}
+
+function getMaxEnergy() {
+    let bonus = 0;
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const b = grid[r][c].building;
+            if (b && b.type === 'miner') bonus += b.level;
+        }
+    }
+    return baseMaxEnergy + bonus;
+}
+
+function prepareWave(idx) {
+    waveIndex = idx;
+    const cfg = WAVES_CONFIG[idx];
+    spawnQueue = [...cfg.enemies];
+
+    // 预告文本
+    const nextCfg = WAVES_CONFIG[idx + 1];
+    document.getElementById('next-wave-tag').textContent = nextCfg ? `第 ${idx + 2} 波` : '最终波次';
+    document.getElementById('next-wave-intel').innerHTML = nextCfg
+        ? `<strong>下波敌情：</strong>${nextCfg.desc}`
+        : `<strong style="color:#f43f5e;">警告：</strong>第 10 波为最终决战，守住能源核心即可胜利！`;
+
+    // 波次开始先放出首批敌人进入虫洞入口
+    spawnFromQueue(2);
+}
+
+function spawnFromQueue(count) {
+    for (let i = 0; i < count; i++) {
+        if (spawnQueue.length === 0) break;
+        // 如果起点被占，顺延到下回合
+        if (enemies.some(e => e.c === SPAWN_CELL.c && e.r === SPAWN_CELL.r)) break;
+
+        const typeKey = spawnQueue.shift();
+        const def = ENEMY_TYPES[typeKey];
+        // 随波次微幅成长血量
+        const hpScale = 1 + waveIndex * 0.08;
+        const maxHp = Math.round(def.hp * hpScale);
+
+        enemies.push({
+            id: Math.random().toString(36).slice(2),
+            type: typeKey,
+            name: def.name,
+            icon: def.icon,
+            color: def.color,
+            c: SPAWN_CELL.c,
+            r: SPAWN_CELL.r,
+            visualX: SPAWN_CELL.c,
+            visualY: SPAWN_CELL.r,
+            hp: maxHp,
+            maxHp: maxHp,
+            armor: def.armor,
+            shield: def.shield,
+            maxShield: def.shield,
+            speed: def.speed,
+            vulnerable: false,
+            slowed: false,
+            empStun: false,
+            path: []
+        });
+    }
+}
+
+/**
+ * ============================================================================
+ * BFS 最短路径寻路与动态路线重算（核心策略机制）
+ * ============================================================================
+ */
+function findShortestPath(startC, startR, goalC, goalR, extraBlockCell = null) {
+    const visited = Array.from({ length: ROWS }, () => Array(COLS).fill(false));
+    const parent = Array.from({ length: ROWS }, () => Array(COLS).fill(null));
+    const queue = [{ c: startC, r: startR }];
+    visited[startR][startC] = true;
+
+    const dirs = [
+        { dc: 1, dr: 0 }, { dc: 0, dr: 1 }, { dc: 0, dr: -1 }, { dc: -1, dr: 0 }
+    ];
+
+    while (queue.length > 0) {
+        const curr = queue.shift();
+        if (curr.c === goalC && curr.r === goalR) {
+            const path = [];
+            let trace = curr;
+            while (trace) {
+                path.unshift({ c: trace.c, r: trace.r });
+                trace = parent[trace.r][trace.c];
+            }
+            return path;
+        }
+
+        for (const d of dirs) {
+            const nc = curr.c + d.dc;
+            const nr = curr.r + d.dr;
+            if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS) continue;
+            if (visited[nr][nc]) continue;
+
+            // 检查地形与建筑阻挡
+            if (grid[nr][nc].terrain === 'rock') continue;
+            if (grid[nr][nc].building !== null) continue;
+            if (extraBlockCell && extraBlockCell.c === nc && extraBlockCell.r === nr) continue;
+
+            visited[nr][nc] = true;
+            parent[nr][nc] = curr;
+            queue.push({ c: nc, r: nr });
+        }
+    }
+    return null; // 无路可走
+}
+
+function recalcAllEnemyPaths() {
+    // 虫洞主干道基准路径
+    const mainPath = findShortestPath(SPAWN_CELL.c, SPAWN_CELL.r, CORE_CELL.c, CORE_CELL.r);
+    currentPaths = mainPath ? [mainPath] : [];
+
+    enemies.forEach(e => {
+        const p = findShortestPath(e.c, e.r, CORE_CELL.c, CORE_CELL.r);
+        e.path = p || [];
+    });
+}
+
+// 检查在 (c, r) 建造建筑是否合法（不能堵死起点或任何现有敌人的通路）
+function canPlaceBuildingAt(c, r, typeId) {
+    if (c === SPAWN_CELL.c && r === SPAWN_CELL.r) return { ok: false, reason: '不能封堵虫洞入口！' };
+    if (c === CORE_CELL.c && r === CORE_CELL.r) return { ok: false, reason: '不能占用能源核心！' };
+
+    const cell = grid[r][c];
+    if (cell.terrain === 'rock') return { ok: false, reason: '陨石障碍无法建造！' };
+    if (cell.building !== null) return { ok: false, reason: '该格已有建筑（点击可升级或拆除）' };
+
+    if (typeId === 'miner' && cell.terrain !== 'ore') {
+        return { ok: false, reason: '采矿增幅塔只能建在【金色能源矿脉】上！' };
+    }
+
+    if (enemies.some(e => e.c === c && e.r === r)) {
+        return { ok: false, reason: '有敌方单位正占据此格！' };
+    }
+
+    // 关键路径连通性校验：必须保证虫洞到核心依然有路
+    const testMain = findShortestPath(SPAWN_CELL.c, SPAWN_CELL.r, CORE_CELL.c, CORE_CELL.r, { c, r });
+    if (!testMain) {
+        return { ok: false, reason: '⚠️ 战术限制：不能完全堵死敌军通道！' };
+    }
+
+    // 必须保证场上每一只敌人也都能走到核心
+    for (const e of enemies) {
+        const testEnemy = findShortestPath(e.c, e.r, CORE_CELL.c, CORE_CELL.r, { c, r });
+        if (!testEnemy) {
+            return { ok: false, reason: '⚠️ 战术限制：不能将敌军完全围死在孤岛中！' };
+        }
+    }
+
+    return { ok: true, previewMainPath: testMain };
+}
+
+/**
+ * ============================================================================
+ * 玩家建造、升级与拆除交互
+ * ============================================================================
+ */
+function handleCellClick(c, r) {
+    if (isBusy || gameOver) return;
+    audio.init();
+
+    const cell = grid[r][c];
+
+    // 如果处于拆除/升级模式，或点击了已有建筑
+    if (selectedTool === 'sell' || cell.building !== null) {
+        if (!cell.building) {
+            showBanner('该地块为空，请选择要拆除或升级的建筑');
+            return;
+        }
+        const b = cell.building;
+        const def = BUILDING_TYPES[b.type];
+
+        if (selectedTool === 'sell') {
+            // 拆除返还 50% 能量（至少1点，路障拆除返还0或触发自爆）
+            const refund = Math.max(0, Math.floor((def.cost * b.level) * 0.5));
+            energy = Math.min(getMaxEnergy() + 4, energy + refund);
+            if (b.type === 'wall' && activeRelics.has('wall_bomb')) {
+                triggerWallExplosion(c, r);
+            }
+            cell.building = null;
+            audio.playClick();
+            recalcAllEnemyPaths();
+            updateTopHUD();
+            renderBuildCards();
+            showBanner(`已拆除【${def.name}】，回收 ${refund} 点能量`);
+            return;
+        } else {
+            // 点击已有炮台：消耗基础费用进行升级（最高 Lv.3）
+            if (b.type === 'wall') {
+                showBanner('能量路障无法升级，如需移除请点击右下角【拆除/升级】');
+                return;
+            }
+            if (b.level >= 3) {
+                showBanner(`【${def.name}】已达最高等级 Lv.3！`);
+                return;
+            }
+            const upgCost = def.cost;
+            if (energy < upgCost) {
+                showBanner(`能量不足！升级【${def.name}】需要 ${upgCost} 点能量`);
+                return;
+            }
+            energy -= upgCost;
+            b.level++;
+            audio.playBuild();
+            spawnParticles(c, r, def.color, 16);
+            addFloatText(c, r, `升级 Lv.${b.level}!`, '#fbbf24');
+            updateTopHUD();
+            renderBuildCards();
+            return;
+        }
+    }
+
+    // 建造新建筑
+    const def = BUILDING_TYPES[selectedTool];
+    if (!def) return;
+
+    if (energy < def.cost) {
+        showBanner(`⚡ 能量不足！建造【${def.name}】需要 ${def.cost} 点能量`);
+        return;
+    }
+
+    const check = canPlaceBuildingAt(c, r, selectedTool);
+    if (!check.ok) {
+        showBanner(check.reason);
+        return;
+    }
+
+    energy -= def.cost;
+    cell.building = {
+        type: selectedTool,
+        level: 1,
+        hp: selectedTool === 'wall' ? 35 : 50
+    };
+
+    audio.playBuild();
+    spawnParticles(c, r, def.color, 14);
+    recalcAllEnemyPaths();
+    previewPaths = null;
+    updateTopHUD();
+    renderBuildCards();
+    showBanner(`已部署【${def.name}】！敌军行进路线已动态重算`);
+}
+
+function triggerWallExplosion(c, r) {
+    audio.playExplosion();
+    spawnParticles(c, r, '#f43f5e', 22);
+    addFloatText(c, r, '高爆自毁!', '#f43f5e');
+    enemies.forEach(e => {
+        if (Math.abs(e.c - c) <= 1 && Math.abs(e.r - r) <= 1) {
+            damageEnemy(e, 24, true);
+        }
+    });
+}
+
+/**
+ * ============================================================================
+ * 回合推进与战斗结算流程 (完全回合制动画演示)
+ * ============================================================================
+ */
+const sleep = ms => new Promise(res => setTimeout(res, ms));
+
+async function executeEndTurn() {
+    if (isBusy || gameOver) return;
+    audio.init();
+    audio.playClick();
+
+    isBusy = true;
+    previewPaths = null;
+    document.getElementById('end-turn-btn').disabled = true;
+
+    // 1. 刷新所有敌人的 debuff 状态，并在回合初结算【低温力场塔】光环
+    enemies.forEach(e => {
+        e.vulnerable = false;
+        e.slowed = false;
+    });
+    applyCryoAuras(false);
+
+    // 2. 炮台主火力阶段（按网格顺序依次开火，清晰展示弹道与伤害）
+    showBanner('⚔️ 阶段 1/3：防御炮台火力齐射！');
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const b = grid[r][c].building;
+            if (!b) continue;
+            if (b.type === 'gatling' || b.type === 'railgun' || b.type === 'mortar') {
+                const fired = await fireTowerMain(c, r, b);
+                if (fired) await sleep(170);
+            }
+        }
+    }
+
+    cleanupDeadEnemies();
+    if (checkVictoryOrWaveClear()) return;
+
+    // 3. 敌军移动阶段（根据当前最短路径逐格前进）
+    showBanner('👾 阶段 2/3：外星虫群推进中...');
+    recalcAllEnemyPaths();
+
+    for (const e of [...enemies]) {
+        if (e.hp <= 0) continue;
+
+        let steps = e.speed;
+        if (e.slowed) steps = Math.max(1, Math.floor(steps * 0.5));
+        if (e.empStun) {
+            steps = Math.max(0, steps - 1);
+            e.empStun = false;
+        }
+
+        for (let s = 0; s < steps; s++) {
+            const path = findShortestPath(e.c, e.r, CORE_CELL.c, CORE_CELL.r);
+            if (!path || path.length < 2) break;
+
+            const nextStep = path[1];
+            // 检查下一格是否被其他敌人占据（BOSS可直接碾压并伤害路障）
+            const occupied = enemies.some(other => other !== e && other.hp > 0 && other.c === nextStep.c && other.r === nextStep.r);
+            if (occupied) break;
+
+            e.c = nextStep.c;
+            e.r = nextStep.r;
+            e.visualX = e.c;
+            e.visualY = e.r;
+
+            // 每走一步都重新检查是否踏入低温力场
+            applyCryoAuras(false);
+            await sleep(110);
+
+            // 检查是否抵达能源核心
+            if (e.c === CORE_CELL.c && e.r === CORE_CELL.r) {
+                const dmg = e.type === 'boss' ? 5 : 1;
+                coreHp = Math.max(0, coreHp - dmg);
+                e.hp = 0;
+                audio.playExplosion();
+                spawnParticles(CORE_CELL.c, CORE_CELL.r, '#f43f5e', 24);
+                addFloatText(CORE_CELL.c, CORE_CELL.r, `核心受击 -${dmg}!`, '#f43f5e');
+                updateTopHUD();
+                break;
+            }
+        }
+    }
+
+    cleanupDeadEnemies();
+    if (coreHp <= 0) {
+        triggerDefeat();
+        return;
+    }
+
+    // 4. 回合末阶段：机枪塔压制补射、低温塔热能灼烧、精英护盾回复、新虫群入场
+    showBanner('🔄 阶段 3/3：回合末压制与虫洞增援...');
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const b = grid[r][c].building;
+            if (!b) continue;
+            if (b.type === 'gatling') {
+                const suppressRange = activeRelics.has('gatling_fury') ? 2 : 1;
+                const targets = enemies.filter(e => e.hp > 0 && Math.max(Math.abs(e.c - c), Math.abs(e.r - r)) <= suppressRange);
+                if (targets.length > 0) {
+                    const t = targets[0];
+                    audio.playLaser();
+                    projectiles.push({ x1: c, y1: r, x2: t.c, y2: t.r, color: '#34d399', life: 1 });
+                    damageEnemy(t, 6 + b.level * 2, false);
+                    await sleep(90);
+                }
+            } else if (b.type === 'cryo' && activeRelics.has('cryo_burn')) {
+                const near = enemies.filter(e => e.hp > 0 && Math.max(Math.abs(e.c - c), Math.abs(e.r - r)) <= 1);
+                if (near.length > 0) {
+                    audio.playCryo();
+                    near.forEach(t => damageEnemy(t, 10, true));
+                    await sleep(90);
+                }
+            }
+        }
+    }
+
+    // 护盾精英回合末回盾
+    enemies.forEach(e => {
+        if (e.hp > 0 && e.maxShield > 0 && e.shield < e.maxShield) {
+            e.shield = Math.min(e.maxShield, e.shield + 10);
+            addFloatText(e.c, e.r, '+10 护盾', '#38bdf8');
+        }
+    });
+
+    cleanupDeadEnemies();
+    if (checkVictoryOrWaveClear()) return;
+
+    // 虫洞继续投放本波剩余增援
+    spawnFromQueue(2);
+    recalcAllEnemyPaths();
+    applyCryoAuras(false);
+
+    // 恢复下回合能量
+    energy = getMaxEnergy();
+    updateTopHUD();
+    renderBuildCards();
+
+    isBusy = false;
+    document.getElementById('end-turn-btn').disabled = false;
+    showBanner(`第 ${waveIndex + 1} 波进行中 · 请部署炮台或调整路障迷宫`);
+}
+
+// 计算矿脉塔对相邻炮台的增幅倍率
+function getAdjacencyBuff(c, r) {
+    let mult = 1.0;
+    const dirs = [[1,0],[-1,0],[0,1],[0,-1]];
+    for (const [dc, dr] of dirs) {
+        const nc = c + dc, nr = r + dr;
+        if (nc >= 0 && nc < COLS && nr >= 0 && nr < ROWS) {
+            const nb = grid[nr][nc].building;
+            if (nb && nb.type === 'miner') mult += 0.15;
+        }
+    }
+    return mult;
+}
+
+// 低温力场光环判定
+function applyCryoAuras(playSound) {
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const b = grid[r][c].building;
+            if (b && b.type === 'cryo') {
+                enemies.forEach(e => {
+                    if (e.hp > 0 && Math.max(Math.abs(e.c - c), Math.abs(e.r - r)) <= 1) {
+                        e.slowed = true;
+                        e.vulnerable = true;
+                    }
+                });
+            }
+        }
+    }
+}
+
+// 炮台主攻击逻辑
+async function fireTowerMain(c, r, b) {
+    const buff = getAdjacencyBuff(c, r);
+
+    if (b.type === 'gatling') {
+        const range = 2;
+        const targets = enemies.filter(e => e.hp > 0 && Math.max(Math.abs(e.c - c), Math.abs(e.r - r)) <= range);
+        if (targets.length === 0) return false;
+        // 优先攻击距离核心最近的敌人
+        targets.sort((a, b) => a.path.length - b.path.length);
+        const t = targets[0];
+
+        let baseDmg = (14 + (b.level - 1) * 7 + (activeRelics.has('gatling_fury') ? 5 : 0)) * buff;
+        if (t.armor === 0) baseDmg += 6; // 轻甲克制
+
+        audio.playLaser();
+        projectiles.push({ x1: c, y1: r, x2: t.c, y2: t.r, color: '#34d399', life: 1 });
+        damageEnemy(t, Math.round(baseDmg), false);
+        return true;
+    }
+
+    if (b.type === 'railgun') {
+        const range = 4 + (activeRelics.has('rail_range') ? 1 : 0);
+        const bonusDmg = activeRelics.has('rail_range') ? 6 : 0;
+        const rawDmg = Math.round((26 + (b.level - 1) * 12 + bonusDmg) * buff);
+
+        // 搜索上下左右四个方向，选择命中敌人最多的一条直线开火
+        const dirs = [
+            { dc: 1, dr: 0 }, { dc: -1, dr: 0 }, { dc: 0, dr: 1 }, { dc: 0, dr: -1 }
+        ];
+        let bestDir = null;
+        let bestHits = [];
+
+        for (const d of dirs) {
+            const hits = [];
+            for (let step = 1; step <= range; step++) {
+                const nc = c + d.dc * step;
+                const nr = r + d.dr * step;
+                if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS) break;
+                if (grid[nr][nc].terrain === 'rock') break; // 陨石阻挡直线
+                const found = enemies.filter(e => e.hp > 0 && e.c === nc && e.r === nr);
+                hits.push(...found);
+            }
+            if (hits.length > bestHits.length) {
+                bestHits = hits;
+                bestDir = d;
+            }
+        }
+
+        if (!bestDir || bestHits.length === 0) return false;
+
+        // 计算光束终点
+        let endC = c, endR = r;
+        for (let step = 1; step <= range; step++) {
+            const nc = c + bestDir.dc * step;
+            const nr = r + bestDir.dr * step;
+            if (nc < 0 || nc >= COLS || nr < 0 || nr >= ROWS || grid[nr][nc].terrain === 'rock') break;
+            endC = nc; endR = nr;
+        }
+
+        audio.playRailgun();
+        projectiles.push({ x1: c, y1: r, x2: endC, y2: endR, color: '#60a5fa', width: 6, life: 1 });
+        bestHits.forEach(t => damageEnemy(t, rawDmg, true)); // 无视护甲穿透
+        return true;
+    }
+
+    if (b.type === 'mortar') {
+        // 射程 2 ~ 4 格
+        const targets = enemies.filter(e => {
+            if (e.hp <= 0) return false;
+            const dist = Math.max(Math.abs(e.c - c), Math.abs(e.r - r));
+            return dist >= 2 && dist <= 4;
+        });
+        if (targets.length === 0) return false;
+
+        // 选择周围敌人最密集的目标点
+        let bestTarget = targets[0];
+        let maxCluster = -1;
+        for (const cand of targets) {
+            const count = enemies.filter(e => e.hp > 0 && Math.max(Math.abs(e.c - cand.c), Math.abs(e.r - cand.r)) <= 1).length;
+            if (count > maxCluster) {
+                maxCluster = count;
+                bestTarget = cand;
+            }
+        }
+
+        const dmg = Math.round((22 + (b.level - 1) * 10) * buff);
+        audio.playExplosion();
+        projectiles.push({ x1: c, y1: r, x2: bestTarget.c, y2: bestTarget.r, color: '#f43f5e', isMortar: true, life: 1 });
+        spawnParticles(bestTarget.c, bestTarget.r, '#f43f5e', 18);
+
+        enemies.forEach(e => {
+            if (e.hp > 0 && Math.max(Math.abs(e.c - bestTarget.c), Math.abs(e.r - bestTarget.r)) <= 1) {
+                damageEnemy(e, dmg, false);
+                if (activeRelics.has('mortar_stun') && Math.random() < 0.5) {
+                    e.empStun = true;
+                    addFloatText(e.c, e.r, 'EMP震荡!', '#fde047');
+                }
+            }
+        });
+        return true;
+    }
+
+    return false;
+}
+
+// 伤害结算（含易伤、护甲减伤、能量护盾吸收）
+function damageEnemy(e, rawAmount, ignoreArmor) {
+    if (e.hp <= 0) return;
+    let dmg = rawAmount;
+    if (e.vulnerable) dmg = Math.round(dmg * 1.3);
+
+    if (!ignoreArmor && e.armor > 0) {
+        dmg = Math.max(2, dmg - e.armor);
+    }
+
+    // 先扣除能量护盾
+    if (e.shield > 0) {
+        const absorbed = Math.min(e.shield, dmg);
+        e.shield -= absorbed;
+        dmg -= absorbed;
+    }
+
+    e.hp -= dmg;
+    addFloatText(e.c, e.r, `-${dmg}`, e.vulnerable ? '#fbbf24' : '#ffffff');
+    spawnParticles(e.c, e.r, e.color, 6);
+}
+
+// 清理被击杀敌人 & 处理分裂母体与肉鸽能量回收
+function cleanupDeadEnemies() {
+    const newlySpawned = [];
+    for (let i = enemies.length - 1; i >= 0; i--) {
+        const e = enemies[i];
+        if (e.hp <= 0 && e.c !== CORE_CELL.c) {
+            // 击杀回收能量遗物
+            if (activeRelics.has('kill_energy') && Math.random() < 0.3) {
+                energy++;
+                addFloatText(e.c, e.r, '+1⚡回收', '#fbbf24');
+                updateTopHUD();
+            }
+
+            // 分裂母体死亡分裂出2只微型幼虫
+            if (e.type === 'splitter') {
+                const neighbors = [
+                    { c: e.c, r: e.r },
+                    { c: Math.max(0, e.c - 1), r: e.r },
+                    { c: e.c, r: Math.max(0, e.r - 1) },
+                    { c: e.c, r: Math.min(ROWS - 1, e.r + 1) }
+                ].filter(pos => grid[pos.r][pos.c].terrain !== 'rock' && !grid[pos.r][pos.c].building);
+
+                for (let k = 0; k < 2; k++) {
+                    const pos = neighbors[k % neighbors.length] || { c: e.c, r: e.r };
+                    const miteDef = ENEMY_TYPES.mite;
+                    newlySpawned.push({
+                        id: Math.random().toString(36).slice(2),
+                        type: 'mite', name: miteDef.name, icon: miteDef.icon, color: miteDef.color,
+                        c: pos.c, r: pos.r, visualX: pos.c, visualY: pos.r,
+                        hp: miteDef.hp, maxHp: miteDef.hp, armor: 0, shield: 0, maxShield: 0,
+                        speed: miteDef.speed, vulnerable: false, slowed: false, empStun: false, path: []
+                    });
+                }
+                addFloatText(e.c, e.r, '母体分裂!', '#e879f9');
+            }
+            enemies.splice(i, 1);
+        } else if (e.hp <= 0) {
+            enemies.splice(i, 1);
+        }
+    }
+    enemies.push(...newlySpawned);
+    recalcAllEnemyPaths();
+}
+
+function checkVictoryOrWaveClear() {
+    if (coreHp <= 0) {
+        triggerDefeat();
+        return true;
+    }
+
+    if (enemies.length === 0 && spawnQueue.length === 0) {
+        // 通关第 10 波 -> 胜利！
+        if (waveIndex >= WAVES_CONFIG.length - 1) {
+            triggerVictory();
+            return true;
+        }
+
+        const clearedWaveNum = waveIndex + 1;
+        prepareWave(waveIndex + 1);
+        energy = getMaxEnergy();
+        updateTopHUD();
+        renderBuildCards();
+
+        isBusy = false;
+        document.getElementById('end-turn-btn').disabled = false;
+
+        // 每击退 2 波弹出肉鸽 3 选 1 战术空投
+        if (clearedWaveNum % 2 === 0) {
+            openRogueDraft();
+        } else {
+            showBanner(`🎉 第 ${clearedWaveNum} 波已肃清！第 ${waveIndex + 1} 波敌军正在集结`);
+        }
+        return true;
+    }
+    return false;
+}
+
+/**
+ * ============================================================================
+ * 肉鸽战术空投 (3选1) 与胜负弹窗
+ * ============================================================================
+ */
+function openRogueDraft() {
+    const available = ROGUE_POOL.filter(r => !activeRelics.has(r.id));
+    if (available.length === 0) return;
+
+    // 随机抽取 3 张强化卡
+    const shuffled = [...available].sort(() => Math.random() - 0.5).slice(0, 3);
+    const container = document.getElementById('rogue-options');
+    container.innerHTML = '';
+
+    shuffled.forEach(item => {
+        const card = document.createElement('div');
+        card.className = 'rogue-card';
+        card.innerHTML = `
+            <div class="rogue-icon">${item.icon}</div>
+            <div class="rogue-name">${item.name}</div>
+            <div class="rogue-desc">${item.desc}</div>
+        `;
+        card.onclick = () => {
+            audio.init();
+            audio.playBuild();
+            activeRelics.add(item.id);
+            if (item.id === 'max_ap') {
+                baseMaxEnergy++;
+                energy = getMaxEnergy();
+            }
+            updateTopHUD();
+            renderRelicsUI();
+            document.getElementById('rogue-modal').classList.add('hidden');
+            showBanner(`🧬 已装载强化模块：【${item.name}】`);
+        };
+        container.appendChild(card);
+    });
+
+    document.getElementById('rogue-modal').classList.remove('hidden');
+}
+
+function triggerVictory() {
+    gameOver = true;
+    isBusy = false;
+    document.getElementById('endgame-sub').textContent = 'SECTOR SECURED // 全面胜利';
+    document.getElementById('endgame-title').textContent = '🏆 星际港湾防线大捷！';
+    document.getElementById('endgame-title').style.color = '#10b981';
+    document.getElementById('endgame-desc').textContent = `指挥官，你成功运用地形迷宫与炮台配合击溃了包括【利维坦母舰】在内的全部 10 波虫潮，能源核心剩余完整度 ${coreHp} 点！`;
+    document.getElementById('endgame-modal').classList.remove('hidden');
+}
+
+function triggerDefeat() {
+    gameOver = true;
+    isBusy = false;
+    document.getElementById('endgame-sub').textContent = 'CORE BREACHED // 防线崩溃';
+    document.getElementById('endgame-title').textContent = '💥 能源核心已被摧毁';
+    document.getElementById('endgame-title').style.color = '#f43f5e';
+    document.getElementById('endgame-desc').textContent = `你在第 ${waveIndex + 1} 波攻势中失守。建议在前期多利用 1 能量的【能量路障】拉长敌军绕行路径，让磁轨炮与低温塔打出多重交叉伤害！`;
+    document.getElementById('endgame-modal').classList.remove('hidden');
+}
+
+/**
+ * ============================================================================
+ * UI 渲染与交互状态同步
+ * ============================================================================
+ */
+function updateTopHUD() {
+    document.getElementById('energy-display').textContent = `${energy} / ${getMaxEnergy()}`;
+    document.getElementById('core-hp-display').textContent = coreHp;
+    document.getElementById('wave-display').textContent = `${waveIndex + 1} / ${WAVES_CONFIG.length}`;
+}
+
+function renderRelicsUI() {
+    const el = document.getElementById('active-relics');
+    if (activeRelics.size === 0) {
+        el.innerHTML = '<span style="font-size:0.75rem; color:#64748b;">每通关2波可空投强化</span>';
+        return;
+    }
+    el.innerHTML = '';
+    activeRelics.forEach(id => {
+        const def = ROGUE_POOL.find(r => r.id === id);
+        if (def) {
+            const tag = document.createElement('span');
+            tag.className = 'relic-tag';
+            tag.textContent = `${def.icon} ${def.name}`;
+            tag.title = def.desc;
+            el.appendChild(tag);
+        }
+    });
+}
+
+function renderBuildCards() {
+    const container = document.getElementById('build-cards-container');
+    container.innerHTML = '';
+
+    Object.values(BUILDING_TYPES).forEach(def => {
+        const card = document.createElement('div');
+        card.className = 'unit-card' + (selectedTool === def.id ? ' selected' : '') + (energy < def.cost ? ' disabled' : '');
+        card.innerHTML = `
+            <div class="card-top">
+                <span>${def.icon} ${def.name}</span>
+                <span class="cost-badge">${def.cost}⚡</span>
+            </div>
+            <div class="card-desc">${def.shortDesc}</div>
+        `;
+        card.onclick = () => {
+            audio.init();
+            audio.playClick();
+            selectedTool = def.id;
+            document.getElementById('sell-btn').classList.remove('selected');
+            renderBuildCards();
+            updateHoverIntel();
+        };
+        container.appendChild(card);
+    });
+}
+
+function showBanner(text) {
+    document.getElementById('tactical-banner').textContent = text;
+}
+
+function updateHoverIntel() {
+    const box = document.getElementById('hover-intel');
+    if (!hoverCell) {
+        const curDef = BUILDING_TYPES[selectedTool];
+        if (curDef) {
+            box.innerHTML = `<strong>当前选中：【${curDef.name}】(${curDef.cost}⚡)</strong><br>${curDef.detail}`;
+        }
+        return;
+    }
+
+    const { c, r } = hoverCell;
+    const cell = grid[r][c];
+    const enemyHere = enemies.find(e => e.c === c && e.r === r);
+
+    if (enemyHere) {
+        const eDef = ENEMY_TYPES[enemyHere.type];
+        box.innerHTML = `
+            <strong style="color:${enemyHere.color};">${enemyHere.icon} ${enemyHere.name}</strong><br>
+            生命：<strong>${enemyHere.hp}/${enemyHere.maxHp}</strong> | 护甲：<strong>${enemyHere.armor}</strong> | 护盾：<strong>${enemyHere.shield}</strong><br>
+            本回合移动力：<strong>${enemyHere.slowed ? Math.max(1, Math.floor(enemyHere.speed * 0.5)) + ' (已减速)' : enemyHere.speed + ' 格'}</strong><br>
+            ${eDef.desc}
+        `;
+        return;
+    }
+
+    if (cell.building) {
+        const b = cell.building;
+        const bDef = BUILDING_TYPES[b.type];
+        box.innerHTML = `
+            <strong style="color:${bDef.color};">${bDef.icon} ${bDef.name} (Lv.${b.level})</strong><br>
+            ${bDef.detail}<br>
+            <span style="color:#fbbf24;">${b.type !== 'wall' && b.level < 3 ? `点击该格消耗 ${bDef.cost}⚡ 可升级至 Lv.${b.level + 1}` : '已达最高状态'}</span>
+        `;
+        return;
+    }
+
+    if (c === SPAWN_CELL.c && r === SPAWN_CELL.r) {
+        box.innerHTML = `<strong style="color:#a855f7;">🌀 异星虫洞裂隙</strong><br>敌方虫群增援的源头，无法在此部署建筑。`;
+    } else if (c === CORE_CELL.c && r === CORE_CELL.r) {
+        box.innerHTML = `<strong style="color:#10b981;">🛡️ 星港能源核心</strong><br>必须死守的防线终点！普通敌人突入扣 1 点核心完整度，BOSS 扣 5 点。`;
+    } else if (cell.terrain === 'ore') {
+        box.innerHTML = `<strong style="color:#fbbf24;">✨ 金色能源矿脉 (${c + 1},${r + 1})</strong><br>在此建造【采矿增幅塔】可每回合额外获得 +1⚡ 能量恢复，并强化相邻炮台 15% 伤害！`;
+    } else if (cell.terrain === 'rock') {
+        box.innerHTML = `<strong style="color:#94a3b8;">🪨 陨石屏障 (${c + 1},${r + 1})</strong><br>天然不可通行障碍，可阻挡敌人行进与直线射击。`;
+    } else {
+        const curDef = BUILDING_TYPES[selectedTool];
+        box.innerHTML = `<strong>标准战术甲板 (${c + 1},${r + 1})</strong><br>${curDef ? `点击可部署【${curDef.name}】(${curDef.cost}⚡)` : '可部署防御设施'}`;
+    }
+}
+
+/**
+ * ============================================================================
+ * Canvas 2D 全息战术网格渲染引擎
+ * ============================================================================
+ */
+function resizeCanvas() {
+    const area = document.getElementById('canvas-area');
+    const rect = area.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    const maxTileW = Math.floor((rect.width - 28) / COLS);
+    const maxTileH = Math.floor((rect.height - 54) / ROWS);
+    tileSize = Math.max(42, Math.min(maxTileW, maxTileH, 92));
+
+    const canvasW = tileSize * COLS + 16;
+    const canvasH = tileSize * ROWS + 16;
+
+    canvas.style.width = canvasW + 'px';
+    canvas.style.height = canvasH + 'px';
+    canvas.width = canvasW * dpr;
+    canvas.height = canvasH * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    boardOffsetX = 8;
+    boardOffsetY = 8;
+}
+
+window.addEventListener('resize', resizeCanvas);
+
+function cellCenter(c, r) {
+    return {
+        x: boardOffsetX + c * tileSize + tileSize / 2,
+        y: boardOffsetY + r * tileSize + tileSize / 2
+    };
+}
+
+function draw() {
+    const w = canvas.width / (Math.min(window.devicePixelRatio || 1, 2));
+    const h = canvas.height / (Math.min(window.devicePixelRatio || 1, 2));
+    ctx.clearRect(0, 0, w, h);
+
+    // 1. 绘制 8x6 战术网格地板与特殊地形
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const x = boardOffsetX + c * tileSize;
+            const y = boardOffsetY + r * tileSize;
+            const cell = grid[r][c];
+
+            ctx.fillStyle = (r + c) % 2 === 0 ? '#0d1526' : '#101a2e';
+            ctx.fillRect(x + 1, y + 1, tileSize - 2, tileSize - 2);
+
+            ctx.strokeStyle = 'rgba(56, 189, 248, 0.16)';
+            ctx.lineWidth = 1;
+            ctx.strokeRect(x + 1, y + 1, tileSize - 2, tileSize - 2);
+
+            // 特殊地形：陨石障碍
+            if (cell.terrain === 'rock') {
+                ctx.fillStyle = '#1e293b';
+                ctx.beginPath();
+                ctx.roundRect(x + 5, y + 5, tileSize - 10, tileSize - 10, 8);
+                ctx.fill();
+                ctx.strokeStyle = '#475569';
+                ctx.lineWidth = 1.5;
+                ctx.stroke();
+
+                ctx.font = `${Math.floor(tileSize * 0.42)}px sans-serif`;
+                ctx.textAlign = 'center';
+                ctx.textBaseline = 'middle';
+                ctx.fillText('🪨', x + tileSize / 2, y + tileSize / 2);
+            }
+
+            // 特殊地形：金色能源矿脉
+            if (cell.terrain === 'ore') {
+                const pulse = 0.15 + Math.sin(performance.now() * 0.004) * 0.08;
+                ctx.fillStyle = `rgba(251, 191, 36, ${pulse})`;
+                ctx.fillRect(x + 3, y + 3, tileSize - 6, tileSize - 6);
+
+                ctx.strokeStyle = 'rgba(251, 191, 36, 0.55)';
+                ctx.setLineDash([4, 4]);
+                ctx.strokeRect(x + 4, y + 4, tileSize - 8, tileSize - 8);
+                ctx.setLineDash([]);
+
+                if (!cell.building) {
+                    ctx.font = `700 ${Math.max(10, Math.floor(tileSize * 0.16))}px "Noto Sans SC"`;
+                    ctx.fillStyle = '#fbbf24';
+                    ctx.textAlign = 'center';
+                    ctx.fillText('⚡矿脉', x + tileSize / 2, y + tileSize - 10);
+                }
+            }
+        }
+    }
+
+    // 2. 绘制虫洞入口与星港能源核心
+    drawSpecialNode(SPAWN_CELL.c, SPAWN_CELL.r, '#a855f7', '🌀', '虫洞');
+    drawSpecialNode(CORE_CELL.c, CORE_CELL.r, '#10b981', '🛡️', '核心');
+
+    // 3. 绘制敌人当前寻路虚线 & 悬停改道预测虚线
+    if (currentPaths.length > 0) {
+        drawPathLine(currentPaths[0], 'rgba(244, 63, 94, 0.45)', 3, [6, 6]);
+    }
+    if (previewPaths && previewPaths.length > 0) {
+        drawPathLine(previewPaths, '#38bdf8', 3.5, [5, 5]);
+    }
+
+    // 4. 悬停高亮与射程范围预览
+    if (hoverCell && !isBusy && !gameOver) {
+        const { c, r } = hoverCell;
+        const x = boardOffsetX + c * tileSize;
+        const y = boardOffsetY + r * tileSize;
+
+        const existing = grid[r][c].building;
+        const previewType = existing ? existing.type : (selectedTool !== 'sell' ? selectedTool : null);
+
+        if (previewType) {
+            drawRangeOverlay(c, r, previewType);
+        }
+
+        const check = existing ? { ok: true } : canPlaceBuildingAt(c, r, selectedTool);
+        ctx.strokeStyle = check.ok ? '#38bdf8' : '#f43f5e';
+        ctx.lineWidth = 2.5;
+        ctx.strokeRect(x + 2, y + 2, tileSize - 4, tileSize - 4);
+    }
+
+    // 5. 绘制已建造的炮台与路障
+    for (let r = 0; r < ROWS; r++) {
+        for (let c = 0; c < COLS; c++) {
+            const b = grid[r][c].building;
+            if (!b) continue;
+            const def = BUILDING_TYPES[b.type];
+            const center = cellCenter(c, r);
+            const rad = tileSize * 0.36;
+
+            ctx.save();
+            ctx.fillStyle = 'rgba(15, 23, 42, 0.92)';
+            ctx.strokeStyle = def.color;
+            ctx.lineWidth = 2.2;
+            ctx.shadowColor = def.color;
+            ctx.shadowBlur = 10;
+
+            ctx.beginPath();
+            if (b.type === 'wall') {
+                ctx.roundRect(center.x - rad, center.y - rad, rad * 2, rad * 2, 8);
+            } else {
+                ctx.arc(center.x, center.y, rad, 0, Math.PI * 2);
+            }
+            ctx.fill();
+            ctx.stroke();
+
+            ctx.shadowBlur = 0;
+            ctx.font = `${Math.floor(tileSize * 0.4)}px sans-serif`;
+            ctx.textAlign = 'center';
+            ctx.textBaseline = 'middle';
+            ctx.fillText(def.icon, center.x, center.y - 2);
+
+            // 等级星标
+            if (b.type !== 'wall') {
+                ctx.font = `900 ${Math.max(10, Math.floor(tileSize * 0.16))}px "Orbitron"`;
+                ctx.fillStyle = '#fbbf24';
+                ctx.fillText(`Lv${b.level}`, center.x, center.y + rad - 4);
+            }
+            ctx.restore();
+        }
+    }
+
+    // 6. 绘制外星虫群单位、血条、护盾条与下步意图箭头
+    enemies.forEach(e => {
+        const center = cellCenter(e.visualX, e.visualY);
+        const rad = e.type === 'boss' ? tileSize * 0.42 : tileSize * 0.32;
+
+        // 低温力场减速光环
+        if (e.slowed) {
+            ctx.save();
+            ctx.strokeStyle = '#22d3ee';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([3, 3]);
+            ctx.beginPath();
+            ctx.arc(center.x, center.y, rad + 4, 0, Math.PI * 2);
+            ctx.stroke();
+            ctx.restore();
+        }
+
+        // 单位底座
+        ctx.save();
+        ctx.fillStyle = 'rgba(15, 23, 42, 0.95)';
+        ctx.strokeStyle = e.color;
+        ctx.lineWidth = 2.2;
+        ctx.beginPath();
+        ctx.arc(center.x, center.y, rad, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.stroke();
+
+        // 图标
+        ctx.font = `${Math.floor(rad * 1.25)}px sans-serif`;
+        ctx.textAlign = 'center';
+        ctx.textBaseline = 'middle';
+        ctx.fillText(e.icon, center.x, center.y + 1);
+
+        // 血条与护盾条
+        const barW = tileSize * 0.68;
+        const barH = 5;
+        const bx = center.x - barW / 2;
+        const by = center.y - rad - 8;
+
+        ctx.fillStyle = 'rgba(0, 0, 0, 0.75)';
+        ctx.fillRect(bx, by, barW, barH);
+
+        const hpRatio = Math.max(0, e.hp / e.maxHp);
+        ctx.fillStyle = e.vulnerable ? '#fbbf24' : '#ef4444';
+        ctx.fillRect(bx, by, barW * hpRatio, barH);
+
+        if (e.shield > 0 && e.maxShield > 0) {
+            const shRatio = Math.max(0, e.shield / e.maxShield);
+            ctx.fillStyle = '#38bdf8';
+            ctx.fillRect(bx, by - 4, barW * shRatio, 3);
+        }
+
+        // 移动力徽章
+        ctx.fillStyle = '#0f172a';
+        ctx.beginPath();
+        ctx.arc(center.x + rad * 0.75, center.y + rad * 0.75, 8, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.font = '900 10px "Orbitron"';
+        ctx.fillStyle = e.slowed ? '#22d3ee' : '#fff';
+        const effSpeed = e.slowed ? Math.max(1, Math.floor(e.speed * 0.5)) : e.speed;
+        ctx.fillText(effSpeed, center.x + rad * 0.75, center.y + rad * 0.75 + 0.5);
+
+        ctx.restore();
+    });
+
+    // 7. 绘制炮火弹道光束
+    for (let i = projectiles.length - 1; i >= 0; i--) {
+        const p = projectiles[i];
+        const p1 = cellCenter(p.x1, p.y1);
+        const p2 = cellCenter(p.x2, p.y2);
+
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.strokeStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 12;
+        ctx.lineWidth = p.width || 3.5;
+
+        ctx.beginPath();
+        ctx.moveTo(p1.x, p1.y);
+        ctx.lineTo(p2.x, p2.y);
+        ctx.stroke();
+
+        if (p.isMortar) {
+            ctx.beginPath();
+            ctx.arc(p2.x, p2.y, tileSize * 1.2 * (1.2 - p.life * 0.5), 0, Math.PI * 2);
+            ctx.stroke();
+        }
+        ctx.restore();
+
+        p.life -= 0.045;
+        if (p.life <= 0) projectiles.splice(i, 1);
+    }
+
+    // 8. 绘制粒子与浮动伤害字
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const pt = particles[i];
+        pt.x += pt.vx;
+        pt.y += pt.vy;
+        pt.life -= 0.035;
+        if (pt.life <= 0) {
+            particles.splice(i, 1);
+            continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = pt.life;
+        ctx.fillStyle = pt.color;
+        ctx.beginPath();
+        ctx.arc(pt.x, pt.y, pt.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    }
+
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 0.7;
+        ft.life -= 0.025;
+        if (ft.life <= 0) {
+            floatingTexts.splice(i, 1);
+            continue;
+        }
+        ctx.save();
+        ctx.globalAlpha = ft.life;
+        ctx.font = '900 13px "Noto Sans SC"';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color;
+        ctx.shadowColor = '#000';
+        ctx.shadowBlur = 4;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+    }
+
+    requestAnimationFrame(draw);
+}
+
+function drawSpecialNode(c, r, color, icon, label) {
+    const center = cellCenter(c, r);
+    const x = boardOffsetX + c * tileSize;
+    const y = boardOffsetY + r * tileSize;
+
+    ctx.save();
+    ctx.fillStyle = color + '26';
+    ctx.fillRect(x + 2, y + 2, tileSize - 4, tileSize - 4);
+    ctx.strokeStyle = color;
+    ctx.lineWidth = 2;
+    ctx.strokeRect(x + 2, y + 2, tileSize - 4, tileSize - 4);
+
+    ctx.font = `${Math.floor(tileSize * 0.42)}px sans-serif`;
+    ctx.textAlign = 'center';
+    ctx.textBaseline = 'middle';
+    ctx.fillText(icon, center.x, center.y - 5);
+
+    ctx.font = `900 ${Math.max(10, Math.floor(tileSize * 0.16))}px "Noto Sans SC"`;
+    ctx.fillStyle = color;
+    ctx.fillText(label, center.x, y + tileSize - 9);
+    ctx.restore();
+}
+
+function drawPathLine(path, color, width, dash) {
+    if (!path || path.length < 2) return;
+    ctx.save();
+    ctx.strokeStyle = color;
+    ctx.lineWidth = width;
+    ctx.setLineDash(dash);
+    ctx.lineDashOffset = -(performance.now() * 0.03) % 24;
+    ctx.beginPath();
+    path.forEach((pt, idx) => {
+        const pos = cellCenter(pt.c, pt.r);
+        if (idx === 0) ctx.moveTo(pos.x, pos.y);
+        else ctx.lineTo(pos.x, pos.y);
+    });
+    ctx.stroke();
+    ctx.restore();
+}
+
+function drawRangeOverlay(c, r, type) {
+    ctx.save();
+    ctx.fillStyle = 'rgba(56, 189, 248, 0.16)';
+
+    for (let tr = 0; tr < ROWS; tr++) {
+        for (let tc = 0; tc < COLS; tc++) {
+            if (tc === c && tr === r) continue;
+            const dist = Math.max(Math.abs(tc - c), Math.abs(tr - r));
+            let inRange = false;
+
+            if (type === 'gatling' && dist <= 2) inRange = true;
+            if (type === 'cryo' && dist <= 1) inRange = true;
+            if (type === 'mortar' && dist >= 2 && dist <= 4) inRange = true;
+            if (type === 'railgun') {
+                const maxR = 4 + (activeRelics.has('rail_range') ? 1 : 0);
+                if ((tc === c && Math.abs(tr - r) <= maxR) || (tr === r && Math.abs(tc - c) <= maxR)) {
+                    inRange = true;
+                }
+            }
+
+            if (inRange) {
+                const x = boardOffsetX + tc * tileSize;
+                const y = boardOffsetY + tr * tileSize;
+                ctx.fillRect(x + 3, y + 3, tileSize - 6, tileSize - 6);
+            }
+        }
+    }
+    ctx.restore();
+}
+
+function spawnParticles(c, r, color, count) {
+    const center = cellCenter(c, r);
+    for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 2.5 + 0.6;
+        particles.push({
+            x: center.x, y: center.y,
+            vx: Math.cos(a) * spd, vy: Math.sin(a) * spd,
+            size: Math.random() * 3 + 1.5,
+            color, life: 1.0
+        });
+    }
+}
+
+function addFloatText(c, r, text, color) {
+    const center = cellCenter(c, r);
+    floatingTexts.push({
+        x: center.x,
+        y: center.y - tileSize * 0.25,
+        text, color, life: 1.0
+    });
+}
+
+/**
+ * ============================================================================
+ * 鼠标与触屏事件监听
+ * ============================================================================
+ */
+function getCellFromPointer(e) {
+    const rect = canvas.getBoundingClientRect();
+    const px = e.clientX - rect.left - boardOffsetX;
+    const py = e.clientY - rect.top - boardOffsetY;
+    const c = Math.floor(px / tileSize);
+    const r = Math.floor(py / tileSize);
+    if (c >= 0 && c < COLS && r >= 0 && r < ROWS) return { c, r };
+    return null;
+}
+
+canvas.addEventListener('pointermove', (e) => {
+    const cell = getCellFromPointer(e);
+    hoverCell = cell;
+    previewPaths = null;
+
+    if (cell && !isBusy && !gameOver && selectedTool !== 'sell' && !grid[cell.r][cell.c].building) {
+        const check = canPlaceBuildingAt(cell.c, cell.r, selectedTool);
+        if (check.ok && check.previewMainPath) {
+            previewPaths = check.previewMainPath;
+        }
+    }
+    updateHoverIntel();
+});
+
+canvas.addEventListener('pointerleave', () => {
+    hoverCell = null;
+    previewPaths = null;
+    updateHoverIntel();
+});
+
+canvas.addEventListener('pointerdown', (e) => {
+    const cell = getCellFromPointer(e);
+    if (cell) {
+        hoverCell = cell;
+        handleCellClick(cell.c, cell.r);
+    }
+});
+
+document.getElementById('sell-btn').addEventListener('click', () => {
+    audio.init();
+    audio.playClick();
+    selectedTool = selectedTool === 'sell' ? 'wall' : 'sell';
+    document.getElementById('sell-btn').classList.toggle('selected', selectedTool === 'sell');
+    renderBuildCards();
+    showBanner(selectedTool === 'sell' ? '🔧 已进入拆除模式：点击场上建筑可回收 50% 能量' : '已切回建造模式');
+});
+
+document.getElementById('end-turn-btn').addEventListener('click', executeEndTurn);
+document.getElementById('restart-top-btn').addEventListener('click', () => { audio.init(); initGame(); });
+document.getElementById('play-again-btn').addEventListener('click', () => { audio.init(); initGame(); });
+document.getElementById('audio-btn').addEventListener('click', () => { audio.init(); audio.toggle(); });
+
+document.getElementById('rules-btn').addEventListener('click', () => {
+    audio.init();
+    audio.playClick();
+    document.getElementById('rules-modal').classList.remove('hidden');
+});
+document.getElementById('close-rules-btn').addEventListener('click', () => {
+    audio.playClick();
+    document.getElementById('rules-modal').classList.add('hidden');
+});
+
+window.onload = function() {
+    initGame();
+    requestAnimationFrame(draw);
+};
+</script>
+</body>
+</html>

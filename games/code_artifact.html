@@ -1,0 +1,1492 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>夜市大排档：美食合成</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@500;700;900&family=ZCOOL+KuaiLe&display=swap');
+
+        :root {
+            --bg-dark: #1f1612;
+            --bg-wood: #2c1e18;
+            --lantern-amber: #ff9e2c;
+            --lantern-red: #e84a27;
+            --bamboo-light: #e5c38b;
+            --bamboo-dark: #8c5a2b;
+            --cream-text: #fff5e4;
+            --muted-text: #c9b39c;
+            --gold: #ffd15c;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-dark);
+            background-image: 
+                radial-gradient(circle at 50% 12%, rgba(255, 158, 44, 0.16) 0%, transparent 55%),
+                repeating-linear-gradient(90deg, rgba(0,0,0,0.12) 0px, rgba(0,0,0,0.12) 2px, transparent 2px, transparent 36px);
+            font-family: 'Noto Sans SC', sans-serif;
+            color: var(--cream-text);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+        }
+
+        /* 顶部灯笼氛围装饰 */
+        .lantern-glow {
+            position: fixed;
+            top: -40px;
+            width: 180px;
+            height: 120px;
+            border-radius: 50%;
+            background: radial-gradient(circle, rgba(255, 130, 40, 0.35), transparent 70%);
+            pointer-events: none;
+            z-index: 0;
+            animation: swayGlow 4s ease-in-out infinite alternate;
+        }
+        .lantern-left { left: 6%; }
+        .lantern-right { right: 6%; animation-delay: -2s; }
+
+        @keyframes swayGlow {
+            from { transform: translateX(-8px) scale(0.96); opacity: 0.8; }
+            to { transform: translateX(8px) scale(1.05); opacity: 1; }
+        }
+
+        /* 顶部 HUD 信息栏 */
+        #top-hud {
+            width: 100%;
+            max-width: 520px;
+            padding: 12px 18px 6px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            z-index: 10;
+        }
+
+        .stall-badge {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .stall-title {
+            font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif;
+            font-size: 1.35rem;
+            color: var(--gold);
+            text-shadow: 0 2px 8px rgba(232, 74, 39, 0.6);
+            letter-spacing: 1px;
+        }
+
+        .score-row {
+            display: flex;
+            gap: 14px;
+            margin-top: 2px;
+            font-size: 0.85rem;
+            color: var(--muted-text);
+        }
+
+        .score-row strong {
+            color: #fff;
+            font-size: 1.05rem;
+            font-weight: 900;
+        }
+
+        /* 右上角下一个预览 + 声音控制 */
+        .hud-right {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .next-card {
+            background: rgba(44, 30, 24, 0.88);
+            border: 1.5px solid rgba(229, 195, 139, 0.35);
+            border-radius: 14px;
+            padding: 5px 12px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.35);
+        }
+
+        .next-card span {
+            font-size: 0.78rem;
+            color: var(--muted-text);
+            font-weight: 700;
+        }
+
+        #nextCanvas {
+            width: 36px;
+            height: 36px;
+            display: block;
+        }
+
+        .icon-btn {
+            width: 40px;
+            height: 40px;
+            border-radius: 12px;
+            background: rgba(44, 30, 24, 0.88);
+            border: 1.5px solid rgba(229, 195, 139, 0.35);
+            color: var(--gold);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: transform 0.15s ease, background 0.15s ease;
+        }
+
+        .icon-btn:hover {
+            transform: scale(1.06);
+            background: rgba(70, 46, 36, 0.95);
+        }
+
+        /* 中央游戏画布区域 */
+        #canvas-wrapper {
+            position: relative;
+            flex: 1;
+            width: 100%;
+            max-width: 520px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 4px 12px;
+            z-index: 5;
+        }
+
+        canvas#gameCanvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+            border-radius: 18px;
+        }
+
+        /* 底部道具与进化图鉴栏 */
+        #bottom-panel {
+            width: 100%;
+            max-width: 520px;
+            padding: 6px 14px 14px;
+            display: flex;
+            flex-direction: column;
+            gap: 8px;
+            z-index: 10;
+        }
+
+        /* 休闲辅助道具按钮行 */
+        .tools-row {
+            display: flex;
+            justify-content: center;
+            gap: 12px;
+        }
+
+        .tool-btn {
+            flex: 1;
+            max-width: 210px;
+            padding: 9px 12px;
+            border-radius: 14px;
+            border: 1.5px solid rgba(255, 209, 92, 0.45);
+            background: linear-gradient(180deg, #4b3123 0%, #332016 100%);
+            color: var(--cream-text);
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 0.88rem;
+            font-weight: 700;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            box-shadow: 0 4px 10px rgba(0, 0, 0, 0.35);
+            transition: transform 0.12s ease, opacity 0.2s ease, border-color 0.2s ease;
+        }
+
+        .tool-btn:hover:not(:disabled) {
+            transform: translateY(-2px);
+            border-color: var(--gold);
+        }
+
+        .tool-btn:active:not(:disabled) {
+            transform: scale(0.96);
+        }
+
+        .tool-btn:disabled {
+            opacity: 0.45;
+            cursor: not-allowed;
+        }
+
+        .badge-count {
+            background: var(--lantern-red);
+            color: #fff;
+            font-size: 0.75rem;
+            font-weight: 900;
+            padding: 1px 7px;
+            border-radius: 99px;
+            min-width: 22px;
+            text-align: center;
+        }
+
+        /* 10级美食进化链图鉴 */
+        .evo-bar {
+            background: rgba(34, 23, 18, 0.9);
+            border: 1px solid rgba(229, 195, 139, 0.25);
+            border-radius: 14px;
+            padding: 6px 10px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 2px;
+            overflow-x: auto;
+        }
+
+        .evo-step {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            min-width: 34px;
+        }
+
+        .evo-icon {
+            font-size: 1.05rem;
+            line-height: 1.2;
+            filter: drop-shadow(0 2px 3px rgba(0,0,0,0.5));
+        }
+
+        .evo-name {
+            font-size: 0.6rem;
+            color: var(--muted-text);
+            white-space: nowrap;
+            margin-top: 1px;
+        }
+
+        .evo-arrow {
+            color: rgba(255, 209, 92, 0.45);
+            font-size: 0.65rem;
+            font-weight: 900;
+        }
+
+        /* 结算弹窗 */
+        .modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(18, 12, 9, 0.85);
+            backdrop-filter: blur(6px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            z-index: 50;
+            transition: opacity 0.25s ease, visibility 0.25s ease;
+        }
+
+        .modal-overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .modal-card {
+            background: linear-gradient(180deg, #3a261d 0%, #261812 100%);
+            border: 2px solid var(--bamboo-light);
+            border-radius: 24px;
+            padding: 28px 24px;
+            width: 100%;
+            max-width: 380px;
+            text-align: center;
+            box-shadow: 0 18px 45px rgba(0, 0, 0, 0.65), 0 0 30px rgba(255, 158, 44, 0.2);
+        }
+
+        .modal-tag {
+            display: inline-block;
+            background: var(--lantern-red);
+            color: #fff;
+            font-size: 0.78rem;
+            font-weight: 900;
+            padding: 4px 14px;
+            border-radius: 99px;
+            letter-spacing: 2px;
+            margin-bottom: 10px;
+        }
+
+        .modal-title {
+            font-family: 'ZCOOL KuaiLe', 'Noto Sans SC', sans-serif;
+            font-size: 2rem;
+            color: var(--gold);
+            margin-bottom: 18px;
+        }
+
+        .result-grid {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 12px;
+            margin-bottom: 22px;
+        }
+
+        .result-box {
+            background: rgba(0, 0, 0, 0.28);
+            border: 1px solid rgba(229, 195, 139, 0.2);
+            border-radius: 14px;
+            padding: 12px 8px;
+        }
+
+        .result-box.full {
+            grid-column: span 2;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+
+        .result-label {
+            font-size: 0.78rem;
+            color: var(--muted-text);
+            margin-bottom: 4px;
+        }
+
+        .result-val {
+            font-size: 1.55rem;
+            font-weight: 900;
+            color: #fff;
+        }
+
+        .result-val.gold {
+            color: var(--gold);
+        }
+
+        .primary-btn {
+            width: 100%;
+            padding: 15px;
+            border-radius: 16px;
+            border: none;
+            background: linear-gradient(90deg, #ff9e2c 0%, #e84a27 100%);
+            color: #fff;
+            font-family: 'Noto Sans SC', sans-serif;
+            font-size: 1.15rem;
+            font-weight: 900;
+            letter-spacing: 2px;
+            cursor: pointer;
+            box-shadow: 0 6px 20px rgba(232, 74, 39, 0.45);
+            transition: transform 0.15s ease;
+        }
+
+        .primary-btn:hover {
+            transform: translateY(-2px);
+        }
+
+        .primary-btn:active {
+            transform: scale(0.97);
+        }
+
+        @media (max-width: 420px) {
+            .stall-title { font-size: 1.15rem; }
+            .evo-name { display: none; }
+            .evo-step { min-width: 24px; }
+        }
+    </style>
+</head>
+<body>
+
+    <div class="lantern-glow lantern-left"></div>
+    <div class="lantern-glow lantern-right"></div>
+
+    <!-- 顶部 HUD -->
+    <header id="top-hud">
+        <div class="stall-badge">
+            <div class="stall-title">🏮 夜市大排档：美食合成</div>
+            <div class="score-row">
+                <span>营业额 <strong id="score-val">0</strong></span>
+                <span>最高纪录 <strong id="best-val" style="color: var(--gold);">0</strong></span>
+            </div>
+        </div>
+
+        <div class="hud-right">
+            <div class="next-card">
+                <span>下一份</span>
+                <canvas id="nextCanvas" width="72" height="72"></canvas>
+            </div>
+            <button id="mute-btn" class="icon-btn" title="开关音效" aria-label="开关音效">
+                <svg id="sound-on-svg" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+                    <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+                </svg>
+                <svg id="sound-off-svg" style="display:none;" width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+                    <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+                    <line x1="23" y1="9" x2="17" y2="15"></line>
+                    <line x1="17" y1="9" x2="23" y2="15"></line>
+                </svg>
+            </button>
+        </div>
+    </header>
+
+    <!-- 主游戏画布容器 -->
+    <main id="canvas-wrapper">
+        <canvas id="gameCanvas"></canvas>
+    </main>
+
+    <!-- 底部辅助道具与进化图鉴 -->
+    <footer id="bottom-panel">
+        <div class="tools-row">
+            <button id="shake-btn" class="tool-btn">
+                <span>🍳 颠勺救场</span>
+                <span id="shake-count" class="badge-count">3</span>
+            </button>
+            <button id="swap-btn" class="tool-btn">
+                <span>🔄 换个食材</span>
+                <span id="swap-count" class="badge-count">2</span>
+            </button>
+        </div>
+
+        <div class="evo-bar" id="evo-bar"></div>
+    </footer>
+
+    <!-- 打烊结算弹窗 -->
+    <div id="gameover-modal" class="modal-overlay hidden">
+        <div class="modal-card">
+            <div class="modal-tag" id="new-best-tag" style="display:none;">🎉 破纪录啦！</div>
+            <h2 class="modal-title">🏮 今日打烊结算</h2>
+            
+            <div class="result-grid">
+                <div class="result-box">
+                    <div class="result-label">本场营业额</div>
+                    <div class="result-val" id="final-score">0</div>
+                </div>
+                <div class="result-box">
+                    <div class="result-label">历史最高分</div>
+                    <div class="result-val gold" id="final-best">0</div>
+                </div>
+                <div class="result-box full">
+                    <span style="font-size: 1.8rem;" id="final-dish-icon">🦞</span>
+                    <div style="text-align: left;">
+                        <div class="result-label" style="margin-bottom:0;">解锁最高招牌菜</div>
+                        <div style="font-weight:900; color: var(--gold); font-size: 1.05rem;" id="final-dish-name">麻辣小龙虾</div>
+                    </div>
+                </div>
+            </div>
+
+            <button id="restart-btn" class="primary-btn">再来一局</button>
+        </div>
+    </div>
+
+<script>
+/**
+ * ============================================================================
+ * 10级夜市美食进化配置表 (从小到大)
+ * ============================================================================
+ */
+const FOOD_TIERS = [
+    { tier: 0, name: '毛豆',         emoji: '🫛', radiusRatio: 0.048, score: 2,   bg: '#68b648', rim: '#3f7d26', detail: 'edamame' },
+    { tier: 1, name: '鱼丸串',       emoji: '🍢', radiusRatio: 0.062, score: 4,   bg: '#f7d996', rim: '#c79546', detail: 'fishball' },
+    { tier: 2, name: '烤羊肉串',     emoji: '串', radiusRatio: 0.078, score: 8,   bg: '#c84b28', rim: '#7c250e', detail: 'skewer' },
+    { tier: 3, name: '炸鸡腿',       emoji: '🍗', radiusRatio: 0.096, score: 16,  bg: '#e6942e', rim: '#9c560c', detail: 'drumstick' },
+    { tier: 4, name: '烤生蚝',       emoji: '🦪', radiusRatio: 0.115, score: 32,  bg: '#d9cfc1', rim: '#827769', detail: 'oyster' },
+    { tier: 5, name: '麻辣小龙虾',   emoji: '🦞', radiusRatio: 0.136, score: 64,  bg: '#e03124', rim: '#8a120a', detail: 'crayfish' },
+    { tier: 6, name: '蒜蓉粉丝扇贝', emoji: '🐚', radiusRatio: 0.158, score: 128, bg: '#f2784b', rim: '#a33c18', detail: 'scallop' },
+    { tier: 7, name: '清蒸大闸蟹',   emoji: '🦀', radiusRatio: 0.182, score: 256, bg: '#ed6a1c', rim: '#963805', detail: 'crab' },
+    { tier: 8, name: '波士顿龙虾',   emoji: '🦞', radiusRatio: 0.208, score: 512, bg: '#b81d24', rim: '#61090d', detail: 'lobster' },
+    { tier: 9, name: '豪华海鲜大咖', emoji: '👑', radiusRatio: 0.238, score: 1024,bg: '#f5b82e', rim: '#9e6805', detail: 'feast' }
+];
+
+// 渲染底部进化图鉴栏
+const evoBarEl = document.getElementById('evo-bar');
+FOOD_TIERS.forEach((f, idx) => {
+    const step = document.createElement('div');
+    step.className = 'evo-step';
+    const displayIcon = idx === 2 ? '🥩' : f.emoji;
+    step.innerHTML = `<span class="evo-icon">${displayIcon}</span><span class="evo-name">${f.name.slice(0, 4)}</span>`;
+    evoBarEl.appendChild(step);
+    if (idx < FOOD_TIERS.length - 1) {
+        const arrow = document.createElement('span');
+        arrow.className = 'evo-arrow';
+        arrow.textContent = '›';
+        evoBarEl.appendChild(arrow);
+    }
+});
+
+/**
+ * ============================================================================
+ * Web Audio API 温馨治愈系音效合成器
+ * ============================================================================
+ */
+class CozyAudio {
+    constructor() {
+        this.ctx = null;
+        this.muted = false;
+    }
+
+    init() {
+        if (!this.ctx) {
+            const AudioCtx = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioCtx();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+
+    toggleMute() {
+        this.muted = !this.muted;
+        document.getElementById('sound-on-svg').style.display = this.muted ? 'none' : 'block';
+        document.getElementById('sound-off-svg').style.display = this.muted ? 'block' : 'none';
+    }
+
+    // 放下食材的轻快木鱼/气泡声
+    playDrop() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(340, now);
+        osc.frequency.exponentialRampToValueAtTime(160, now + 0.09);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.1);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.1);
+    }
+
+    // 美食合成清脆马林巴琴音（音高随等级和连击上升）
+    playMerge(tier, combo) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const pentatonic = [523.25, 587.33, 659.25, 783.99, 880.00, 1046.50, 1174.66, 1318.51, 1567.98, 1760.00];
+        const idx = Math.min(tier + Math.max(0, combo - 1), pentatonic.length - 1);
+        const freq = pentatonic[idx];
+
+        const osc = this.ctx.createOscillator();
+        const osc2 = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        osc.frequency.exponentialRampToValueAtTime(freq * 1.02, now + 0.22);
+
+        // 泛音增加通透感
+        osc2.type = 'triangle';
+        osc2.frequency.setValueAtTime(freq * 2, now);
+
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.28);
+
+        osc.connect(gain);
+        osc2.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc2.start(now);
+        osc.stop(now + 0.28);
+        osc2.stop(now + 0.28);
+    }
+
+    // 颠勺救场：铁锅颠勺白噪声 + 低音弹跳
+    playShake() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const bufferSize = this.ctx.sampleRate * 0.22;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = (Math.random() * 2 - 1) * Math.sin((i / bufferSize) * Math.PI);
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(650, now);
+        filter.frequency.linearRampToValueAtTime(1200, now + 0.2);
+
+        const gain = this.ctx.createGain();
+        gain.gain.setValueAtTime(0.25, now);
+        gain.gain.exponentialRampToValueAtTime(0.01, now + 0.22);
+
+        noise.connect(filter);
+        filter.connect(gain);
+        gain.connect(this.ctx.destination);
+        noise.start(now);
+    }
+
+    // 打烊温馨和弦
+    playGameOver() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const notes = [523.25, 493.88, 440.00, 392.00];
+        notes.forEach((f, i) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(f, now + i * 0.14);
+            gain.gain.setValueAtTime(0.16, now + i * 0.14);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + i * 0.14 + 0.4);
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now + i * 0.14);
+            osc.stop(now + i * 0.14 + 0.4);
+        });
+    }
+}
+
+const audio = new CozyAudio();
+
+/**
+ * ============================================================================
+ * 游戏核心状态与画布参数
+ * ============================================================================
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const nextCanvas = document.getElementById('nextCanvas');
+const nextCtx = nextCanvas.getContext('2d');
+
+let score = 0;
+let bestScore = parseInt(localStorage.getItem('night_market_merge_best') || '0', 10);
+document.getElementById('best-val').textContent = bestScore;
+
+let highestTierUnlocked = 0;
+let shakeCharges = 3;
+let swapCharges = 2;
+let isGameOver = false;
+
+// 碗容器几何尺寸（自适应屏幕）
+let width = 0, height = 0;
+let bowl = { left: 0, right: 0, top: 0, bottom: 0, width: 0, dangerY: 0, spawnY: 0 };
+
+// 当前手持与下一个预览食材（仅从前5级随机生成：毛豆~烤生蚝）
+let currentTier = 0;
+let nextTier = 1;
+let aimX = 0;
+let canDrop = true;
+let dropCooldown = 0;
+
+// 物理刚体列表与特效列表
+let items = [];
+let particles = [];
+let floatingTexts = [];
+let shockwaves = [];
+let bowlShakeOffset = { x: 0, y: 0 };
+
+// 溢出警戒倒计时（宽容的 2.5 秒判定）
+let dangerTimer = 0;
+const DANGER_LIMIT = 2.5;
+
+// 物理引擎参数
+const GRAVITY = 1480;
+const RESTITUTION = 0.22; // 温和的弹性，避免乱飞
+const FRICTION = 0.92;
+const SUB_STEPS = 6;      // 6次子步迭代，堆叠极其稳固不抖动
+
+function randomSpawnTier() {
+    // 权重随机：毛豆、鱼丸、羊肉串概率更高，炸鸡腿和烤生蚝适中
+    const weights = [30, 28, 22, 13, 7];
+    const sum = weights.reduce((a, b) => a + b, 0);
+    let r = Math.random() * sum;
+    for (let i = 0; i < weights.length; i++) {
+        if (r < weights[i]) return i;
+        r -= weights[i];
+    }
+    return 0;
+}
+
+function getTierRadius(tier) {
+    return bowl.width * FOOD_TIERS[tier].radiusRatio;
+}
+
+/**
+ * ============================================================================
+ * 响应式尺寸计算
+ * ============================================================================
+ */
+function resize() {
+    const wrapper = document.getElementById('canvas-wrapper');
+    const rect = wrapper.getBoundingClientRect();
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+
+    width = rect.width;
+    height = rect.height;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    // 计算大竹碗的居中尺寸
+    const maxBowlW = Math.min(width - 24, 420);
+    const bowlH = Math.min(height - 76, maxBowlW * 1.32);
+    const bowlW = Math.min(maxBowlW, bowlH * 0.78);
+
+    const oldLeft = bowl.left;
+    const oldWidth = bowl.width;
+
+    bowl.width = bowlW;
+    bowl.left = (width - bowlW) / 2;
+    bowl.right = bowl.left + bowlW;
+    bowl.bottom = height - 14;
+    bowl.top = bowl.bottom - bowlH;
+    bowl.dangerY = bowl.top + bowlH * 0.14;
+    bowl.spawnY = Math.max(36, bowl.top - 16);
+
+    // 同步缩放已有食材的位置与半径（应对横竖屏切换）
+    if (oldWidth > 0 && items.length > 0) {
+        const scale = bowl.width / oldWidth;
+        items.forEach(item => {
+            item.x = bowl.left + (item.x - oldLeft) * scale;
+            item.y = bowl.bottom - (bowl.bottom - item.y) * scale;
+            item.radius = getTierRadius(item.tier);
+        });
+    }
+
+    if (aimX === 0) {
+        aimX = width / 2;
+    } else {
+        clampAimX();
+    }
+    drawNextPreview();
+}
+
+function clampAimX() {
+    const r = getTierRadius(currentTier);
+    const minX = bowl.left + r + 8;
+    const maxX = bowl.right - r - 8;
+    aimX = Math.max(minX, Math.min(maxX, aimX));
+}
+
+window.addEventListener('resize', resize);
+
+/**
+ * ============================================================================
+ * 精美矢量美食绘制引擎 (为每道夜宵绘制独特细节)
+ * ============================================================================
+ */
+function drawFoodVisual(c, x, y, radius, tier, angle = 0) {
+    const food = FOOD_TIERS[tier];
+    c.save();
+    c.translate(x, y);
+    c.rotate(angle);
+
+    // 1. 食材立体圆盘底座与柔和阴影
+    c.shadowColor = 'rgba(0, 0, 0, 0.35)';
+    c.shadowBlur = 6;
+    c.shadowOffsetY = 3;
+
+    const grad = c.createRadialGradient(-radius * 0.3, -radius * 0.3, radius * 0.1, 0, 0, radius);
+    grad.addColorStop(0, lightenColor(food.bg, 28));
+    grad.addColorStop(0.75, food.bg);
+    grad.addColorStop(1, food.rim);
+
+    c.fillStyle = grad;
+    c.beginPath();
+    c.arc(0, 0, radius, 0, Math.PI * 2);
+    c.fill();
+
+    // 清除阴影以免影响内部细节
+    c.shadowColor = 'transparent';
+    c.shadowBlur = 0;
+    c.shadowOffsetY = 0;
+
+    // 外圈高光描边
+    c.lineWidth = Math.max(2, radius * 0.06);
+    c.strokeStyle = food.rim;
+    c.stroke();
+
+    // 2. 专属美食纹理细节
+    if (tier === 0) {
+        // 毛豆：三颗饱满豆粒凸起 + 盐粒
+        c.fillStyle = 'rgba(255, 255, 255, 0.32)';
+        [-0.36, 0, 0.36].forEach(offset => {
+            c.beginPath();
+            c.arc(offset * radius, 0, radius * 0.22, 0, Math.PI * 2);
+            c.fill();
+        });
+    } else if (tier === 1) {
+        // 鱼丸串：竹签 + 酱汁光泽
+        c.strokeStyle = '#d4a359';
+        c.lineWidth = Math.max(2, radius * 0.08);
+        c.beginPath();
+        c.moveTo(-radius * 0.7, radius * 0.7);
+        c.lineTo(radius * 0.7, -radius * 0.7);
+        c.stroke();
+    } else if (tier === 2) {
+        // 烤羊肉串：孜然与芝麻粒
+        c.fillStyle = '#ffe599';
+        for (let i = 0; i < 6; i++) {
+            const a = (i * Math.PI) / 3;
+            c.beginPath();
+            c.arc(Math.cos(a) * radius * 0.48, Math.sin(a) * radius * 0.48, radius * 0.06, 0, Math.PI * 2);
+            c.fill();
+        }
+    } else if (tier === 3) {
+        // 炸鸡腿：金黄酥脆纹理弧线
+        c.strokeStyle = 'rgba(255, 240, 190, 0.5)';
+        c.lineWidth = Math.max(1.5, radius * 0.05);
+        c.beginPath();
+        c.arc(0, 0, radius * 0.65, -0.8, 1.2);
+        c.stroke();
+    } else if (tier === 4 || tier === 6) {
+        // 烤生蚝 / 蒜蓉扇贝：贝壳放射纹 + 蒜蓉金点
+        c.strokeStyle = 'rgba(255, 255, 255, 0.28)';
+        c.lineWidth = Math.max(1.5, radius * 0.04);
+        for (let i = -2; i <= 2; i++) {
+            c.beginPath();
+            c.moveTo(0, radius * 0.6);
+            c.lineTo(i * radius * 0.3, -radius * 0.6);
+            c.stroke();
+        }
+    } else if (tier >= 7) {
+        // 大闸蟹 / 波士顿龙虾 / 海鲜大咖：尊贵金边光环
+        c.strokeStyle = 'rgba(255, 230, 128, 0.65)';
+        c.lineWidth = Math.max(2, radius * 0.05);
+        c.setLineDash([radius * 0.18, radius * 0.12]);
+        c.beginPath();
+        c.arc(0, 0, radius * 0.82, 0, Math.PI * 2);
+        c.stroke();
+        c.setLineDash([]);
+    }
+
+    // 3. 居中绘制清晰可爱的美食 Emoji 图标
+    const iconChar = tier === 2 ? '🥩' : food.emoji;
+    c.font = `${Math.floor(radius * 1.12)}px "Apple Color Emoji", "Segoe UI Emoji", "Noto Color Emoji", sans-serif`;
+    c.textAlign = 'center';
+    c.textBaseline = 'middle';
+    c.fillText(iconChar, 0, radius * 0.04);
+
+    // 4. 终极“豪华海鲜大咖”专属星光高光
+    if (tier === 9) {
+        c.fillStyle = '#ffffff';
+        const sparkles = [[-0.55, -0.45], [0.58, -0.35], [0.45, 0.55]];
+        sparkles.forEach(([sx, sy]) => {
+            c.beginPath();
+            c.arc(sx * radius, sy * radius, radius * 0.06, 0, Math.PI * 2);
+            c.fill();
+        });
+    }
+
+    // 顶部玻璃质感反光月牙
+    c.fillStyle = 'rgba(255, 255, 255, 0.24)';
+    c.beginPath();
+    c.ellipse(-radius * 0.28, -radius * 0.35, radius * 0.26, radius * 0.13, -Math.PI / 4, 0, Math.PI * 2);
+    c.fill();
+
+    c.restore();
+}
+
+function lightenColor(hex, percent) {
+    const num = parseInt(hex.replace('#', ''), 16);
+    const amt = Math.round(2.55 * percent);
+    const R = Math.min(255, (num >> 16) + amt);
+    const G = Math.min(255, ((num >> 8) & 0x00FF) + amt);
+    const B = Math.min(255, (num & 0x0000FF) + amt);
+    return `rgb(${R}, ${G}, ${B})`;
+}
+
+// 绘制右上角“下一份”预览
+function drawNextPreview() {
+    nextCtx.clearRect(0, 0, 72, 72);
+    drawFoodVisual(nextCtx, 36, 36, 26, nextTier, 0);
+}
+
+/**
+ * ============================================================================
+ * 游戏核心操作：投放食材、颠勺救场、换个食材
+ * ============================================================================
+ */
+function initGame() {
+    score = 0;
+    highestTierUnlocked = 0;
+    shakeCharges = 3;
+    swapCharges = 2;
+    isGameOver = false;
+    dangerTimer = 0;
+    items = [];
+    particles = [];
+    floatingTexts = [];
+    shockwaves = [];
+
+    currentTier = randomSpawnTier();
+    nextTier = randomSpawnTier();
+    canDrop = true;
+    dropCooldown = 0;
+
+    updateHUD();
+    resize();
+    document.getElementById('gameover-modal').classList.add('hidden');
+}
+
+function updateHUD() {
+    document.getElementById('score-val').textContent = score;
+    if (score > bestScore) {
+        bestScore = score;
+        localStorage.setItem('night_market_merge_best', bestScore.toString());
+    }
+    document.getElementById('best-val').textContent = bestScore;
+
+    const shakeBtn = document.getElementById('shake-btn');
+    document.getElementById('shake-count').textContent = shakeCharges;
+    shakeBtn.disabled = shakeCharges <= 0 || isGameOver;
+
+    const swapBtn = document.getElementById('swap-btn');
+    document.getElementById('swap-count').textContent = swapCharges;
+    swapBtn.disabled = swapCharges <= 0 || isGameOver || !canDrop;
+
+    drawNextPreview();
+}
+
+function dropFood() {
+    if (isGameOver || !canDrop) return;
+    audio.init();
+    audio.playDrop();
+
+    const r = getTierRadius(currentTier);
+    clampAimX();
+
+    items.push({
+        x: aimX,
+        y: bowl.spawnY,
+        vx: (Math.random() - 0.5) * 12, // 微小随机扰动防止完全垂直死锁
+        vy: 60,
+        radius: r,
+        mass: r * r,
+        tier: currentTier,
+        angle: (Math.random() - 0.5) * 0.4,
+        omega: 0,
+        scale: 1,
+        spawnGrace: 0.9, // 刚投放的0.9秒内不触发红线溢出判定
+        merged: false
+    });
+
+    currentTier = nextTier;
+    nextTier = randomSpawnTier();
+    clampAimX();
+
+    canDrop = false;
+    dropCooldown = 0.42; // 舒适的投放冷却节拍
+    updateHUD();
+}
+
+// 道具1：颠勺救场（给碗里所有美食施加向上的颠锅脉冲，让卡住的相同食材滚到一起）
+function triggerShakeBowl() {
+    if (isGameOver || shakeCharges <= 0) return;
+    audio.init();
+    audio.playShake();
+
+    shakeCharges--;
+    bowlShakeOffset.y = -14;
+    bowlShakeOffset.x = (Math.random() - 0.5) * 12;
+
+    items.forEach(item => {
+        item.vy -= 260 + Math.random() * 140;
+        item.vx += (Math.random() - 0.5) * 260;
+        item.omega += (Math.random() - 0.5) * 5;
+        item.spawnGrace = Math.max(item.spawnGrace, 0.8);
+    });
+
+    addFloatingText(width / 2, bowl.top + 40, '🍳 颠勺翻锅！', '#ffd15c');
+    updateHUD();
+}
+
+// 道具2：换个食材
+function triggerSwapFood() {
+    if (isGameOver || swapCharges <= 0 || !canDrop) return;
+    audio.init();
+    audio.playDrop();
+
+    swapCharges--;
+    const temp = currentTier;
+    currentTier = nextTier;
+    nextTier = temp;
+    clampAimX();
+    updateHUD();
+}
+
+/**
+ * ============================================================================
+ * 2D 刚体圆形物理引擎 & 合成判定
+ * ============================================================================
+ */
+function updatePhysics(dt) {
+    if (isGameOver) return;
+
+    // 投放冷却恢复
+    if (!canDrop) {
+        dropCooldown -= dt;
+        if (dropCooldown <= 0) {
+            canDrop = true;
+            updateHUD();
+        }
+    }
+
+    // 颠勺碗身弹性回位
+    bowlShakeOffset.x *= 0.82;
+    bowlShakeOffset.y *= 0.82;
+
+    const subDt = dt / SUB_STEPS;
+
+    for (let step = 0; step < SUB_STEPS; step++) {
+        // 1. 积分更新速度与位置
+        for (let i = 0; i < items.length; i++) {
+            const b = items[i];
+            if (step === 0) {
+                if (b.spawnGrace > 0) b.spawnGrace -= dt;
+                if (b.scale < 1) b.scale = Math.min(1, b.scale + 5 * dt);
+            }
+
+            b.vy += GRAVITY * subDt;
+            b.x += b.vx * subDt;
+            b.y += b.vy * subDt;
+            b.angle += b.omega * subDt;
+
+            // 空气与滚动阻尼
+            b.vx *= Math.pow(0.992, subDt * 60);
+            b.vy *= Math.pow(0.996, subDt * 60);
+            b.omega *= Math.pow(0.94, subDt * 60);
+
+            // 碗壁与碗底边界约束
+            if (b.x - b.radius < bowl.left) {
+                b.x = bowl.left + b.radius;
+                b.vx = Math.abs(b.vx) * RESTITUTION;
+                b.omega = b.vy / b.radius * 0.3;
+            } else if (b.x + b.radius > bowl.right) {
+                b.x = bowl.right - b.radius;
+                b.vx = -Math.abs(b.vx) * RESTITUTION;
+                b.omega = -b.vy / b.radius * 0.3;
+            }
+
+            if (b.y + b.radius > bowl.bottom) {
+                b.y = bowl.bottom - b.radius;
+                b.vy = -Math.abs(b.vy) * RESTITUTION;
+                b.vx *= FRICTION;
+                b.omega = b.vx / b.radius * 0.5;
+                if (Math.abs(b.vy) < 12) b.vy = 0;
+            }
+        }
+
+        // 2. 两两圆形刚体碰撞与同级合成检测
+        for (let i = 0; i < items.length; i++) {
+            const a = items[i];
+            if (a.merged) continue;
+
+            for (let j = i + 1; j < items.length; j++) {
+                const b = items[j];
+                if (b.merged) continue;
+
+                const dx = b.x - a.x;
+                const dy = b.y - a.y;
+                const distSq = dx * dx + dy * dy;
+                const minDist = a.radius + b.radius;
+
+                if (distSq < minDist * minDist) {
+                    // 相同等级且未满级 -> 触发美食合成！
+                    if (a.tier === b.tier && a.tier < FOOD_TIERS.length - 1) {
+                        a.merged = true;
+                        b.merged = true;
+                        handleMerge(a, b);
+                        break;
+                    }
+
+                    // 刚体位置分离与冲量反弹
+                    const dist = Math.sqrt(distSq) || 0.001;
+                    const overlap = (minDist - dist) * 0.52;
+                    const nx = dx / dist;
+                    const ny = dy / dist;
+
+                    const totalMass = a.mass + b.mass;
+                    const ratioA = b.mass / totalMass;
+                    const ratioB = a.mass / totalMass;
+
+                    a.x -= nx * overlap * ratioA;
+                    a.y -= ny * overlap * ratioA;
+                    b.x += nx * overlap * ratioB;
+                    b.y += ny * overlap * ratioB;
+
+                    // 相对速度冲量
+                    const rvx = b.vx - a.vx;
+                    const rvy = b.vy - a.vy;
+                    const velAlongNormal = rvx * nx + rvy * ny;
+
+                    if (velAlongNormal < 0) {
+                        const jImpulse = -(1 + RESTITUTION) * velAlongNormal / (1 / a.mass + 1 / b.mass);
+                        const impulseX = jImpulse * nx;
+                        const impulseY = jImpulse * ny;
+
+                        a.vx -= impulseX / a.mass;
+                        a.vy -= impulseY / a.mass;
+                        b.vx += impulseX / b.mass;
+                        b.vy += impulseY / b.mass;
+
+                        // 切向摩擦产生自然滚动旋转
+                        const tx = -ny;
+                        const ty = nx;
+                        const tangentVel = rvx * tx + rvy * ty;
+                        a.omega += (tangentVel * 0.015) / a.radius;
+                        b.omega -= (tangentVel * 0.015) / b.radius;
+                    }
+                }
+            }
+        }
+    }
+
+    // 清理已合成的旧食材
+    items = items.filter(item => !item.merged);
+
+    // 3. 检查红线溢出警戒（仅检测已稳定落下的食材）
+    let isOverflowing = false;
+    for (let i = 0; i < items.length; i++) {
+        const b = items[i];
+        if (b.spawnGrace <= 0 && (b.y - b.radius) < bowl.dangerY) {
+            isOverflowing = true;
+            break;
+        }
+    }
+
+    if (isOverflowing) {
+        dangerTimer += dt;
+        if (dangerTimer >= DANGER_LIMIT) {
+            triggerGameOver();
+        }
+    } else {
+        dangerTimer = Math.max(0, dangerTimer - dt * 2);
+    }
+}
+
+// 处理两道美食合成下一级硬菜
+let comboResetTimer = 0;
+let currentCombo = 0;
+
+function handleMerge(a, b) {
+    const newTier = a.tier + 1;
+    const midX = (a.x + b.x) / 2;
+    const midY = (a.y + b.y) / 2;
+    const newRadius = getTierRadius(newTier);
+
+    currentCombo++;
+    comboResetTimer = 1.1;
+
+    audio.playMerge(newTier, currentCombo);
+
+    if (newTier > highestTierUnlocked) {
+        highestTierUnlocked = newTier;
+    }
+
+    // 合成出第7级“清蒸大闸蟹”或以上，奖励1次免费颠勺次数！
+    if (newTier >= 7 && shakeCharges < 5) {
+        shakeCharges++;
+        addFloatingText(midX, midY - 34, '🎁 奖励颠勺 +1', '#7cff6b');
+    }
+
+    const baseScore = FOOD_TIERS[newTier].score;
+    const gained = baseScore * Math.min(currentCombo, 4);
+    score += gained;
+
+    // 防止合成变大后卡出碗壁
+    const clampedX = Math.max(bowl.left + newRadius, Math.min(bowl.right - newRadius, midX));
+    const clampedY = Math.min(bowl.bottom - newRadius, midY);
+
+    items.push({
+        x: clampedX,
+        y: clampedY,
+        vx: (a.vx + b.vx) * 0.3,
+        vy: -95, // 合成瞬间轻微上跳弹窗感
+        radius: newRadius,
+        mass: newRadius * newRadius,
+        tier: newTier,
+        angle: 0,
+        omega: (Math.random() - 0.5) * 1.5,
+        scale: 0.45, // 从小弹大动画
+        spawnGrace: 0.6,
+        merged: false
+    });
+
+    // 粒子与得分飘字特效
+    const foodInfo = FOOD_TIERS[newTier];
+    spawnMergeParticles(clampedX, clampedY, foodInfo.bg, newRadius);
+    shockwaves.push({ x: clampedX, y: clampedY, r: newRadius * 0.5, maxR: newRadius * 1.85, alpha: 0.9, color: '#ffd15c' });
+
+    const label = currentCombo > 1 ? `${foodInfo.name} +${gained} (${currentCombo}连击!)` : `${foodInfo.name} +${gained}`;
+    addFloatingText(clampedX, clampedY - newRadius * 0.5, label, '#ffd15c');
+
+    updateHUD();
+}
+
+function triggerGameOver() {
+    isGameOver = true;
+    audio.playGameOver();
+    updateHUD();
+
+    const isNewBest = score >= bestScore && score > 0;
+    document.getElementById('new-best-tag').style.display = isNewBest ? 'inline-block' : 'none';
+    document.getElementById('final-score').textContent = score;
+    document.getElementById('final-best').textContent = bestScore;
+
+    const topDish = FOOD_TIERS[highestTierUnlocked];
+    document.getElementById('final-dish-icon').textContent = highestTierUnlocked === 2 ? '🥩' : topDish.emoji;
+    document.getElementById('final-dish-name').textContent = topDish.name;
+
+    document.getElementById('gameover-modal').classList.remove('hidden');
+}
+
+/**
+ * ============================================================================
+ * 粒子与飘字特效系统
+ * ============================================================================
+ */
+function spawnMergeParticles(x, y, color, radius) {
+    const count = 14 + Math.floor(radius * 0.25);
+    for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = Math.random() * 180 + 50;
+        particles.push({
+            x, y,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd - 40,
+            size: Math.random() * 4.5 + 2,
+            color: i % 3 === 0 ? '#ffd15c' : color,
+            life: 1.0
+        });
+    }
+}
+
+function addFloatingText(x, y, text, color) {
+    floatingTexts.push({ x, y, text, color, life: 1.0 });
+}
+
+function updateEffects(dt) {
+    if (comboResetTimer > 0) {
+        comboResetTimer -= dt;
+        if (comboResetTimer <= 0) currentCombo = 0;
+    }
+
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 320 * dt;
+        p.life -= 1.8 * dt;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y -= 42 * dt;
+        ft.life -= 1.15 * dt;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const sw = shockwaves[i];
+        sw.r += (sw.maxR - sw.r) * 9 * dt;
+        sw.alpha -= 2.2 * dt;
+        if (sw.alpha <= 0) shockwaves.splice(i, 1);
+    }
+}
+
+/**
+ * ============================================================================
+ * 主画面渲染 (Render)
+ * ============================================================================
+ */
+function render() {
+    ctx.clearRect(0, 0, width, height);
+
+    ctx.save();
+    ctx.translate(bowlShakeOffset.x, bowlShakeOffset.y);
+
+    // 1. 绘制大竹碗背板（半透明暖木质感）
+    const bowlGrad = ctx.createLinearGradient(0, bowl.top, 0, bowl.bottom);
+    bowlGrad.addColorStop(0, 'rgba(62, 40, 28, 0.55)');
+    bowlGrad.addColorStop(1, 'rgba(42, 26, 18, 0.88)');
+
+    ctx.fillStyle = bowlGrad;
+    ctx.beginPath();
+    ctx.roundRect(bowl.left, bowl.top, bowl.width, bowl.bottom - bowl.top, [8, 8, 28, 28]);
+    ctx.fill();
+
+    // 碗内微妙的竹编横纹装饰
+    ctx.strokeStyle = 'rgba(229, 195, 139, 0.06)';
+    ctx.lineWidth = 2;
+    for (let y = bowl.top + 32; y < bowl.bottom - 20; y += 34) {
+        ctx.beginPath();
+        ctx.moveTo(bowl.left + 10, y);
+        ctx.lineTo(bowl.right - 10, y);
+        ctx.stroke();
+    }
+
+    // 2. 绘制顶部红线警戒线（满碗溢出线）
+    const isDangerActive = dangerTimer > 0.15;
+    const dangerAlpha = isDangerActive ? (0.55 + Math.sin(performance.now() * 0.018) * 0.4) : 0.35;
+    ctx.save();
+    ctx.strokeStyle = `rgba(255, 75, 58, ${dangerAlpha})`;
+    ctx.lineWidth = isDangerActive ? 3 : 2;
+    ctx.setLineDash([8, 6]);
+    ctx.beginPath();
+    ctx.moveTo(bowl.left + 6, bowl.dangerY);
+    ctx.lineTo(bowl.right - 6, bowl.dangerY);
+    ctx.stroke();
+    ctx.setLineDash([]);
+
+    // 若正在触发溢出倒计时，绘制友好的圆形/文字预警提示
+    if (isDangerActive) {
+        const remain = Math.max(0, DANGER_LIMIT - dangerTimer).toFixed(1);
+        ctx.fillStyle = '#ff5747';
+        ctx.font = '900 13px "Noto Sans SC", sans-serif';
+        ctx.textAlign = 'right';
+        ctx.fillText(`⚠️ 快满出来啦! ${remain}s`, bowl.right - 12, bowl.dangerY - 8);
+    }
+    ctx.restore();
+
+    // 3. 绘制瞄准虚线与待投放的当前食材
+    if (!isGameOver && canDrop) {
+        const previewR = getTierRadius(currentTier);
+        // 垂直落点辅助虚线
+        ctx.save();
+        ctx.strokeStyle = 'rgba(255, 224, 150, 0.38)';
+        ctx.lineWidth = 2;
+        ctx.setLineDash([5, 6]);
+        ctx.beginPath();
+        ctx.moveTo(aimX, bowl.spawnY + previewR);
+        ctx.lineTo(aimX, bowl.bottom - 6);
+        ctx.stroke();
+        ctx.restore();
+
+        // 顶部待投放美食
+        drawFoodVisual(ctx, aimX, bowl.spawnY, previewR, currentTier, 0);
+    }
+
+    // 4. 绘制碗内所有美食刚体
+    for (let i = 0; i < items.length; i++) {
+        const b = items[i];
+        drawFoodVisual(ctx, b.x, b.y, b.radius * b.scale, b.tier, b.angle);
+    }
+
+    // 5. 绘制竹木碗边框（左右壁与加厚碗底）
+    ctx.save();
+    ctx.strokeStyle = '#d9b171';
+    ctx.lineWidth = 6;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+    ctx.beginPath();
+    ctx.moveTo(bowl.left, bowl.top);
+    ctx.lineTo(bowl.left, bowl.bottom - 24);
+    ctx.quadraticCurveTo(bowl.left, bowl.bottom, bowl.left + 24, bowl.bottom);
+    ctx.lineTo(bowl.right - 24, bowl.bottom);
+    ctx.quadraticCurveTo(bowl.right, bowl.bottom, bowl.right, bowl.bottom - 24);
+    ctx.lineTo(bowl.right, bowl.top);
+    ctx.stroke();
+
+    // 碗口两端竹节装饰圆环
+    ctx.fillStyle = '#f2cf94';
+    [bowl.left, bowl.right].forEach(bx => {
+        ctx.beginPath();
+        ctx.arc(bx, bowl.top, 5.5, 0, Math.PI * 2);
+        ctx.fill();
+    });
+    ctx.restore();
+
+    // 6. 绘制合成冲击波与爆米花粒子
+    shockwaves.forEach(sw => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(sw.x, sw.y, sw.r, 0, Math.PI * 2);
+        ctx.strokeStyle = sw.color;
+        ctx.globalAlpha = Math.max(0, sw.alpha);
+        ctx.lineWidth = 3;
+        ctx.stroke();
+        ctx.restore();
+    });
+
+    particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // 7. 绘制得分飘字
+    floatingTexts.forEach(ft => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.life);
+        ctx.font = '900 15px "Noto Sans SC", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillStyle = ft.color;
+        ctx.shadowColor = 'rgba(0, 0, 0, 0.8)';
+        ctx.shadowBlur = 6;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+    });
+
+    ctx.restore();
+}
+
+/**
+ * ============================================================================
+ * 主循环与鼠标/触屏交互绑定
+ * ============================================================================
+ */
+let lastTime = 0;
+function loop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.04);
+    lastTime = timestamp;
+
+    updatePhysics(dt);
+    updateEffects(dt);
+    render();
+
+    requestAnimationFrame(loop);
+}
+
+function updateAimFromClientX(clientX) {
+    const rect = canvas.getBoundingClientRect();
+    aimX = clientX - rect.left;
+    clampAimX();
+}
+
+let isPointerDown = false;
+
+canvas.addEventListener('pointerdown', (e) => {
+    if (isGameOver) return;
+    isPointerDown = true;
+    updateAimFromClientX(e.clientX);
+});
+
+window.addEventListener('pointermove', (e) => {
+    if (isGameOver) return;
+    updateAimFromClientX(e.clientX);
+});
+
+window.addEventListener('pointerup', (e) => {
+    if (isPointerDown) {
+        isPointerDown = false;
+        updateAimFromClientX(e.clientX);
+        dropFood();
+    }
+});
+
+document.getElementById('shake-btn').addEventListener('click', triggerShakeBowl);
+document.getElementById('swap-btn').addEventListener('click', triggerSwapFood);
+document.getElementById('restart-btn').addEventListener('click', initGame);
+document.getElementById('mute-btn').addEventListener('click', () => {
+    audio.init();
+    audio.toggleMute();
+});
+
+window.onload = function() {
+    initGame();
+    requestAnimationFrame(loop);
+};
+</script>
+</body>
+</html>

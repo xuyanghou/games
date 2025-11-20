@@ -1,0 +1,11 @@
+{
+  "name": "fish-break-arcade",
+  "version": "2.0.0",
+  "private": true,
+  "description": "摸鱼游戏厅：所有小游戏放在 games/ 目录，index.html 自动读取清单",
+  "scripts": {
+    "scan": "node scan.js",
+    "start": "node scan.js && node serve.js",
+    "dev": "node scan.js && node serve.js 5173"
+  }
+}

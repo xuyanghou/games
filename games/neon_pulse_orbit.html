@@ -1,0 +1,1396 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>霓虹脉冲：轨道 | NEON PULSE: ORBIT</title>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Orbitron:wght@500;700;900&family=Noto+Sans+SC:wght@400;700;900&display=swap');
+
+        :root {
+            --bg-color: #06080f;
+            --cyan: #00f3ff;
+            --magenta: #ff0055;
+            --gold: #ffcc00;
+            --purple: #b537f2;
+            --text-main: #ffffff;
+            --text-dim: rgba(255, 255, 255, 0.6);
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+            user-select: none;
+            -webkit-user-select: none;
+            touch-action: manipulation;
+        }
+
+        body, html {
+            width: 100%;
+            height: 100%;
+            overflow: hidden;
+            background-color: var(--bg-color);
+            font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+            color: var(--text-main);
+        }
+
+        #game-container {
+            position: relative;
+            width: 100vw;
+            height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        canvas {
+            display: block;
+            width: 100%;
+            height: 100%;
+            cursor: pointer;
+        }
+
+        /* HUD 顶部状态栏 */
+        #hud {
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            padding: 20px 28px;
+            display: flex;
+            justify-content: space-between;
+            align-items: flex-start;
+            pointer-events: none;
+            z-index: 10;
+        }
+
+        .hud-box {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+        }
+
+        .hud-label {
+            font-size: 0.75rem;
+            letter-spacing: 2px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+        }
+
+        .hud-value {
+            font-size: 1.8rem;
+            font-weight: 900;
+            text-shadow: 0 0 15px rgba(0, 243, 255, 0.5);
+        }
+
+        #score-val {
+            color: var(--cyan);
+            font-size: 2.2rem;
+        }
+
+        #high-score-val {
+            color: var(--gold);
+            font-size: 1.3rem;
+            text-shadow: 0 0 10px rgba(255, 204, 0, 0.4);
+        }
+
+        /* 连击与超载进度条 */
+        #combo-container {
+            position: absolute;
+            top: 24px;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            pointer-events: none;
+            z-index: 10;
+            opacity: 0;
+            transition: opacity 0.25s ease, transform 0.2s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+
+        #combo-container.active {
+            opacity: 1;
+        }
+
+        #combo-text {
+            font-size: 1.3rem;
+            font-weight: 900;
+            letter-spacing: 1px;
+            color: var(--cyan);
+            text-shadow: 0 0 12px var(--cyan);
+            margin-bottom: 6px;
+        }
+
+        #combo-container.overdrive #combo-text {
+            color: var(--gold);
+            text-shadow: 0 0 18px var(--gold), 0 0 30px var(--magenta);
+            animation: pulseText 0.4s infinite alternate;
+        }
+
+        @keyframes pulseText {
+            from { transform: scale(1); }
+            to { transform: scale(1.12); }
+        }
+
+        .combo-bar-bg {
+            width: 140px;
+            height: 6px;
+            background: rgba(255, 255, 255, 0.15);
+            border-radius: 99px;
+            overflow: hidden;
+            box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        }
+
+        #combo-bar-fill {
+            width: 0%;
+            height: 100%;
+            background: linear-gradient(90deg, var(--cyan), var(--purple));
+            border-radius: 99px;
+            transition: width 0.1s linear;
+        }
+
+        #combo-container.overdrive #combo-bar-fill {
+            background: linear-gradient(90deg, var(--gold), var(--magenta), var(--cyan));
+        }
+
+        /* 音效控制按钮 */
+        #audio-btn {
+            position: absolute;
+            bottom: 24px;
+            right: 24px;
+            width: 48px;
+            height: 48px;
+            border-radius: 50%;
+            background: rgba(15, 22, 38, 0.7);
+            border: 1px solid rgba(0, 243, 255, 0.3);
+            color: var(--cyan);
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            cursor: pointer;
+            z-index: 20;
+            backdrop-filter: blur(8px);
+            transition: all 0.2s ease;
+            box-shadow: 0 0 15px rgba(0, 243, 255, 0.15);
+        }
+
+        #audio-btn:hover {
+            transform: scale(1.08);
+            border-color: var(--cyan);
+            box-shadow: 0 0 20px rgba(0, 243, 255, 0.4);
+        }
+
+        /* 遮罩弹窗（开始 & 结束画面） */
+        .overlay {
+            position: absolute;
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(10, 15, 30, 0.75) 0%, rgba(4, 6, 12, 0.92) 100%);
+            backdrop-filter: blur(6px);
+            display: flex;
+            flex-direction: column;
+            justify-content: center;
+            align-items: center;
+            text-align: center;
+            padding: 24px;
+            z-index: 15;
+            transition: opacity 0.3s ease, visibility 0.3s ease;
+        }
+
+        .overlay.hidden {
+            opacity: 0;
+            visibility: hidden;
+            pointer-events: none;
+        }
+
+        .game-subtitle {
+            font-size: 0.9rem;
+            letter-spacing: 5px;
+            color: var(--cyan);
+            margin-bottom: 8px;
+            text-shadow: 0 0 10px rgba(0, 243, 255, 0.6);
+        }
+
+        .game-title {
+            font-size: clamp(2.2rem, 6vw, 4rem);
+            font-weight: 900;
+            letter-spacing: 3px;
+            background: linear-gradient(135deg, #ffffff 20%, var(--cyan) 60%, var(--purple) 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            filter: drop-shadow(0 0 20px rgba(0, 243, 255, 0.35));
+            margin-bottom: 18px;
+        }
+
+        .rules-card {
+            background: rgba(255, 255, 255, 0.04);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 16px;
+            padding: 18px 24px;
+            max-width: 420px;
+            margin-bottom: 32px;
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+            font-size: 0.92rem;
+            color: rgba(255, 255, 255, 0.85);
+            line-height: 1.5;
+        }
+
+        .rule-item {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            text-align: left;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            flex-shrink: 0;
+        }
+
+        .dot.cyan { background: var(--cyan); box-shadow: 0 0 10px var(--cyan); }
+        .dot.red { background: var(--magenta); box-shadow: 0 0 10px var(--magenta); }
+        .dot.gold { background: var(--gold); box-shadow: 0 0 10px var(--gold); }
+
+        /* 霓虹按钮 */
+        .neon-btn {
+            position: relative;
+            padding: 16px 46px;
+            font-family: 'Orbitron', 'Noto Sans SC', sans-serif;
+            font-size: 1.2rem;
+            font-weight: 900;
+            letter-spacing: 3px;
+            color: #050811;
+            background: linear-gradient(90deg, var(--cyan), #4facfe);
+            border: none;
+            border-radius: 99px;
+            cursor: pointer;
+            box-shadow: 0 0 25px rgba(0, 243, 255, 0.6), inset 0 0 10px rgba(255, 255, 255, 0.6);
+            transition: transform 0.15s ease, box-shadow 0.15s ease;
+        }
+
+        .neon-btn:hover {
+            transform: translateY(-2px) scale(1.04);
+            box-shadow: 0 0 35px rgba(0, 243, 255, 0.9), inset 0 0 12px rgba(255, 255, 255, 0.8);
+        }
+
+        .neon-btn:active {
+            transform: scale(0.96);
+        }
+
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(2, 1fr);
+            gap: 16px;
+            width: 100%;
+            max-width: 360px;
+            margin-bottom: 30px;
+        }
+
+        .stat-box {
+            background: rgba(255, 255, 255, 0.05);
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            border-radius: 14px;
+            padding: 14px;
+        }
+
+        .stat-box .label {
+            font-size: 0.75rem;
+            color: var(--text-dim);
+            margin-bottom: 4px;
+        }
+
+        .stat-box .val {
+            font-size: 1.6rem;
+            font-weight: 900;
+            color: var(--cyan);
+        }
+
+        .stat-box.highlight .val {
+            color: var(--gold);
+        }
+
+        #new-record-badge {
+            display: none;
+            background: linear-gradient(90deg, var(--gold), #ff8800);
+            color: #000;
+            font-weight: 900;
+            font-size: 0.75rem;
+            padding: 4px 12px;
+            border-radius: 99px;
+            letter-spacing: 2px;
+            margin-bottom: 12px;
+            box-shadow: 0 0 15px rgba(255, 204, 0, 0.6);
+        }
+
+        @media (max-width: 600px) {
+            #hud { padding: 16px 18px; }
+            .hud-value { font-size: 1.4rem; }
+            #score-val { font-size: 1.8rem; }
+            #combo-container { top: 75px; }
+        }
+    </style>
+</head>
+<body>
+
+<div id="game-container">
+    <!-- 游戏主画布 -->
+    <canvas id="gameCanvas"></canvas>
+
+    <!-- 顶部 HUD -->
+    <div id="hud">
+        <div class="hud-box">
+            <span class="hud-label">得分 SCORE</span>
+            <span id="score-val" class="hud-value">0</span>
+        </div>
+        <div class="hud-box" style="align-items: flex-end;">
+            <span class="hud-label">最高分 BEST</span>
+            <span id="high-score-val" class="hud-value">0</span>
+        </div>
+    </div>
+
+    <!-- 中央连击条 -->
+    <div id="combo-container">
+        <div id="combo-text">2x 连击</div>
+        <div class="combo-bar-bg">
+            <div id="combo-bar-fill"></div>
+        </div>
+    </div>
+
+    <!-- 静音切换按钮 -->
+    <button id="audio-btn" title="切换音效" aria-label="切换音效">
+        <svg id="icon-sound-on" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <path d="M15.54 8.46a5 5 0 0 1 0 7.07"></path>
+            <path d="M19.07 4.93a10 10 0 0 1 0 14.14"></path>
+        </svg>
+        <svg id="icon-sound-off" style="display:none;" width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polygon points="11 5 6 9 2 9 2 15 6 15 11 19 11 5"></polygon>
+            <line x1="23" y1="9" x2="17" y2="15"></line>
+            <line x1="17" y1="9" x2="23" y2="15"></line>
+        </svg>
+    </button>
+
+    <!-- 开始游戏遮罩 -->
+    <div id="start-screen" class="overlay">
+        <div class="game-subtitle">NEON PULSE : ORBIT</div>
+        <h1 class="game-title">霓虹脉冲：轨道</h1>
+        
+        <div class="rules-card">
+            <div class="rule-item">
+                <span class="dot cyan"></span>
+                <span><strong>点击屏幕 / 空格键</strong>：在【内圈】与【外圈】轨道之间瞬间跃迁。</span>
+            </div>
+            <div class="rule-item">
+                <span class="dot gold"></span>
+                <span><strong>能量晶体</strong>：连续收集叠加连击，10连击激活双倍【超载模式】！</span>
+            </div>
+            <div class="rule-item">
+                <span class="dot red"></span>
+                <span><strong>脉冲红刺</strong>：留意预警信号，及时切换轨道规避致命撞击。</span>
+            </div>
+        </div>
+
+        <button id="start-btn" class="neon-btn">开始游戏</button>
+    </div>
+
+    <!-- 游戏结束遮罩 -->
+    <div id="gameover-screen" class="overlay hidden">
+        <div id="new-record-badge">★ 刷新最高纪录 ★</div>
+        <div class="game-subtitle" style="color: var(--magenta);">SYSTEM CRITICAL</div>
+        <h2 class="game-title" style="margin-bottom: 22px;">轨道失联</h2>
+
+        <div class="stats-grid">
+            <div class="stat-box">
+                <div class="label">本次得分</div>
+                <div id="final-score" class="val">0</div>
+            </div>
+            <div class="stat-box highlight">
+                <div class="label">历史最高</div>
+                <div id="final-best" class="val">0</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">最高连击</div>
+                <div id="final-combo" class="val" style="color: var(--purple);">0x</div>
+            </div>
+            <div class="stat-box">
+                <div class="label">收集晶体</div>
+                <div id="final-nodes" class="val" style="color: #fff;">0</div>
+            </div>
+        </div>
+
+        <button id="restart-btn" class="neon-btn">重新挑战</button>
+    </div>
+</div>
+
+<script>
+/**
+ * ============================================================================
+ * Web Audio API 合成器音效引擎 (无外部音频依赖)
+ * ============================================================================
+ */
+class SoundEngine {
+    constructor() {
+        this.ctx = null;
+        this.muted = false;
+        this.bassTimer = 0;
+        this.beatStep = 0;
+    }
+
+    init() {
+        if (!this.ctx) {
+            const AudioContext = window.AudioContext || window.webkitAudioContext;
+            this.ctx = new AudioContext();
+        }
+        if (this.ctx.state === 'suspended') {
+            this.ctx.resume();
+        }
+    }
+
+    toggleMute() {
+        this.muted = !this.muted;
+        document.getElementById('icon-sound-on').style.display = this.muted ? 'none' : 'block';
+        document.getElementById('icon-sound-off').style.display = this.muted ? 'block' : 'none';
+        return this.muted;
+    }
+
+    // 轨道切换音效：清脆的滤波扫频嗖声
+    playSwitch(toOuter) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = 'sine';
+        const startFreq = toOuter ? 280 : 520;
+        const endFreq = toOuter ? 560 : 240;
+
+        osc.frequency.setValueAtTime(startFreq, now);
+        osc.frequency.exponentialRampToValueAtTime(endFreq, now + 0.11);
+
+        gain.gain.setValueAtTime(0.18, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + 0.12);
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + 0.12);
+    }
+
+    // 收集能量晶体音效：音高随连击数攀升的五声音阶合成音
+    playPickup(combo, isGolden) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        
+        // C小调五声音阶频率表
+        const scale = [523.25, 622.25, 698.46, 783.99, 932.33, 1046.50, 1244.51, 1396.91, 1567.98];
+        const noteIndex = Math.min(combo % scale.length, scale.length - 1);
+        const octaveShift = Math.floor(combo / scale.length) * 0.5;
+        const freq = scale[noteIndex] * (1 + Math.min(octaveShift, 0.5));
+
+        const osc = this.ctx.createOscillator();
+        const gain = this.ctx.createGain();
+
+        osc.type = isGolden ? 'triangle' : 'sine';
+        osc.frequency.setValueAtTime(freq, now);
+        if (isGolden) {
+            osc.frequency.setValueAtTime(freq * 1.5, now + 0.06);
+        }
+
+        gain.gain.setValueAtTime(0.22, now);
+        gain.gain.exponentialRampToValueAtTime(0.001, now + (isGolden ? 0.35 : 0.22));
+
+        osc.connect(gain);
+        gain.connect(this.ctx.destination);
+
+        osc.start(now);
+        osc.stop(now + (isGolden ? 0.35 : 0.22));
+    }
+
+    // 激活 OVERDRIVE 超载模式和弦
+    playOverdrive() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const freqs = [523.25, 659.25, 783.99, 1046.50];
+        freqs.forEach((f, idx) => {
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            osc.type = 'sawtooth';
+            osc.frequency.setValueAtTime(f, now + idx * 0.04);
+
+            // 低通滤波让音色更柔和电子化
+            const filter = this.ctx.createBiquadFilter();
+            filter.type = 'lowpass';
+            filter.frequency.setValueAtTime(2200, now);
+
+            gain.gain.setValueAtTime(0.09, now + idx * 0.04);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.55);
+
+            osc.connect(filter);
+            filter.connect(gain);
+            gain.connect(this.ctx.destination);
+
+            osc.start(now + idx * 0.04);
+            osc.stop(now + 0.55);
+        });
+    }
+
+    // 碰撞爆炸音效：白噪声 + 低频下潜
+    playCrash() {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+
+        // 1. 低频冲击波
+        const osc = this.ctx.createOscillator();
+        const oscGain = this.ctx.createGain();
+        osc.type = 'sawtooth';
+        osc.frequency.setValueAtTime(140, now);
+        osc.frequency.exponentialRampToValueAtTime(28, now + 0.5);
+
+        oscGain.gain.setValueAtTime(0.35, now);
+        oscGain.gain.exponentialRampToValueAtTime(0.001, now + 0.5);
+
+        osc.connect(oscGain);
+        oscGain.connect(this.ctx.destination);
+        osc.start(now);
+        osc.stop(now + 0.5);
+
+        // 2. 电子碎片噪声
+        const bufferSize = this.ctx.sampleRate * 0.4;
+        const buffer = this.ctx.createBuffer(1, bufferSize, this.ctx.sampleRate);
+        const data = buffer.getChannelData(0);
+        for (let i = 0; i < bufferSize; i++) {
+            data[i] = Math.random() * 2 - 1;
+        }
+
+        const noise = this.ctx.createBufferSource();
+        noise.buffer = buffer;
+
+        const filter = this.ctx.createBiquadFilter();
+        filter.type = 'bandpass';
+        filter.frequency.setValueAtTime(800, now);
+
+        const noiseGain = this.ctx.createGain();
+        noiseGain.gain.setValueAtTime(0.3, now);
+        noiseGain.gain.exponentialRampToValueAtTime(0.001, now + 0.4);
+
+        noise.connect(filter);
+        filter.connect(noiseGain);
+        noiseGain.connect(this.ctx.destination);
+        noise.start(now);
+    }
+
+    // 背景环境脉冲低音节拍
+    updateAmbientPulse(dt, isPlaying, isOverdrive) {
+        if (this.muted || !this.ctx || !isPlaying) return;
+        const interval = isOverdrive ? 0.28 : 0.42;
+        this.bassTimer += dt;
+        if (this.bassTimer >= interval) {
+            this.bassTimer = 0;
+            const now = this.ctx.currentTime;
+            const osc = this.ctx.createOscillator();
+            const gain = this.ctx.createGain();
+            
+            const notes = isOverdrive ? [65.41, 65.41, 77.78, 98.00] : [65.41, 65.41, 65.41, 77.78];
+            osc.type = 'triangle';
+            osc.frequency.setValueAtTime(notes[this.beatStep % notes.length], now);
+            this.beatStep++;
+
+            gain.gain.setValueAtTime(0.11, now);
+            gain.gain.exponentialRampToValueAtTime(0.001, now + 0.18);
+
+            osc.connect(gain);
+            gain.connect(this.ctx.destination);
+            osc.start(now);
+            osc.stop(now + 0.18);
+        }
+    }
+}
+
+/**
+ * ============================================================================
+ * 游戏核心引擎与逻辑
+ * ============================================================================
+ */
+const canvas = document.getElementById('gameCanvas');
+const ctx = canvas.getContext('2d');
+const sound = new SoundEngine();
+
+// UI 元素引用
+const scoreEl = document.getElementById('score-val');
+const highScoreEl = document.getElementById('high-score-val');
+const comboContainer = document.getElementById('combo-container');
+const comboText = document.getElementById('combo-text');
+const comboBarFill = document.getElementById('combo-bar-fill');
+const startScreen = document.getElementById('start-screen');
+const gameoverScreen = document.getElementById('gameover-screen');
+
+// 持久化最高分
+let highScore = parseInt(localStorage.getItem('neon_pulse_orbit_best') || '0', 10);
+highScoreEl.textContent = highScore;
+
+// 游戏状态常量与变量
+const STATE = { MENU: 0, PLAYING: 1, GAMEOVER: 2 };
+let gameState = STATE.MENU;
+
+// 屏幕几何自适应参数
+let width = 0, height = 0, cx = 0, cy = 0;
+let innerRadius = 90;
+let outerRadius = 165;
+let coreRadius = 36;
+
+// 玩家光球状态
+const player = {
+    angle: -Math.PI / 2,
+    orbit: 0,           // 0 = 内圈, 1 = 外圈
+    currentRadius: 90,
+    targetRadius: 90,
+    angularSpeed: 2.35, // 弧度/秒
+    direction: 1,
+    size: 11,
+    trail: []
+};
+
+// 游戏数据统计
+let score = 0;
+let combo = 0;
+let maxCombo = 0;
+let nodesCollected = 0;
+let comboTimer = 0;
+const COMBO_MAX_TIME = 4.2; // 连击维持时间（秒）
+let isOverdrive = false;
+let gameTime = 0;
+
+// 实体池
+let collectibles = []; // 能量晶体
+let hazards = [];      // 红色脉冲障碍
+let particles = [];    // 爆炸/收集粒子
+let shockwaves = [];   // 扩散波纹
+let floatingTexts = []; // 得分飘字
+let bgStars = [];      // 背景星尘
+
+// 屏幕震动
+let shakeIntensity = 0;
+
+// 初始化背景星尘
+function initStars() {
+    bgStars = [];
+    for (let i = 0; i < 65; i++) {
+        bgStars.push({
+            x: Math.random(),
+            y: Math.random(),
+            size: Math.random() * 1.8 + 0.5,
+            alpha: Math.random() * 0.5 + 0.15,
+            speed: Math.random() * 0.015 + 0.005
+        });
+    }
+}
+
+// 响应式画布尺寸调整
+function resizeCanvas() {
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    width = window.innerWidth;
+    height = window.innerHeight;
+    canvas.width = width * dpr;
+    canvas.height = height * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+
+    cx = width / 2;
+    cy = height / 2;
+
+    const minDim = Math.min(width, height);
+    coreRadius = Math.max(26, minDim * 0.055);
+    innerRadius = Math.max(78, minDim * 0.175);
+    outerRadius = Math.max(142, minDim * 0.315);
+
+    player.targetRadius = player.orbit === 0 ? innerRadius : outerRadius;
+    if (gameState !== STATE.PLAYING) {
+        player.currentRadius = player.targetRadius;
+    }
+}
+
+window.addEventListener('resize', resizeCanvas);
+initStars();
+resizeCanvas();
+
+/**
+ * ============================================================================
+ * 游戏核心逻辑控制
+ * ============================================================================
+ */
+function startGame() {
+    sound.init();
+    gameState = STATE.PLAYING;
+    score = 0;
+    combo = 0;
+    maxCombo = 0;
+    nodesCollected = 0;
+    comboTimer = 0;
+    isOverdrive = false;
+    gameTime = 0;
+    shakeIntensity = 0;
+
+    player.angle = -Math.PI / 2;
+    player.orbit = 0;
+    player.currentRadius = innerRadius;
+    player.targetRadius = innerRadius;
+    player.angularSpeed = 2.35;
+    player.trail = [];
+
+    collectibles = [];
+    hazards = [];
+    particles = [];
+    shockwaves = [];
+    floatingTexts = [];
+
+    scoreEl.textContent = '0';
+    updateComboUI();
+
+    startScreen.classList.add('hidden');
+    gameoverScreen.classList.add('hidden');
+
+    // 初始生成几个安全晶体引导玩家
+    spawnCollectible(player.angle + Math.PI * 0.65, 0, false);
+    spawnCollectible(player.angle + Math.PI * 1.25, 1, false);
+    
+    // 初始生成第一个带预警的障碍物
+    scheduleNextWave(1.2);
+}
+
+function switchOrbit() {
+    if (gameState !== STATE.PLAYING) return;
+    player.orbit = player.orbit === 0 ? 1 : 0;
+    player.targetRadius = player.orbit === 0 ? innerRadius : outerRadius;
+    sound.playSwitch(player.orbit === 1);
+
+    // 切换瞬间产生小型跃迁波纹与火花
+    const px = cx + Math.cos(player.angle) * player.currentRadius;
+    const py = cy + Math.sin(player.angle) * player.currentRadius;
+    spawnParticles(px, py, isOverdrive ? '#ffcc00' : '#00f3ff', 8, 90);
+}
+
+let waveTimer = 0;
+function scheduleNextWave(delay) {
+    waveTimer = delay;
+}
+
+// 生成能量晶体
+function spawnCollectible(angle, orbit, isGolden = false) {
+    collectibles.push({
+        angle: normalizeAngle(angle),
+        orbit: orbit,
+        isGolden: isGolden,
+        pulse: Math.random() * Math.PI * 2,
+        collected: false
+    });
+}
+
+// 生成脉冲障碍物（带有明确预警阶段，避免不公平秒杀）
+function spawnHazard(angle, orbit, angularVel = 0) {
+    hazards.push({
+        angle: normalizeAngle(angle),
+        orbit: orbit,
+        angularVel: angularVel,
+        warningTime: 1.15, // 1.15秒预警闪烁后才激活碰撞判定
+        lifeTime: 6.5,
+        active: false,
+        scale: 0
+    });
+}
+
+// 波次生成器：根据当前难度动态生成晶体与障碍组合
+function generateWave() {
+    const difficulty = Math.min(gameTime / 65, 1); // 0 -> 1 随时间平滑提升难度
+    const lookAhead = player.angle + Math.PI * (0.85 + Math.random() * 0.45);
+    
+    // 随机选择安全轨道与危险轨道
+    const safeOrbit = Math.random() < 0.5 ? 0 : 1;
+    const dangerOrbit = safeOrbit === 0 ? 1 : 0;
+
+    // 在安全轨道上放置晶体（10%概率为金色高分晶体）
+    const isGolden = Math.random() < 0.14;
+    spawnCollectible(lookAhead, safeOrbit, isGolden);
+
+    // 额外连串晶体奖励
+    if (Math.random() < 0.35) {
+        spawnCollectible(lookAhead + 0.32, safeOrbit, false);
+    }
+
+    // 在另一条轨道放置障碍物
+    const moveSpeed = difficulty > 0.35 && Math.random() < 0.4 ? (Math.random() < 0.5 ? 0.55 : -0.55) : 0;
+    spawnHazard(lookAhead, dangerOrbit, moveSpeed);
+
+    // 高难度下追加错位双障碍组合
+    if (difficulty > 0.5 && Math.random() < 0.45) {
+        spawnHazard(lookAhead + 0.85, safeOrbit, 0);
+        spawnCollectible(lookAhead + 0.85, dangerOrbit, false);
+    }
+
+    const nextInterval = Math.max(0.85, 1.65 - difficulty * 0.72);
+    scheduleNextWave(nextInterval);
+}
+
+function normalizeAngle(a) {
+    return ((a % (Math.PI * 2)) + Math.PI * 2) % (Math.PI * 2);
+}
+
+function angleDiff(a, b) {
+    let diff = normalizeAngle(a) - normalizeAngle(b);
+    if (diff > Math.PI) diff -= Math.PI * 2;
+    if (diff < -Math.PI) diff += Math.PI * 2;
+    return Math.abs(diff);
+}
+
+// 触发碰撞失败
+function triggerGameOver() {
+    gameState = STATE.GAMEOVER;
+    sound.playCrash();
+    shakeIntensity = 22;
+
+    const px = cx + Math.cos(player.angle) * player.currentRadius;
+    const py = cy + Math.sin(player.angle) * player.currentRadius;
+
+    spawnParticles(px, py, '#ff0055', 36, 260);
+    spawnParticles(px, py, '#00f3ff', 24, 200);
+    shockwaves.push({ x: px, y: py, radius: 10, maxRadius: 220, alpha: 1, color: '#ff0055' });
+
+    comboContainer.classList.remove('active', 'overdrive');
+
+    // 检查是否刷新纪录
+    const isNewRecord = score > highScore && score > 0;
+    if (isNewRecord) {
+        highScore = score;
+        localStorage.setItem('neon_pulse_orbit_best', highScore.toString());
+        highScoreEl.textContent = highScore;
+    }
+
+    // 延迟展示结算面板，保留爆炸视觉冲击力
+    setTimeout(() => {
+        document.getElementById('final-score').textContent = score;
+        document.getElementById('final-best').textContent = highScore;
+        document.getElementById('final-combo').textContent = maxCombo + 'x';
+        document.getElementById('final-nodes').textContent = nodesCollected;
+        document.getElementById('new-record-badge').style.display = isNewRecord ? 'inline-block' : 'none';
+        gameoverScreen.classList.remove('hidden');
+    }, 550);
+}
+
+/**
+ * ============================================================================
+ * 粒子与视觉特效工具
+ * ============================================================================
+ */
+function spawnParticles(x, y, color, count, speedMax) {
+    for (let i = 0; i < count; i++) {
+        const ang = Math.random() * Math.PI * 2;
+        const spd = Math.random() * speedMax + 30;
+        particles.push({
+            x, y,
+            vx: Math.cos(ang) * spd,
+            vy: Math.sin(ang) * spd,
+            life: 1.0,
+            decay: Math.random() * 1.5 + 1.2,
+            size: Math.random() * 3.5 + 1.5,
+            color
+        });
+    }
+}
+
+function addFloatingText(x, y, text, color) {
+    floatingTexts.push({
+        x, y,
+        text,
+        color,
+        life: 1.0,
+        vy: -45
+    });
+}
+
+function updateComboUI() {
+    if (combo >= 2) {
+        comboContainer.classList.add('active');
+        if (isOverdrive) {
+            comboContainer.classList.add('overdrive');
+            comboText.textContent = `${combo}x 超载双倍!`;
+        } else {
+            comboContainer.classList.remove('overdrive');
+            comboText.textContent = `${combo}x 连击`;
+        }
+        const pct = Math.max(0, (comboTimer / COMBO_MAX_TIME) * 100);
+        comboBarFill.style.width = `${pct}%`;
+    } else {
+        comboContainer.classList.remove('active', 'overdrive');
+    }
+}
+
+/**
+ * ============================================================================
+ * 主更新循环 (Update)
+ * ============================================================================
+ */
+function update(dt) {
+    // 背景星尘微动
+    bgStars.forEach(s => {
+        s.y -= s.speed * dt;
+        if (s.y < 0) s.y = 1;
+    });
+
+    // 更新粒子
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vx *= 0.95;
+        p.vy *= 0.95;
+        p.life -= p.decay * dt;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    // 更新扩散波纹
+    for (let i = shockwaves.length - 1; i >= 0; i--) {
+        const sw = shockwaves[i];
+        sw.radius += (sw.maxRadius - sw.radius) * 6 * dt;
+        sw.alpha -= 1.8 * dt;
+        if (sw.alpha <= 0) shockwaves.splice(i, 1);
+    }
+
+    // 更新飘字
+    for (let i = floatingTexts.length - 1; i >= 0; i--) {
+        const ft = floatingTexts[i];
+        ft.y += ft.vy * dt;
+        ft.life -= 1.3 * dt;
+        if (ft.life <= 0) floatingTexts.splice(i, 1);
+    }
+
+    // 屏幕震动衰减
+    if (shakeIntensity > 0) {
+        shakeIntensity = Math.max(0, shakeIntensity - 55 * dt);
+    }
+
+    if (gameState !== STATE.PLAYING) {
+        // 菜单界面的闲置轨道环绕动画
+        player.angle += 1.1 * dt;
+        return;
+    }
+
+    gameTime += dt;
+    sound.updateAmbientPulse(dt, true, isOverdrive);
+
+    // 速度随游戏时间平滑递增
+    const targetSpeed = Math.min(4.1, 2.35 + gameTime * 0.024);
+    player.angularSpeed += (targetSpeed - player.angularSpeed) * 2 * dt;
+
+    // 玩家角度与半径插值（极具弹性与响应速度的切换手感）
+    player.angle = normalizeAngle(player.angle + player.angularSpeed * player.direction * dt);
+    player.currentRadius += (player.targetRadius - player.currentRadius) * Math.min(1, 24 * dt);
+
+    const px = cx + Math.cos(player.angle) * player.currentRadius;
+    const py = cy + Math.sin(player.angle) * player.currentRadius;
+
+    // 记录光球拖尾
+    player.trail.push({ x: px, y: py, alpha: 1.0, hue: (gameTime * 280) % 360 });
+    if (player.trail.length > (isOverdrive ? 22 : 14)) {
+        player.trail.shift();
+    }
+
+    // 连击倒计时逻辑
+    if (combo > 0) {
+        comboTimer -= dt;
+        if (comboTimer <= 0) {
+            combo = 0;
+            isOverdrive = false;
+        }
+        updateComboUI();
+    }
+
+    // 波次生成计时
+    waveTimer -= dt;
+    if (waveTimer <= 0) {
+        generateWave();
+    }
+
+    // 更新能量晶体与拾取检测
+    for (let i = collectibles.length - 1; i >= 0; i--) {
+        const c = collectibles[i];
+        c.pulse += 5 * dt;
+
+        const cRadius = c.orbit === 0 ? innerRadius : outerRadius;
+        const radialDist = Math.abs(player.currentRadius - cRadius);
+        const arcDist = angleDiff(player.angle, c.angle) * cRadius;
+
+        if (radialDist < 26 && arcDist < 26) {
+            // 成功收集晶体
+            combo++;
+            nodesCollected++;
+            if (combo > maxCombo) maxCombo = combo;
+            comboTimer = COMBO_MAX_TIME;
+
+            // 10连击激活 OVERDRIVE 超载模式
+            if (combo === 10 && !isOverdrive) {
+                isOverdrive = true;
+                sound.playOverdrive();
+                shakeIntensity = 10;
+                shockwaves.push({ x: cx, y: cy, radius: coreRadius, maxRadius: outerRadius * 1.4, alpha: 0.9, color: '#ffcc00' });
+                addFloatingText(cx, cy - outerRadius - 25, 'OVERDRIVE 超载激活!', '#ffcc00');
+            } else {
+                sound.playPickup(combo, c.isGolden);
+            }
+
+            const basePts = c.isGolden ? 30 : 10;
+            const mult = isOverdrive ? 2 : 1;
+            const gained = basePts * mult + Math.min(combo, 15) * 2;
+            score += gained;
+            scoreEl.textContent = score;
+
+            const itemX = cx + Math.cos(c.angle) * cRadius;
+            const itemY = cy + Math.sin(c.angle) * cRadius;
+            const burstColor = c.isGolden ? '#ffcc00' : (isOverdrive ? '#ff00ff' : '#00f3ff');
+
+            spawnParticles(itemX, itemY, burstColor, c.isGolden ? 18 : 11, 140);
+            shockwaves.push({ x: itemX, y: itemY, radius: 4, maxRadius: 48, alpha: 0.8, color: burstColor });
+            addFloatingText(itemX, itemY - 12, `+${gained}`, burstColor);
+
+            updateComboUI();
+            collectibles.splice(i, 1);
+        }
+    }
+
+    // 更新障碍物与碰撞检测
+    for (let i = hazards.length - 1; i >= 0; i--) {
+        const h = hazards[i];
+        h.angle = normalizeAngle(h.angle + h.angularVel * dt);
+
+        if (h.warningTime > 0) {
+            h.warningTime -= dt;
+            if (h.warningTime <= 0) {
+                h.active = true;
+                const hr = h.orbit === 0 ? innerRadius : outerRadius;
+                const hx = cx + Math.cos(h.angle) * hr;
+                const hy = cy + Math.sin(h.angle) * hr;
+                shockwaves.push({ x: hx, y: hy, radius: 2, maxRadius: 36, alpha: 0.7, color: '#ff0055' });
+            }
+        } else {
+            h.scale = Math.min(1, h.scale + 8 * dt);
+            h.lifeTime -= dt;
+
+            // 碰撞检测（仅在激活状态下判定，且留出合理的边缘宽容度）
+            const hRadius = h.orbit === 0 ? innerRadius : outerRadius;
+            const radialDist = Math.abs(player.currentRadius - hRadius);
+            const arcDist = angleDiff(player.angle, h.angle) * hRadius;
+
+            if (radialDist < 19 && arcDist < 19) {
+                triggerGameOver();
+                return;
+            }
+
+            if (h.lifeTime <= 0) {
+                hazards.splice(i, 1);
+            }
+        }
+    }
+}
+
+/**
+ * ============================================================================
+ * 画面渲染 (Render)
+ * ============================================================================
+ */
+function draw() {
+    ctx.save();
+
+    // 屏幕震动偏移
+    if (shakeIntensity > 0.5) {
+        const sx = (Math.random() - 0.5) * shakeIntensity;
+        const sy = (Math.random() - 0.5) * shakeIntensity;
+        ctx.translate(sx, sy);
+    }
+
+    // 1. 深空赛博背景
+    ctx.fillStyle = isOverdrive ? '#0d0718' : '#06080f';
+    ctx.fillRect(0, 0, width, height);
+
+    // 超载模式下的中心辐射光晕
+    if (isOverdrive && gameState === STATE.PLAYING) {
+        const pulseGlow = 0.14 + Math.sin(gameTime * 10) * 0.05;
+        const grad = ctx.createRadialGradient(cx, cy, coreRadius, cx, cy, outerRadius * 1.5);
+        grad.addColorStop(0, `rgba(255, 0, 128, ${pulseGlow})`);
+        grad.addColorStop(0.5, `rgba(181, 55, 242, ${pulseGlow * 0.6})`);
+        grad.addColorStop(1, 'rgba(6, 8, 15, 0)');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, width, height);
+    }
+
+    // 2. 背景微光星尘
+    bgStars.forEach(s => {
+        ctx.fillStyle = `rgba(180, 230, 255, ${s.alpha})`;
+        ctx.beginPath();
+        ctx.arc(s.x * width, s.y * height, s.size, 0, Math.PI * 2);
+        ctx.fill();
+    });
+
+    // 3. 绘制内外双轨道环
+    drawOrbitTrack(innerRadius, player.orbit === 0);
+    drawOrbitTrack(outerRadius, player.orbit === 1);
+
+    // 4. 绘制中心能量核心（随音乐节拍律动）
+    const beatPulse = gameState === STATE.PLAYING ? Math.sin(gameTime * (isOverdrive ? 14 : 9)) * 3.5 : Math.sin(performance.now() * 0.003) * 2.5;
+    const currentCoreR = coreRadius + beatPulse;
+
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, currentCoreR, 0, Math.PI * 2);
+    const coreGrad = ctx.createRadialGradient(cx, cy, 4, cx, cy, currentCoreR);
+    if (isOverdrive) {
+        coreGrad.addColorStop(0, '#ffffff');
+        coreGrad.addColorStop(0.5, '#ffcc00');
+        coreGrad.addColorStop(1, '#ff0055');
+        ctx.shadowColor = '#ffcc00';
+    } else {
+        coreGrad.addColorStop(0, '#ffffff');
+        coreGrad.addColorStop(0.45, '#00f3ff');
+        coreGrad.addColorStop(1, '#1a2b50');
+        ctx.shadowColor = '#00f3ff';
+    }
+    ctx.shadowBlur = 24;
+    ctx.fillStyle = coreGrad;
+    ctx.fill();
+    ctx.restore();
+
+    // 5. 绘制扩散波纹
+    shockwaves.forEach(sw => {
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(sw.x, sw.y, sw.radius, 0, Math.PI * 2);
+        ctx.strokeStyle = sw.color;
+        ctx.globalAlpha = Math.max(0, sw.alpha);
+        ctx.lineWidth = 2.5;
+        ctx.stroke();
+        ctx.restore();
+    });
+
+    // 6. 绘制能量晶体 (菱形旋转宝石)
+    collectibles.forEach(c => {
+        const r = c.orbit === 0 ? innerRadius : outerRadius;
+        const x = cx + Math.cos(c.angle) * r;
+        const y = cy + Math.sin(c.angle) * r;
+        const scale = 1 + Math.sin(c.pulse) * 0.16;
+        const size = (c.isGolden ? 12 : 9.5) * scale;
+        const color = c.isGolden ? '#ffcc00' : '#00f3ff';
+
+        ctx.save();
+        ctx.translate(x, y);
+        ctx.rotate(c.angle + Math.PI / 4);
+        ctx.shadowColor = color;
+        ctx.shadowBlur = 16;
+        ctx.fillStyle = color;
+
+        ctx.beginPath();
+        ctx.moveTo(0, -size);
+        ctx.lineTo(size * 0.78, 0);
+        ctx.lineTo(0, size);
+        ctx.lineTo(-size * 0.78, 0);
+        ctx.closePath();
+        ctx.fill();
+
+        // 晶体内部高光
+        ctx.fillStyle = '#ffffff';
+        ctx.beginPath();
+        ctx.arc(0, 0, size * 0.25, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // 7. 绘制红色脉冲障碍物 (含预警虚线与旋转尖刺)
+    hazards.forEach(h => {
+        const r = h.orbit === 0 ? innerRadius : outerRadius;
+        const x = cx + Math.cos(h.angle) * r;
+        const y = cy + Math.sin(h.angle) * r;
+
+        ctx.save();
+        ctx.translate(x, y);
+
+        if (!h.active) {
+            // 预警阶段：闪烁的瞄准圈与核心连线提示
+            const blink = Math.sin(h.warningTime * 28) > 0;
+            ctx.strokeStyle = blink ? 'rgba(255, 0, 85, 0.85)' : 'rgba(255, 0, 85, 0.25)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([4, 4]);
+            ctx.beginPath();
+            ctx.arc(0, 0, 15, 0, Math.PI * 2);
+            ctx.stroke();
+
+            // 中心点提示
+            ctx.fillStyle = 'rgba(255, 0, 85, 0.6)';
+            ctx.beginPath();
+            ctx.arc(0, 0, 4, 0, Math.PI * 2);
+            ctx.fill();
+        } else {
+            // 激活状态：致命发光四角星刺
+            ctx.scale(h.scale, h.scale);
+            ctx.rotate(gameTime * 4.5);
+            ctx.shadowColor = '#ff0055';
+            ctx.shadowBlur = 18;
+            ctx.fillStyle = '#ff0055';
+
+            const outerSpike = 14;
+            const innerSpike = 5.5;
+            ctx.beginPath();
+            for (let k = 0; k < 8; k++) {
+                const rad = k % 2 === 0 ? outerSpike : innerSpike;
+                const a = (k * Math.PI) / 4;
+                if (k === 0) ctx.moveTo(Math.cos(a) * rad, Math.sin(a) * rad);
+                else ctx.lineTo(Math.cos(a) * rad, Math.sin(a) * rad);
+            }
+            ctx.closePath();
+            ctx.fill();
+
+            ctx.fillStyle = '#ffd6e0';
+            ctx.beginPath();
+            ctx.arc(0, 0, 3.5, 0, Math.PI * 2);
+            ctx.fill();
+        }
+        ctx.restore();
+    });
+
+    // 8. 绘制玩家光球与拖尾（游戏结束瞬间隐藏光球）
+    if (gameState !== STATE.GAMEOVER) {
+        // 拖尾轨迹
+        for (let i = 0; i < player.trail.length; i++) {
+            const t = player.trail[i];
+            const ratio = (i + 1) / player.trail.length;
+            ctx.beginPath();
+            ctx.arc(t.x, t.y, player.size * ratio * 0.85, 0, Math.PI * 2);
+            if (isOverdrive) {
+                ctx.fillStyle = `hsla(${t.hue}, 100%, 60%, ${ratio * 0.55})`;
+            } else {
+                ctx.fillStyle = `rgba(0, 243, 255, ${ratio * 0.45})`;
+            }
+            ctx.fill();
+        }
+
+        // 玩家主体光球
+        const px = cx + Math.cos(player.angle) * player.currentRadius;
+        const py = cy + Math.sin(player.angle) * player.currentRadius;
+
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(px, py, player.size, 0, Math.PI * 2);
+        const orbColor = isOverdrive ? '#ffcc00' : '#00f3ff';
+        ctx.shadowColor = orbColor;
+        ctx.shadowBlur = 22;
+        ctx.fillStyle = '#ffffff';
+        ctx.fill();
+
+        ctx.lineWidth = 3;
+        ctx.strokeStyle = orbColor;
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    // 9. 绘制粒子特效
+    particles.forEach(p => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.shadowColor = p.color;
+        ctx.shadowBlur = 8;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.restore();
+    });
+
+    // 10. 绘制得分飘字
+    floatingTexts.forEach(ft => {
+        ctx.save();
+        ctx.globalAlpha = Math.max(0, ft.life);
+        ctx.font = '900 15px "Orbitron", "Noto Sans SC", sans-serif';
+        ctx.fillStyle = ft.color;
+        ctx.textAlign = 'center';
+        ctx.shadowColor = ft.color;
+        ctx.shadowBlur = 10;
+        ctx.fillText(ft.text, ft.x, ft.y);
+        ctx.restore();
+    });
+
+    ctx.restore();
+}
+
+function drawOrbitTrack(radius, isCurrent) {
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(cx, cy, radius, 0, Math.PI * 2);
+    if (isCurrent) {
+        ctx.strokeStyle = isOverdrive ? 'rgba(255, 204, 0, 0.45)' : 'rgba(0, 243, 255, 0.42)';
+        ctx.lineWidth = 2.5;
+    } else {
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+        ctx.lineWidth = 1.5;
+        ctx.setLineDash([6, 8]);
+    }
+    ctx.stroke();
+    ctx.restore();
+}
+
+/**
+ * ============================================================================
+ * 动画主循环与输入事件绑定
+ * ============================================================================
+ */
+let lastTime = 0;
+function gameLoop(timestamp) {
+    if (!lastTime) lastTime = timestamp;
+    const dt = Math.min((timestamp - lastTime) / 1000, 0.05); // 限制最大帧间隔防止切屏跳帧
+    lastTime = timestamp;
+
+    update(dt);
+    draw();
+
+    requestAnimationFrame(gameLoop);
+}
+
+// 统一交互输入处理（支持鼠标点击、触屏轻触、空格键及上下方向键）
+function handleAction(e) {
+    if (e.target.closest('#audio-btn') || e.target.closest('.neon-btn')) return;
+    if (gameState === STATE.PLAYING) {
+        e.preventDefault();
+        switchOrbit();
+    }
+}
+
+canvas.addEventListener('pointerdown', handleAction);
+
+window.addEventListener('keydown', (e) => {
+    if (e.code === 'Space' || e.code === 'ArrowUp' || e.code === 'ArrowDown' || e.code === 'KeyW' || e.code === 'KeyS') {
+        e.preventDefault();
+        if (gameState === STATE.PLAYING) {
+            switchOrbit();
+        } else if (gameState === STATE.MENU && !startScreen.classList.contains('hidden')) {
+            startGame();
+        } else if (gameState === STATE.GAMEOVER && !gameoverScreen.classList.contains('hidden')) {
+            startGame();
+        }
+    }
+});
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('restart-btn').addEventListener('click', startGame);
+document.getElementById('audio-btn').addEventListener('click', (e) => {
+    e.stopPropagation();
+    sound.init();
+    sound.toggleMute();
+});
+
+// 启动主循环
+window.onload = function() {
+    resizeCanvas();
+    requestAnimationFrame(gameLoop);
+};
+</script>
+</body>
+</html>

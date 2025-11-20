@@ -1,0 +1,576 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>摸鱼游戏厅 · Fish Break Arcade</title>
+<style>
+    :root {
+        --bg-0: #070a16;
+        --bg-1: #0d1226;
+        --cyan: #00f3ff;
+        --magenta: #ff0055;
+        --gold: #ffcc00;
+        --purple: #b537f2;
+        --text: #ffffff;
+        --dim: rgba(255, 255, 255, 0.62);
+        --card: rgba(255, 255, 255, 0.05);
+        --stroke: rgba(255, 255, 255, 0.12);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+
+    html, body {
+        width: 100%;
+        min-height: 100%;
+        background: var(--bg-0);
+        color: var(--text);
+        font-family: 'Noto Sans SC', 'PingFang SC', 'Microsoft YaHei', system-ui, sans-serif;
+        overflow-x: hidden;
+    }
+
+    body::before {
+        content: '';
+        position: fixed;
+        inset: 0;
+        background:
+            radial-gradient(900px 500px at 12% -8%, rgba(0, 243, 255, 0.18), transparent 60%),
+            radial-gradient(800px 480px at 88% 6%, rgba(181, 55, 242, 0.20), transparent 62%),
+            radial-gradient(700px 420px at 50% 108%, rgba(255, 0, 85, 0.14), transparent 60%);
+        pointer-events: none;
+        z-index: 0;
+    }
+
+    .app { position: relative; z-index: 1; min-height: 100vh; display: flex; flex-direction: column; }
+
+    /* ============ 顶部导航 ============ */
+    .topbar {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 16px;
+        padding: 18px clamp(16px, 5vw, 48px);
+        border-bottom: 1px solid var(--stroke);
+        backdrop-filter: blur(10px);
+        background: rgba(7, 10, 22, 0.55);
+        position: sticky;
+        top: 0;
+        z-index: 30;
+    }
+
+    .brand { display: flex; align-items: center; gap: 12px; cursor: pointer; user-select: none; }
+    .brand-logo {
+        width: 44px; height: 44px; border-radius: 14px; display: grid; place-items: center;
+        font-size: 1.5rem;
+        background: linear-gradient(140deg, rgba(0, 243, 255, 0.28), rgba(255, 0, 85, 0.28));
+        border: 1.5px solid rgba(0, 243, 255, 0.5);
+        box-shadow: 0 0 18px rgba(0, 243, 255, 0.28);
+    }
+    .brand-text h1 {
+        font-size: 1.25rem; letter-spacing: 2px; font-weight: 900;
+        background: linear-gradient(90deg, var(--cyan), var(--purple) 55%, var(--magenta));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .brand-text p { font-size: 0.72rem; color: var(--dim); letter-spacing: 1px; margin-top: 2px; }
+
+    .stats { display: flex; align-items: center; gap: 10px; flex-wrap: wrap; justify-content: flex-end; }
+
+    .stat-chip {
+        display: flex; flex-direction: column; align-items: center; justify-content: center;
+        min-width: 86px; padding: 6px 12px; border-radius: 12px;
+        background: var(--card); border: 1px solid var(--stroke);
+    }
+    .stat-chip .label { font-size: 0.66rem; color: var(--dim); letter-spacing: 1px; }
+    .stat-chip .value { font-size: 1.05rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .stat-chip.cyan .value { color: var(--cyan); text-shadow: 0 0 12px rgba(0, 243, 255, 0.45); }
+    .stat-chip.gold .value { color: var(--gold); text-shadow: 0 0 12px rgba(255, 204, 0, 0.4); }
+
+    .icon-btn {
+        width: 42px; height: 42px; border-radius: 12px; cursor: pointer;
+        background: var(--card); border: 1px solid var(--stroke); color: var(--text);
+        font-size: 1.05rem; display: grid; place-items: center;
+        transition: transform 0.15s ease, border-color 0.2s ease, background 0.2s ease;
+    }
+    .icon-btn:hover { transform: translateY(-2px); border-color: var(--cyan); background: rgba(0, 243, 255, 0.12); }
+
+    /* ============ 大厅 ============ */
+    .lobby { flex: 1; padding: clamp(24px, 5vw, 56px) clamp(16px, 5vw, 48px) 60px; }
+
+    .hero { text-align: center; margin-bottom: clamp(26px, 5vw, 46px); }
+    .hero h2 {
+        font-size: clamp(1.6rem, 4.6vw, 2.7rem); font-weight: 900; letter-spacing: 1px;
+        background: linear-gradient(90deg, #fff, var(--cyan) 40%, var(--purple));
+        -webkit-background-clip: text; background-clip: text; color: transparent;
+    }
+    .hero p { color: var(--dim); margin-top: 12px; font-size: 0.95rem; letter-spacing: 1px; }
+    .hero p b { color: var(--cyan); }
+
+    /* 本地文件模式下的扫描提示条 */
+    .scan-tip {
+        margin: 18px auto 0; max-width: 620px;
+        padding: 14px 18px; border-radius: 16px;
+        background: rgba(255, 204, 0, 0.07); border: 1px dashed rgba(255, 204, 0, 0.45);
+        color: var(--dim); font-size: 0.85rem; line-height: 1.8;
+    }
+    .scan-btn {
+        margin-top: 10px; padding: 9px 20px; border-radius: 12px; cursor: pointer;
+        font-size: 0.85rem; font-weight: 900; color: #050811;
+        background: linear-gradient(90deg, #ffcc00, #ff9e2c);
+        box-shadow: 0 8px 20px rgba(0, 0, 0, 0.4);
+        transition: transform 0.15s ease;
+    }
+    .scan-btn:hover { transform: translateY(-2px); }
+    .scan-btn:disabled { opacity: 0.5; cursor: not-allowed; }
+
+    .grid {
+        display: grid; gap: clamp(16px, 2.4vw, 26px);
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        max-width: 1220px; margin: 0 auto;
+    }
+
+    .card {
+        position: relative; overflow: hidden; cursor: pointer;
+        border-radius: 22px; padding: 22px 22px 20px;
+        background: linear-gradient(165deg, rgba(255, 255, 255, 0.075), rgba(255, 255, 255, 0.02));
+        border: 1px solid var(--stroke);
+        transition: transform 0.22s cubic-bezier(.2,.8,.3,1), border-color 0.22s ease, box-shadow 0.22s ease;
+        display: flex; flex-direction: column; min-height: 320px;
+    }
+    .card:hover { transform: translateY(-8px); box-shadow: 0 24px 50px rgba(0, 0, 0, 0.55); }
+    .card::after {
+        content: ''; position: absolute; inset: 0; pointer-events: none; opacity: 0; transition: opacity 0.3s ease;
+        background: radial-gradient(420px 220px at 50% -20%, var(--accent-soft), transparent 70%);
+    }
+    .card:hover::after { opacity: 1; }
+    .card.tone-cyan:hover { border-color: rgba(0, 243, 255, 0.6); }
+    .card.tone-magenta:hover { border-color: rgba(255, 0, 85, 0.6); }
+    .card.tone-amber:hover { border-color: rgba(255, 176, 32, 0.6); }
+    .card.tone-green:hover { border-color: rgba(57, 220, 130, 0.6); }
+    .card.tone-blue:hover { border-color: rgba(64, 156, 255, 0.6); }
+    .card.tone-purple:hover { border-color: rgba(160, 110, 255, 0.6); }
+
+    /* 自动发现的游戏：虚线边框 + AUTO 角标 */
+    .card.is-auto { border-style: dashed; }
+    .auto-badge {
+        position: absolute; top: 14px; right: 14px;
+        font-size: 0.62rem; letter-spacing: 1px; font-weight: 700;
+        padding: 3px 8px; border-radius: 99px;
+        background: rgba(255, 255, 255, 0.08); border: 1px solid var(--stroke); color: var(--dim);
+    }
+
+    .card-icon {
+        width: 72px; height: 72px; border-radius: 20px; display: grid; place-items: center;
+        font-size: 2.1rem; margin-bottom: 16px;
+        background: var(--accent-soft); border: 1.5px solid var(--accent-line);
+        box-shadow: 0 10px 26px rgba(0, 0, 0, 0.4);
+    }
+    .card h3 { font-size: 1.35rem; font-weight: 900; letter-spacing: 1px; }
+    .card .en { font-size: 0.72rem; color: var(--dim); letter-spacing: 2px; margin-top: 3px; text-transform: uppercase; }
+    .card .desc { color: var(--dim); font-size: 0.9rem; line-height: 1.7; margin: 14px 0 16px; }
+
+    .tags { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+    .tag {
+        font-size: 0.72rem; padding: 4px 10px; border-radius: 99px;
+        background: rgba(255, 255, 255, 0.06); border: 1px solid var(--stroke); color: var(--dim);
+    }
+
+    .card-foot { margin-top: auto; display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+    .card-best { font-size: 0.8rem; color: var(--dim); }
+    .card-best b { color: var(--gold); font-size: 1.05rem; font-variant-numeric: tabular-nums; }
+    .play-btn {
+        padding: 9px 20px; border-radius: 12px; border: none; cursor: pointer;
+        font-size: 0.9rem; font-weight: 900; letter-spacing: 1px; color: #050811;
+        background: linear-gradient(90deg, var(--accent-a), var(--accent-b));
+        box-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+        transition: transform 0.15s ease;
+    }
+    .play-btn:hover { transform: translateY(-2px) scale(1.03); }
+
+    .hint {
+        max-width: 1220px; margin: 34px auto 0; display: grid; gap: 12px;
+        grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    }
+    .hint-item {
+        padding: 14px 16px; border-radius: 14px; background: rgba(255, 255, 255, 0.035);
+        border: 1px solid var(--stroke); font-size: 0.82rem; color: var(--dim); line-height: 1.7;
+    }
+    .hint-item b { color: var(--cyan); }
+
+    /* ============ 游戏运行页 ============ */
+    .stage { position: fixed; inset: 0; z-index: 60; background: #05070f; display: flex; flex-direction: column; }
+    /* 隐藏但保留布局尺寸，保证画布游戏恢复后尺寸正确 */
+    .stage.is-parked { left: -200vw; right: auto; width: 100vw; visibility: hidden; pointer-events: none; }
+    .stage-bar {
+        display: flex; align-items: center; justify-content: space-between; gap: 12px;
+        padding: 8px 14px; background: rgba(10, 14, 28, 0.92);
+        border-bottom: 1px solid var(--stroke); flex: 0 0 auto;
+    }
+    .stage-left { display: flex; align-items: center; gap: 10px; min-width: 0; }
+    .stage-title { font-weight: 900; font-size: 0.95rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+    .stage-sub { font-size: 0.7rem; color: var(--dim); letter-spacing: 1px; }
+    .stage-actions { display: flex; align-items: center; gap: 8px; }
+    .small-btn {
+        padding: 7px 14px; border-radius: 10px; cursor: pointer; font-size: 0.82rem; font-weight: 700;
+        background: rgba(255, 255, 255, 0.07); border: 1px solid var(--stroke); color: var(--text);
+        transition: background 0.18s ease, transform 0.15s ease;
+    }
+    .small-btn:hover { background: rgba(0, 243, 255, 0.16); transform: translateY(-1px); }
+
+    .stage-body { flex: 1; position: relative; overflow: hidden; }
+    .stage-body iframe { width: 100%; height: 100%; border: 0; display: block; background: #000; }
+
+    /* ============ 假装工作遮罩 ============ */
+    .work-veil {
+        position: fixed; inset: 0; z-index: 200; display: grid; place-items: center;
+        background: rgba(6, 9, 18, 0.97);
+        backdrop-filter: blur(6px);
+        transition: opacity 0.18s ease;
+    }
+    .work-veil.hide { opacity: 0; pointer-events: none; }
+    .work-box { text-align: center; }
+    .work-box .emoji { font-size: 3.4rem; animation: bob 1.6s ease-in-out infinite; }
+    .work-box h3 { font-size: 1.4rem; margin-top: 14px; letter-spacing: 2px; }
+    .work-box p { color: var(--dim); margin-top: 8px; font-size: 0.9rem; }
+    .work-box .kbd {
+        display: inline-block; margin-top: 18px; padding: 8px 18px; border-radius: 10px;
+        border: 1px solid var(--stroke); background: rgba(255, 255, 255, 0.06); font-size: 0.85rem;
+    }
+    @keyframes bob { 0%,100% { transform: translateY(0); } 50% { transform: translateY(-10px); } }
+
+    .fade-enter-active, .fade-leave-active { transition: opacity 0.18s ease; }
+    .fade-enter-from, .fade-leave-to { opacity: 0; }
+
+    /* toast 提示条 */
+    .toast {
+        position: fixed; left: 50%; bottom: 28px; transform: translateX(-50%);
+        z-index: 300; max-width: min(92vw, 640px);
+        padding: 12px 20px; border-radius: 14px; text-align: center;
+        background: rgba(14, 20, 38, 0.95); border: 1px solid rgba(0, 243, 255, 0.45);
+        color: #fff; font-size: 0.85rem; line-height: 1.7;
+        box-shadow: 0 14px 40px rgba(0, 0, 0, 0.6);
+    }
+
+    @media (max-width: 640px) {
+        .brand-text p { display: none; }
+        .stat-chip { min-width: 70px; padding: 5px 9px; }
+        .card { min-height: 0; }
+    }
+</style>
+</head>
+<body>
+<div id="app" class="app">
+
+    <!-- ================= 大厅 ================= -->
+    <header class="topbar" v-if="!stageOpen">
+        <div class="brand" @click="goHome">
+            <div class="brand-logo">🐟</div>
+            <div class="brand-text">
+                <h1>摸鱼游戏厅</h1>
+                <p>FISH BREAK ARCADE · 上班摸鱼专用</p>
+            </div>
+        </div>
+
+        <div class="stats">
+            <div class="stat-chip cyan">
+                <span class="label">累计摸鱼</span>
+                <span class="value">{{ sessionText }}</span>
+            </div>
+            <div class="stat-chip gold">
+                <span class="label">今日摸鱼</span>
+                <span class="value">{{ todayText }}</span>
+            </div>
+            <div class="stat-chip">
+                <span class="label">总局数</span>
+                <span class="value">{{ totalPlays }}</span>
+            </div>
+            <button class="icon-btn" title="假装在工作（快捷键 W）" @click="workMode = true">🧑‍💻</button>
+        </div>
+    </header>
+
+    <main class="lobby" v-if="!stageOpen">
+        <section class="hero">
+            <h2>上班摸鱼，绝不手滑</h2>
+            <p>{{ games.length }} 个小游戏，一键切换 · 随时按 <b>Esc</b> 回到大厅 · 按 <b>W</b> 假装工作</p>
+            <div class="scan-tip" v-if="isFileMode">
+                <p>游戏目录：<b>games/</b>　把新的 <b>.html</b> 游戏丢进去后，运行 <b>node scan.js</b>（或双击「刷新游戏列表.bat」）刷新清单即可。</p>
+            </div>
+        </section>
+
+        <section class="grid">
+            <article v-for="g in games" :key="g.id" class="card" :class="[g.toneClass, { 'is-auto': g.auto }]"
+                     :style="{ '--accent-soft': g.soft, '--accent-line': g.line, '--accent-a': g.a, '--accent-b': g.b }"
+                     @click="launch(g.id)">
+                <span class="auto-badge" v-if="g.auto">AUTO</span>
+                <div class="card-icon">{{ g.icon }}</div>
+                <h3>{{ g.title }}</h3>
+                <div class="en">{{ g.en }}</div>
+                <p class="desc">{{ g.desc }}</p>
+                <div class="tags">
+                    <span class="tag" v-for="t in g.tags" :key="t">{{ t }}</span>
+                </div>
+                <div class="card-foot">
+                    <span class="card-best">最高纪录 <b>{{ bestOf(g) }}</b></span>
+                    <button class="play-btn" @click.stop="launch(g.id)">开始</button>
+                </div>
+            </article>
+        </section>
+
+        <section class="hint">
+            <div class="hint-item">
+                <b>⌨️ 快捷键</b><br>
+                <b>Esc</b> 返回大厅 · <b>W</b> 假装工作 · <b>F</b> 全屏游戏 · <b>1~9</b> 按顺序直达对应游戏
+            </div>
+            <div class="hint-item">
+                <b>💡 摸鱼小贴士</b><br>
+                最高分会被自动保存在浏览器本地，下次打开依然有效。偷偷玩一下下～
+            </div>
+            <div class="hint-item">
+                <b>🖥️ 运行方式</b><br>
+                直接双击 <b>index.html</b> 即可；如遇浏览器限制，可执行 <b>npm start</b> 用本地服务器打开。
+            </div>
+            <div class="hint-item">
+                <b>➕ 想加新游戏？</b><br>
+                把游戏 <b>.html</b> 丢进 <b>games/</b> 目录 → 双击 <b>刷新游戏列表.bat</b>（或 <b>node scan.js</b>）→ 双击 <b>index.html</b> 即可看到。图标和配色可在 <b>games.config.js</b> 里微调。
+            </div>
+        </section>
+    </main>
+
+    <!-- ================= 游戏舞台 ================= -->
+    <div class="stage" v-if="current" :class="{ 'is-parked': !stageOpen }">
+        <div class="stage-bar">
+            <div class="stage-left">
+                <button class="small-btn" @click="goHome">← 返回大厅</button>
+                <div>
+                    <div class="stage-title">{{ current.title }}</div>
+                    <div class="stage-sub">{{ current.en }}</div>
+                </div>
+            </div>
+            <div class="stage-actions">
+                <button class="small-btn" @click="reload">↻ 重开</button>
+                <button class="small-btn" @click="toggleFullscreen">⛶ 全屏</button>
+            </div>
+        </div>
+        <div class="stage-body">
+            <iframe :key="current.id + '-' + reloadStamp" :src="current.src + (reloadStamp && !current.src.startsWith('blob:') ? ('?v=' + reloadStamp) : '')"
+                    :title="current.title" allow="autoplay; fullscreen"></iframe>
+        </div>
+    </div>
+
+    <!-- ================= 扫描提示 toast ================= -->
+    <transition name="fade">
+        <div class="toast" v-if="toastMsg">{{ toastMsg }}</div>
+    </transition>
+
+    <!-- ================= 假装工作 ================= -->
+    <div class="work-veil" :class="{ hide: !workMode }" @click="workMode = false">
+        <div class="work-box">
+            <div class="emoji">🧑‍💻</div>
+            <h3>正在努力工作…</h3>
+            <p>老板看不到，摸鱼看不到，摸鱼更看不到～</p>
+            <div class="kbd">点击任意处 / 按 W 返回摸鱼</div>
+        </div>
+    </div>
+
+</div>
+
+<script src="./vendor/vue.global.prod.js"></script>
+<!-- 本地文件缺失时自动回退到 CDN -->
+<script>window.Vue || document.write('<script src="https://unpkg.com/vue@3.4.38/dist/vue.global.prod.js"><\/script>');</script>
+<!-- games 目录扫描结果（由 node scan.js 生成） -->
+<script src="./games/manifest.js"></script>
+<!-- 人工配置：图标 / 配色 / 简介 / 最高分键 -->
+<script src="./games.config.js"></script>
+<script>
+const { createApp } = Vue;
+
+/* ---------------------------------------------------------------------------
+ * 主题配色表：配置里写 tone 名字即可
+ * -------------------------------------------------------------------------*/
+const TONES = {
+    amber:   { cls: 'tone-amber',   soft: 'rgba(255, 158, 44, 0.18)', line: 'rgba(255, 158, 44, 0.55)', a: '#ff9e2c', b: '#e84a27' },
+    cyan:    { cls: 'tone-cyan',    soft: 'rgba(0, 243, 255, 0.16)',  line: 'rgba(0, 243, 255, 0.55)',  a: '#00f3ff', b: '#b537f2' },
+    magenta: { cls: 'tone-magenta', soft: 'rgba(255, 0, 85, 0.16)',   line: 'rgba(255, 0, 85, 0.55)',   a: '#ff0055', b: '#b537f2' },
+    green:   { cls: 'tone-green',   soft: 'rgba(57, 220, 130, 0.16)', line: 'rgba(57, 220, 130, 0.55)', a: '#39dc82', b: '#00b4d8' },
+    blue:    { cls: 'tone-blue',    soft: 'rgba(64, 156, 255, 0.16)', line: 'rgba(64, 156, 255, 0.55)', a: '#409cff', b: '#7b5cff' },
+    purple:  { cls: 'tone-purple',  soft: 'rgba(160, 110, 255, 0.16)',line: 'rgba(160, 110, 255, 0.55)',a: '#a06eff', b: '#ff5fa2' }
+};
+const TONE_ORDER = ['amber', 'cyan', 'magenta', 'green', 'blue', 'purple'];
+
+/** 由文件名生成一个像样的默认标题（自动发现模式用） */
+function titleFromFile(file) {
+    const base = file.replace(/\.html$/i, '');
+    return base.replace(/[_-]+/g, ' ').replace(/\s+/g, ' ').trim() || base;
+}
+
+createApp({
+    data() {
+        return {
+            current: null,
+            stageOpen: false,
+            reloadStamp: 0,
+            workMode: false,
+            sessionSeconds: 0,
+            todaySeconds: 0,
+            totalPlays: 0,
+            scores: {},
+            games: [],
+            manifestGames: [],
+            isFileMode: location.protocol === 'file:',
+            toastMsg: ''
+        };
+    },
+    computed: {
+        sessionText() { return this.formatTime(this.sessionSeconds); },
+        todayText() { return this.formatTime(this.todaySeconds); }
+    },
+    mounted() {
+        this.loadState();
+        this.buildGames();
+        this.timer = setInterval(() => this.tick(), 1000);
+        window.addEventListener('keydown', (e) => this.onKey(e));
+    },
+    beforeUnmount() {
+        clearInterval(this.timer);
+    },
+    methods: {
+        /* ==================================================================
+         * 游戏列表构建
+         *   来源 1：games/manifest.js   —— 由 node scan.js 扫描 games 目录生成
+         *           （记录文件名 + <title> + 描述），双击 index.html 也能加载
+         *   来源 2：games.config.js     —— 人工配置的图标/配色/简介/最高分键
+         *   合并规则：manifest 提供「有哪些游戏」，config 提供「怎么展示」
+         * ================================================================== */
+        buildGames() {
+            const manifest = (window.FISH_ARCADE_MANIFEST && Array.isArray(window.FISH_ARCADE_MANIFEST.games))
+                ? window.FISH_ARCADE_MANIFEST.games
+                : [];
+            const configured = Array.isArray(window.FISH_ARCADE_GAMES) ? window.FISH_ARCADE_GAMES : [];
+
+            const cfgMap = new Map();
+            configured.forEach((g) => { if (g && g.file) cfgMap.set(g.file, g); });
+
+            // 以 manifest 为准列出所有游戏（没进 manifest 的配置项也补上，防止漏）
+            const files = manifest.map(g => g.file);
+            configured.forEach(g => { if (g.file && !files.includes(g.file)) files.push(g.file); });
+
+            let toneIdx = 0;
+            this.games = files.map((file) => {
+                const man = manifest.find(m => m.file === file) || {};
+                const cfg = cfgMap.get(file) || {};
+                const tone = TONES[cfg.tone] || TONES[TONE_ORDER[toneIdx++ % TONE_ORDER.length]];
+
+                return {
+                    id: file,
+                    file: './games/' + file,
+                    src: './games/' + file,
+                    title: cfg.title || man.title || titleFromFile(file),
+                    en: cfg.en || '',
+                    icon: cfg.icon || '🎮',
+                    desc: cfg.desc || man.desc || '放在 games 目录下的摸鱼小游戏，点开始即可开玩。',
+                    tags: cfg.tags || [],
+                    scoreKey: cfg.scoreKey || null,
+                    auto: !cfg.title,
+                    toneClass: tone.cls,
+                    soft: tone.soft,
+                    line: tone.line,
+                    a: tone.a,
+                    b: tone.b
+                };
+            });
+        },
+
+        formatTime(sec) {
+            const h = Math.floor(sec / 3600);
+            const m = Math.floor((sec % 3600) / 60);
+            const s = sec % 60;
+            const pad = (n) => String(n).padStart(2, '0');
+            return h > 0 ? `${h}:${pad(m)}:${pad(s)}` : `${pad(m)}:${pad(s)}`;
+        },
+        loadState() {
+            try {
+                const today = new Date().toISOString().slice(0, 10);
+                const saved = JSON.parse(localStorage.getItem('fish_arcade_state') || '{}');
+                this.totalPlays = saved.totalPlays || 0;
+                this.sessionSeconds = saved.sessionSeconds || 0;
+                this.todaySeconds = (saved.today === today) ? (saved.todaySeconds || 0) : 0;
+                this.refreshScores();
+            } catch (e) { /* 忽略存储异常 */ }
+        },
+        saveState() {
+            try {
+                const today = new Date().toISOString().slice(0, 10);
+                localStorage.setItem('fish_arcade_state', JSON.stringify({
+                    totalPlays: this.totalPlays,
+                    sessionSeconds: this.sessionSeconds,
+                    todaySeconds: this.todaySeconds,
+                    today: today
+                }));
+            } catch (e) { /* 忽略存储异常 */ }
+        },
+        refreshScores() {
+            const next = {};
+            this.games.forEach((g) => {
+                if (g.scoreKey) {
+                    next[g.scoreKey] = parseInt(localStorage.getItem(g.scoreKey) || '0', 10);
+                }
+            });
+            this.scores = next;
+        },
+        tick() {
+            this.sessionSeconds++;
+            this.todaySeconds++;
+            this.saveState();
+            if (this.current) this.refreshScores();
+        },
+        bestOf(g) {
+            if (!g.scoreKey) return '—';
+            const v = this.scores[g.scoreKey] || 0;
+            return v > 0 ? v : '未挑战';
+        },
+        launch(id) {
+            const g = this.games.find(x => x.id === id);
+            if (!g) return;
+            const isNew = !this.current || this.current.id !== g.id;
+            this.current = g;
+            this.stageOpen = true;
+            this.workMode = false;
+            if (isNew) {
+                this.totalPlays++;
+                this.saveState();
+            }
+        },
+        goHome() {
+            this.stageOpen = false;
+            this.refreshScores();
+            this.saveState();
+        },
+        reload() {
+            this.reloadStamp = Date.now();
+        },
+        toggleFullscreen() {
+            const el = document.querySelector('.stage-body');
+            if (!document.fullscreenElement) {
+                (el.requestFullscreen || el.webkitRequestFullscreen || (() => {})).call(el);
+            } else {
+                (document.exitFullscreen || document.webkitExitFullscreen || (() => {})).call(document);
+            }
+        },
+        onKey(e) {
+            const key = e.key.toLowerCase();
+            if (key === 'escape') {
+                if (this.workMode) this.workMode = false;
+                else if (this.stageOpen) this.goHome();
+            } else if (key === 'w') {
+                this.workMode = !this.workMode;
+            } else if (key === 'f' && this.stageOpen) {
+                this.toggleFullscreen();
+            } else if (/^[1-9]$/.test(key) && !this.stageOpen) {
+                const idx = parseInt(key, 10) - 1;
+                if (this.games[idx]) this.launch(this.games[idx].id);
+            }
+        }
+    }
+}).mount('#app');
+</script>
+</body>
+</html>
