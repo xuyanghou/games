@@ -1,0 +1,717 @@
+<!doctype html>
+<html lang="zh-CN" data-canvas-width="1440" data-canvas-height="900" style="width:1440px;height:900px;">
+<head>
+<meta charset="UTF-8">
+<title>死考 · 三千万考生</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;600;700;900&family=Noto+Sans+SC:wght@300;400;500;700&display=swap">
+<style>
+  *{box-sizing:border-box;margin:0;padding:0}
+  html,body{margin:0;padding:0}
+  body{width:1440px;height:900px;background:#08090a;color:#d8d1c6;
+    font-family:'Noto Serif SC',Georgia,'Songti SC',serif;letter-spacing:.01em;-webkit-font-smoothing:antialiased}
+  main{width:1440px;height:900px;position:relative;
+    background:radial-gradient(120% 90% at 50% 0%, #141517 0%, #08090a 60%, #050505 100%)}
+
+  /* ---------- 顶栏 ---------- */
+  .top{height:64px;display:flex;align-items:center;justify-content:space-between;
+    padding:0 32px;border-bottom:1px solid rgba(216,209,198,.14)}
+  .brand{display:flex;align-items:baseline;gap:14px}
+  .brand h1{font-size:22px;letter-spacing:.34em;font-weight:900}
+  .brand h1 em{font-style:normal;color:#c8503f}
+  .brand span{font-family:'Noto Sans SC',sans-serif;font-size:10.5px;letter-spacing:.3em;color:#6f6a60}
+  .hud{display:flex;align-items:center;gap:26px;font-family:'Noto Sans SC',sans-serif;font-size:12px;color:#8c8578}
+  .hud b{color:#e6ddd0;font-weight:500;letter-spacing:.06em}
+  .hud .sum b{color:#d8b06a;font-size:15px}
+  .bar{width:92px;height:4px;background:rgba(255,255,255,.1);display:inline-block;vertical-align:middle;margin-left:8px}
+  .bar i{display:block;height:4px;background:linear-gradient(90deg,#7a2b24,#c8503f)}
+  .viol{color:#8c8578}
+  .viol.on{color:#c8503f}
+  .navb{display:flex;gap:8px}
+  .navb button{background:transparent;border:1px solid rgba(216,209,198,.22);color:#a8a094;
+    font-family:'Noto Sans SC',sans-serif;font-size:11.5px;letter-spacing:.14em;padding:7px 13px;cursor:pointer}
+  .navb button:hover{border-color:#c8503f;color:#e6ddd0}
+
+  /* ---------- 主网格 ---------- */
+  .grid{height:812px;padding:24px 32px;display:grid;
+    grid-template-columns:224px 16px 828px 16px 292px;column-gap:0}
+  .safe{height:24px}
+
+  /* ---------- 左栏 ---------- */
+  .col-l{display:flex;flex-direction:column;gap:12px}
+  .sec-t{font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.3em;color:#6f6a60;margin-bottom:6px}
+  .stages{display:flex;flex-direction:column;gap:8px}
+  .stg{height:64px;border:1px solid rgba(216,209,198,.12);padding:9px 12px;cursor:pointer;position:relative;
+    background:rgba(20,19,18,.5);transition:.2s}
+  .stg:hover{border-color:rgba(200,80,63,.5)}
+  .stg.cur{border-color:rgba(200,80,63,.7);background:rgba(60,24,20,.45)}
+  .stg.lock{opacity:.38;cursor:not-allowed}
+  .stg .c{font-family:'Noto Sans SC',sans-serif;font-size:9.5px;letter-spacing:.22em;color:#c8503f}
+  .stg .n{font-size:14px;margin-top:2px;color:#ded6c9}
+  .stg .s{font-family:'Noto Sans SC',sans-serif;font-size:10px;color:#6f6a60;margin-top:2px}
+  .stg.cur .s{color:#b8ac9d}
+
+  .rules{border:1px solid rgba(216,209,198,.12);padding:11px 12px;background:rgba(16,15,14,.55)}
+  .rules ul{list-style:none;display:flex;flex-direction:column;gap:8px}
+  .rules li{font-family:'Noto Sans SC',sans-serif;font-size:11px;line-height:1.6;color:#a8a094;position:relative;padding-left:14px}
+  .rules li:before{content:'';position:absolute;left:0;top:7px;width:5px;height:5px;background:#c8503f;opacity:.8}
+  .rules li b{color:#d8c7b7;font-weight:500}
+
+  .clues{border:1px solid rgba(216,209,198,.12);padding:11px 12px;background:rgba(16,15,14,.55);flex:1}
+  .clues .list{display:flex;flex-wrap:wrap;gap:5px}
+  .clue{font-family:'Noto Sans SC',sans-serif;font-size:10px;color:#b8ac9d;
+    border:1px solid rgba(216,209,198,.2);padding:2px 6px}
+  .clue.new{border-color:rgba(200,80,63,.55);color:#e0c3b3}
+
+  /* ---------- 中栏：场景 ---------- */
+  .scene{position:relative;width:828px;height:400px;border:1px solid rgba(216,209,198,.16);overflow:hidden;background:#0b0b0c}
+  .scene img{width:828px;height:400px;object-fit:cover;display:block;filter:saturate(.8) contrast(1.05) brightness(.86)}
+  .scene .shade{position:absolute;inset:0;background:
+    linear-gradient(180deg,rgba(0,0,0,.55) 0%,rgba(0,0,0,.05) 35%,rgba(0,0,0,.1) 60%,rgba(0,0,0,.72) 100%)}
+  .scene .tag-l{position:absolute;left:16px;top:14px;font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.3em;color:#e0d6c7;opacity:.9}
+  .scene .tag-r{position:absolute;right:16px;top:14px;font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.24em;color:#c8503f;border:1px solid rgba(200,80,63,.4);padding:2px 8px}
+  .hot{position:absolute;width:26px;height:26px;margin-left:-13px;margin-top:-13px;cursor:pointer;z-index:3}
+  .hot .dot{position:absolute;inset:6px;border-radius:50%;background:rgba(240,232,220,.9);box-shadow:0 0 0 1px rgba(0,0,0,.5)}
+  .hot .ring{position:absolute;inset:0;border:1px solid rgba(240,232,220,.65);border-radius:50%;animation:pulse 2.4s ease-out infinite}
+  @keyframes pulse{0%{transform:scale(.55);opacity:.85}70%{transform:scale(1.5);opacity:0}100%{opacity:0}}
+  .hot:hover .dot{background:#e0705c}
+  .hot .lab{position:absolute;left:32px;top:-6px;white-space:nowrap;font-family:'Noto Sans SC',sans-serif;
+    font-size:10.5px;letter-spacing:.1em;color:#f0e6d8;background:rgba(8,7,6,.82);padding:3px 8px;
+    border:1px solid rgba(216,209,198,.2);opacity:0;transition:.18s;pointer-events:none}
+  .hot:hover .lab{opacity:1}
+  .hot.rev .lab{left:auto;right:32px}
+  .hot.done .dot{background:#6b6459;box-shadow:none}
+  .hot.done .ring{display:none}
+
+  .hotcard{position:absolute;left:16px;bottom:44px;width:560px;background:rgba(10,9,8,.94);
+    border:1px solid rgba(200,80,63,.35);padding:14px 16px;z-index:6;display:none}
+  .hotcard.on{display:block}
+  .hotcard .hn{font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.24em;color:#c8503f}
+  .hotcard .ht{font-size:14px;line-height:1.8;color:#ded6c9;margin:6px 0 8px}
+  .hotcard .hg{font-family:'Noto Sans SC',sans-serif;font-size:10.5px;color:#9c9386;display:flex;gap:12px}
+  .hotcard .hg em{font-style:normal;color:#d8b06a}
+  .hotcard .hc{position:absolute;right:12px;top:10px;font-family:'Noto Sans SC',sans-serif;font-size:10px;color:#6f6a60;cursor:pointer}
+  .hintline{position:absolute;left:16px;bottom:14px;right:16px;font-family:'Noto Sans SC',sans-serif;font-size:10.5px;
+    letter-spacing:.06em;color:#9c9386;display:flex;justify-content:space-between;z-index:2}
+  .hintline b{color:#c8bcab;font-weight:400}
+  .hintline span{color:#6f6a60}
+
+  .env{height:150px;border:1px solid rgba(216,209,198,.12);background:rgba(16,15,14,.55);padding:12px 16px}
+  .env .p{font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.26em;color:#6f6a60;margin-bottom:5px}
+  .env .t{font-size:14px;line-height:1.74;color:#cfc6b9}
+  .env .pt{margin-top:7px;padding-top:7px;border-top:1px dashed rgba(216,209,198,.14);font-family:'Noto Sans SC',sans-serif;font-size:11.5px;letter-spacing:.06em;color:#bdb0a2;display:flex;align-items:center;gap:7px}
+  .env .pt i{width:5px;height:5px;background:#c8503f;border-radius:50%;flex:0 0 5px}
+
+  .acts{height:190px;display:grid;grid-template-columns:repeat(3,266px);gap:14px}
+  .act{border:1px solid rgba(216,209,198,.14);background:rgba(20,18,16,.6);padding:13px 14px;cursor:pointer;
+    transition:.2s;position:relative;display:flex;flex-direction:column}
+  .act:hover{border-color:rgba(200,80,63,.6);background:rgba(48,26,22,.55);transform:translateY(-2px)}
+  .act .k{font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.26em;color:#c8503f}
+  .act .tt{font-size:15px;line-height:1.55;color:#e6ddd0;margin-top:6px;min-height:46px}
+  .act .rk{font-family:'Noto Sans SC',sans-serif;font-size:11px;line-height:1.7;color:#8c8578;margin-top:10px;padding-top:9px;border-top:1px dashed rgba(216,209,198,.14)}.act .go{font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.24em;color:#c8503f;margin-top:auto;text-align:right}
+  .act.dim{opacity:.45;cursor:not-allowed}
+  .act.dim:hover{border-color:rgba(216,209,198,.14);background:rgba(20,18,16,.6);transform:none}
+
+  /* ---------- 右栏 ---------- */
+  .col-r{display:flex;flex-direction:column;gap:12px}
+  .portrait{height:236px;border:1px solid rgba(216,209,198,.16);position:relative;overflow:hidden;background:#0a0a0b}
+  .portrait img{width:292px;height:236px;object-fit:cover;object-position:50% 18%;display:block;
+    filter:saturate(.82) contrast(1.05) brightness(.9)}
+  .portrait .ov{position:absolute;inset:0;background:linear-gradient(180deg,rgba(0,0,0,.1) 40%,rgba(5,5,5,.9) 100%)}
+  .portrait .nm{position:absolute;left:14px;bottom:12px}
+  .portrait .nm b{font-size:18px;letter-spacing:.14em;color:#f0e6d8;font-weight:600}
+  .portrait .nm i{display:block;font-style:normal;font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.16em;color:#d8785f;margin-top:3px}
+  .portrait .no{position:absolute;right:12px;top:10px;font-family:'Noto Sans SC',sans-serif;font-size:9.5px;letter-spacing:.2em;color:#8c8578}
+
+  .speech{height:150px;border:1px solid rgba(216,209,198,.12);background:rgba(16,15,14,.6);padding:12px 14px;position:relative}
+  .speech .who{font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.2em;color:#c8503f;margin-bottom:6px}
+  .speech .ln{font-size:14px;line-height:1.82;color:#ded6c9}
+  .speech:after{content:'';position:absolute;left:20px;bottom:-1px;width:40px;height:1px;background:#c8503f;opacity:.6}
+
+  .team{height:186px;border:1px solid rgba(216,209,198,.12);background:rgba(16,15,14,.5);padding:10px 12px}
+  .team .row{display:flex;justify-content:space-between;align-items:center;padding:7px 0;
+    border-bottom:1px dashed rgba(216,209,198,.1);font-size:12px;color:#c8bfb1}
+  .team .row:last-child{border:none}
+  .team .row i{font-style:normal;font-family:'Noto Sans SC',sans-serif;font-size:10px;color:#8c8578}
+  .team .row.hurt i{color:#c8503f}
+  .team .row.gone i{color:#5a544b}
+  .team .row b{font-weight:500;letter-spacing:.06em}
+
+  .log{height:156px;border:1px solid rgba(216,209,198,.12);background:rgba(16,15,14,.5);padding:10px 12px;overflow:hidden}
+  .log .li{font-family:'Noto Sans SC',sans-serif;font-size:10.5px;line-height:1.75;color:#8c8578;
+    display:flex;gap:8px;margin-bottom:3px}
+  .log .li em{font-style:normal;color:#c8503f;flex:0 0 auto}
+
+  /* ---------- 遮罩层 ---------- */
+  .ov{position:absolute;inset:0;background:#070708;z-index:20;display:flex;align-items:center;justify-content:center}
+  .ov .box{width:900px;max-height:760px}
+  .ov h2{font-size:34px;letter-spacing:.2em;font-weight:900;margin-bottom:8px}
+  .ov h2 em{font-style:normal;color:#c8503f}
+  .ov .sub{font-family:'Noto Sans SC',sans-serif;font-size:11px;letter-spacing:.24em;color:#6f6a60;margin-bottom:22px}
+  .ov p{font-size:14px;line-height:2;color:#b8ac9d;margin-bottom:12px}
+  .ov .btns{display:flex;gap:12px;margin-top:26px}
+  .ov .btn{border:1px solid rgba(216,209,198,.4);background:transparent;color:#e6ddd0;
+    font-family:'Noto Sans SC',sans-serif;font-size:12.5px;letter-spacing:.2em;padding:12px 26px;cursor:pointer}
+  .ov .btn:hover{border-color:#c8503f;background:rgba(60,24,20,.4)}
+  .ov .btn.ghost{border-color:rgba(216,209,198,.16);color:#8c8578}
+
+  .coverbg{position:absolute;left:0;top:0;width:1440px;height:900px;object-fit:cover;opacity:.42;
+    filter:saturate(.6) brightness(.7)}
+  .covshade{position:absolute;left:0;top:0;width:1440px;height:900px;background:
+    radial-gradient(60% 80% at 20% 50%, rgba(7,7,8,.96) 0%, rgba(7,7,8,.5) 55%, rgba(7,7,8,.85) 100%),
+    linear-gradient(90deg, rgba(7,7,8,.98) 0%, rgba(7,7,8,.7) 46%, rgba(7,7,8,.2) 100%)}
+  .covwrap{position:relative;z-index:3;width:1200px;display:flex;align-items:center;gap:84px}
+  .covleft{width:626px}
+  .covleft .kick{font-family:'Noto Sans SC',sans-serif;font-size:11px;letter-spacing:.34em;color:#c8503f;margin-bottom:14px}
+  .covleft h2{font-size:66px;letter-spacing:.26em;font-weight:900;line-height:1.1;margin:0 0 16px}
+  .covleft h2 em{font-style:normal;color:#c8503f}
+  .covleft .en{font-family:'Noto Sans SC',sans-serif;font-size:11px;letter-spacing:.4em;color:#6f6a60;margin-bottom:26px}
+  .covleft p{font-size:14.5px;line-height:2;color:#b8ac9d;margin-bottom:12px}
+  .covleft p b{color:#e6ddd0;font-weight:500}
+  .covleft .how{font-family:'Noto Sans SC',sans-serif;font-size:12px;line-height:1.95;color:#7d7568;
+    border-left:2px solid rgba(200,80,63,.55);padding-left:14px;margin:22px 0 26px}
+  .covright{width:380px}
+  .covright .ph{width:380px;height:470px;border:1px solid rgba(216,209,198,.2);overflow:hidden;position:relative}
+  .covright .ph img{width:380px;height:470px;object-fit:cover;display:block;filter:saturate(.7) contrast(1.05)}
+  .covright .ph .pl{position:absolute;left:14px;bottom:12px;font-family:'Noto Sans SC',sans-serif;
+    font-size:10px;letter-spacing:.24em;color:#d8c7b7}
+  .covright .meta{margin-top:14px;display:flex;gap:18px}
+  .covright .meta div{flex:1}
+  .covright .meta span{display:block;font-family:'Noto Sans SC',sans-serif;font-size:9.5px;letter-spacing:.2em;color:#6f6a60}
+  .covright .meta b{font-size:20px;color:#e6ddd0;font-weight:600}
+  .gallery{display:grid;grid-template-columns:repeat(4,1fr);gap:14px;margin-top:6px}
+  .gcard{border:1px solid rgba(216,209,198,.14);background:rgba(16,15,14,.6)}
+  .gcard img{width:100%;height:220px;object-fit:cover;object-position:50% 15%;display:block;filter:saturate(.8)}
+  .gcard .gi{padding:10px 12px}
+  .gcard .gn{font-size:16px;letter-spacing:.1em;color:#e6ddd0}
+  .gcard .gr{font-family:'Noto Sans SC',sans-serif;font-size:9.5px;letter-spacing:.16em;color:#c8503f;margin:2px 0 8px}
+  .stat{display:flex;align-items:center;gap:7px;margin-bottom:4px;
+    font-family:'Noto Sans SC',sans-serif;font-size:9.5px;color:#8c8578}
+  .stat span{width:26px;flex:0 0 26px}
+  .stat u{flex:1;height:3px;background:rgba(255,255,255,.1);text-decoration:none}
+  .stat u i{display:block;height:3px;background:#a8322c}
+  .gcard .gq{font-size:11px;line-height:1.7;color:#a89f92;margin-top:7px}
+
+  .arch{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin-top:4px}
+  .ac{border:1px solid rgba(216,209,198,.14);padding:12px 14px;background:rgba(16,15,14,.55)}
+  .ac.lock{opacity:.35}
+  .ac .an{font-family:'Noto Sans SC',sans-serif;font-size:11px;letter-spacing:.2em;color:#c8503f;margin-bottom:5px}
+  .ac .at{font-size:12.5px;line-height:1.75;color:#b8ac9d}
+
+  .warp{position:absolute;inset:0;z-index:30;background:rgba(30,6,4,.92);display:flex;align-items:center;justify-content:center;
+    animation:fl .18s steps(2) infinite}
+  @keyframes fl{0%{opacity:.95}50%{opacity:1}100%{opacity:.93}}
+  .warp .wb{width:640px;border:1px solid rgba(200,80,63,.5);padding:28px;background:rgba(12,7,6,.9)}
+  .warp .wk{font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.4em;color:#e0705c}
+  .warp h3{font-size:26px;letter-spacing:.16em;margin:10px 0 14px;color:#f0ddd2}
+  .warp p{font-size:14px;line-height:1.95;color:#d8c3b6}
+  .warp button{margin-top:22px;min-width:218px;text-align:center;padding:12px 20px}
+
+  .endstat{display:flex;gap:14px;margin:18px 0 6px}
+  .endstat div{flex:1;border:1px solid rgba(216,209,198,.14);padding:12px 14px}
+  .endstat div span{display:block;font-family:'Noto Sans SC',sans-serif;font-size:10px;letter-spacing:.2em;color:#6f6a60}
+  .endstat div b{font-size:24px;color:#e6ddd0;font-weight:600}
+</style>
+</head>
+<body>
+<main data-canvas-root style="width:1440px;height:900px;">
+
+  <div class="top">
+    <div class="brand">
+      <h1>死<em>考</em></h1>
+      <span>DEATH EXAM · 三千万考生</span>
+    </div>
+    <div class="hud" id="hud"></div>
+    <div class="navb">
+      <button data-nav="cast">人物档案</button>
+      <button data-nav="arch">世界观</button>
+      <button data-nav="settle">结算</button>
+    </div>
+  </div>
+
+  <div class="grid">
+    <div class="col-l" id="colL"></div>
+    <div></div>
+    <div style="display:flex;flex-direction:column;gap:12px" id="colC"></div>
+    <div></div>
+    <div class="col-r" id="colR"></div>
+  </div>
+  <div class="safe"></div>
+
+</main>
+
+<script>
+/* ================= 资源 ================= */
+const IMG = {
+  yard:'https://aka.doubaocdn.com/s/Sur53Y2Nj8',
+  lab:'https://aka.doubaocdn.com/s/jh7vTL0YpV',
+  city:'https://aka.doubaocdn.com/s/Lb7qvCnR6A',
+  temple:'https://aka.doubaocdn.com/s/xOr1PdiPlD',
+  gate:'https://aka.doubaocdn.com/s/YO7nU6kU12',
+  yelin:'https://aka.doubaocdn.com/s/v9h2MU5bKe',
+  anko:'https://aka.doubaocdn.com/s/YFu1VXhJLS',
+  hezheng:'https://aka.doubaocdn.com/s/LfOVFpd5jV',
+  huangliang:'https://aka.doubaocdn.com/s/u9fZW7ItzL'
+};
+
+/* ================= 人物 ================= */
+const CAST = {
+  yelin:{name:'夜林', role:'考生 017 · 前盗墓贼 / 死囚', img:'yelin',
+    stats:{推理:92, 体能:68, 共情:41, 运气:55},
+    quote:'比起杀人，我似乎更擅长杀神。',
+    bio:'十八岁，因盗墓入狱，执行前被异管局提走。判场里靠一条消防斧救过整队人，也靠一句话把监考系统问崩过一次。'},
+  anko:{name:'安可', role:'考生 031 · 医疗兵', img:'anko',
+    stats:{推理:74, 体能:71, 共情:78, 运气:60},
+    quote:'别谢我，你死了我少一个挡在前面的。',
+    bio:'尸潮考场里被卡在公交车残骸上，夜林把她拽出来。此后一直负责给队伍止血、也负责数还剩几个人。'},
+  hezheng:{name:'贺铮', role:'考生 044 · 前军人', img:'hezheng',
+    stats:{推理:55, 体能:93, 共情:62, 运气:48},
+    quote:'你们先走，我数过子弹了。',
+    bio:'尸潮那场留在路口断后，之后失联。有人说在道观里见过他，也有人说那是鬼借了他的脸。'},
+  huangliang:{name:'黄粱', role:'考生 068 · 技术', img:'huangliang',
+    stats:{推理:88, 体能:46, 共情:50, 运气:72},
+    quote:'系统不会无缘无故安排东西，也不会无缘无故写你的名字。',
+    bio:'拆过监考耳机，也拆过自己的工牌。道观那场之后设备断电，只剩下手写的笔记。'}
+};
+
+/* ================= 世界观档案 ================= */
+const ARCH = [
+  {id:'exam', n:'死亡高考', t:'三千万考生被无预警拉入考试。红涡、坠落的尸体、失踪案，是同一天开始的。通关得分，失败抹杀。'},
+  {id:'bureau', n:'异管局', t:'负责处理异常事务的部门。为了调查，他们从全球最大监狱里“请”出重犯夜林，任务是活下去，并传回情报。'},
+  {id:'score', n:'分数兑换', t:'十分兑一千万；百分兑暴君基因；千分兑末日天启。所有兑换都有一个共同前提：你得先活到兑换窗口。'},
+  {id:'god', n:'神类 · 初号', t:'第一考场地下基地的核心。造神实验做到第七次，容器学会了说谎——它说的第一句话是“我是你们的神”。'},
+  {id:'perfect', n:'完美者计划', t:'实验日志里反复出现的代号。计划要筛选的不是最强的考生，而是最能被替换的考生。'},
+  {id:'team', n:'灵安小队', t:'夜林、安可、贺铮、黄粱。名字是黄粱起的，他说四个人的姓都太硬，得配个软一点的队名。'},
+  {id:'names', n:'名册', t:'道观功德箱、石阶刻痕、监考系统，三处都有一份名单。名单上被划掉的名字，还能在下一个考场里遇见。'},
+  {id:'gate', n:'仙门', t:'第四考场尽头。门后不是出口，是另一份考卷。铁链上的编号，和监考系统的一模一样。'}
+];
+
+/* ================= 考场数据 ================= */
+const S = [
+{
+  code:'EXAM 00', name:'判场', level:'—', bg:'yard', portent:'铁锈味在变浓，可这里没有铁。',
+  env:'死刑囚室。铁门外的天是红的，像一块被搅动过的血。空气里是铁锈、消毒水和旧棉被的味道。三天前你被判了死刑，今天执行。门开了，进来的人穿深色制服，拿着档案袋，不是狱警。',
+  rules:['不要在红涡下许愿，任何愿望都会被当作签收。','不要穿地上那套囚服，尺码不是给你的。','不要回答铁门外叫你名字的声音。'],
+  hot:[
+    {x:60,y:38,n:'铁门与红涡',t:'铁门上的漆被磨掉一层。红涡转得很慢，边缘有细小的黑色碎屑往上飘，像有人在上头抖纸。',g:{clue:'红涡'}},
+    {x:40,y:78,n:'叠好的囚服',t:'叠得很整齐，尺码比你的大一号。胸口位置压出一个凹陷，像有人长期把手按在那里。',g:{sum:5}},
+    {x:26,y:52,n:'墙上的划痕',t:'二十七道横线，最后一道只划了一半。旁边一小片暗色被擦过，没擦干净。',g:{san:-4,clue:'墙上的日子'}}
+  ],
+  acts:[
+    {k:'A',t:'接过档案袋，签字进考场',rk:'签下去，就承认自己是考生',next:1,sum:10,clue:'死亡高考',res:'笔尖压在纸上，纸很吃墨。你听见很远的地方有人在念名单。'},
+    {k:'B',t:'问他：我能不能不去',rk:'问一次，等于承认自己怕了',san:-8,clue:'异管局',res:'他没回答，只是把档案袋翻开，露出里面一叠死亡名单——第一页是你的名字。'},
+    {k:'C',t:'要求先看考题',rk:'有些题，看过就忘不掉',san:-12,sum:5,clue:'神类起源',res:'他把一张照片推过来：玻璃舱里漂着一个人形，标签上写着“神类·初号”。'}
+  ],
+  who:'yelin', line:'三天，现在只剩三个小时。你数了数，自己在心里从来只数有用的东西。'
+},
+{
+  code:'EXAM 01', name:'考场一 · 神类起源', level:'C', bg:'lab', portent:'绿灯闪的间隔在变慢，像有人在外面调呼吸。',
+  env:'地下基地。绿色应急灯一米一盏，照着一排玻璃舱，舱里漂着模糊的人形。走廊尽头有金属摩擦声，节奏像有人在拖椅子。空气甜得发腻，像消毒水泡过的糖。',
+  rules:['不要用高于六十分贝的声音说话，它们靠声音定位。','不要打开编号 07 以后的舱。','不要相信任何自称“神”的东西，包括它自己说的。'],
+  hot:[
+    {x:16,y:70,n:'嵌墙的消防斧',t:'柄上缠着胶带，刃口有一道缺。缺口的宽度，和舱门锁扣一模一样。',g:{item:'消防斧',sum:5}},
+    {x:44,y:52,n:'分岔的三扇门',t:'消毒区、杂物区、实验区。箭头全都指向消毒区，可地毯上的拖痕是往实验区去的。',g:{clue:'三门陷阱'}},
+    {x:70,y:56,n:'舱体编号',t:'一到六号舱的人形都朝外，七号朝里。八号玻璃内侧有指印，从里面按的。',g:{san:-6,clue:'八号舱'}},
+    {x:56,y:78,n:'实验日志残页',t:'第七次造神失败。容器学会了说谎，它说的第一句话是“我是你们的神”。',g:{clue:'完美者计划'}},
+    {x:86,y:70,n:'巡逻的鱼头人',t:'眼睛长在两侧，正前方一块盲区。它每走七步停一次，停的时候喉咙鼓起。',g:{clue:'声音弱点',san:-3}}
+  ],
+  acts:[
+    {k:'A',t:'贴着盲区绕到实验区',rk:'走快一步，就会进入它的听觉范围',next:2,need:2,san:-8,sum:15,res:'你踩着它的盲区挪过去。它停了一秒，喉咙鼓了一下，转向了另一边。'},
+    {k:'B',t:'用消防斧敲管道，把它引开',rk:'声音会把所有东西一起叫过来',san:-12,sum:10,res:'金属声在走廊里炸开。它朝反方向冲出去，你的耳朵嗡嗡响了很久。'},
+    {k:'C',t:'打开八号舱',rk:'舱里的东西已经学会说第一句话',v:2,san:-14,res:'锁扣弹开。'}
+  ],
+  who:'huangliang', line:'“系统不会无缘无故安排东西。地上这把斧头，是在告诉你锁扣在哪。”'
+},
+{
+  code:'EXAM 02', name:'考场二 · 尸潮', level:'C', bg:'city', portent:'灰烬落在手背上不烫，是温的。',
+  env:'废城主干道。天是暗红的，灰烬像雪。翻倒的公交车横在路中间，车窗里塞满纸。尸潮不看人，只听声音——谁的脚步乱，谁先被围。',
+  rules:['不要在开阔地奔跑，脚步会连成一条线。','不要开枪，枪声会替你报名。','不要丢下还活着的人，名字会被划掉。'],
+  hot:[
+    {x:28,y:62,n:'公交车残骸',t:'车里还有活人。一个短发女孩被卡在座椅之间，手里攥着一条止血带。',g:{clue:'灵安小队',sum:10}},
+    {x:60,y:70,n:'便利店',t:'货架空了。柜台后面有一箱水和一卷医用胶带，收银机抽屉里全是兑奖券。',g:{sum:10,item:'医用胶带'}},
+    {x:78,y:56,n:'警车后备箱',t:'一把霰弹枪，四发子弹。枪托上刻着编号，和你的考生号只差一位。',g:{item:'霰弹枪',san:-4}},
+    {x:46,y:28,n:'天桥',t:'桥面上一排脚印，全朝同一个方向。最后一个脚印停在栏杆边，脚尖朝下。',g:{clue:'尸潮路线'}}
+  ],
+  acts:[
+    {k:'A',t:'救出安可，带她走地下通道',rk:'多一个人，脚步就多一倍',next:3,san:-6,sum:20,clue:'灵安小队',res:'你把她从座椅之间拽出来。她第一句话是：“你手在抖。”'},
+    {k:'B',t:'开枪引开尸潮，给贺铮争取时间',rk:'枪声会替你报名',san:-16,sum:25,clue:'贺铮断后',res:'你朝天空开了两枪。尸潮像被一根线拽走，贺铮的声音从对讲机里传出来：“够了，走。”'},
+    {k:'C',t:'独自穿过尸潮，不回头',rk:'安静的路，往往要拿别的换',san:-20,sum:5,v:3,res:'你把脚步放到最轻。'}
+  ],
+  who:'anko', line:'“别谢我。你死了，我少一个挡在前面的——这话很难听，但我们现在只算人数。”'
+},
+{
+  code:'EXAM 03', name:'考场三 · 灵异道观', level:'B', bg:'temple', portent:'数数的声音里，多了一个不属于任何人的声线。',
+  env:'旧道观。神像的脸被香火烧掉一半，黄符垂下来像干了的舌头。你听见有人在数数，数到七就重新开始。空气里是檀香、潮木头，还有一点点铁腥味。',
+  rules:['不要数神像的手指。','不要在殿内闭眼超过三秒，梦会把你留下。','不要敲梁上的铜铃，除非你确定自己醒着。'],
+  hot:[
+    {x:34,y:64,n:'功德箱',t:'箱口的锁是新的。里面塞满黄纸，纸上写的是名字——最上面一张是你的。',g:{clue:'名册',san:-8}},
+    {x:54,y:58,n:'签筒',t:'二十七支签，全是下下签。只有一支是空的，竹片上刻着一行小字：别抽。',g:{clue:'空签'}},
+    {x:68,y:44,n:'一排灵位',t:'最后一个灵位没有名字，木牌是新的，木纹还是湿的。',g:{san:-10,clue:'无名灵位'}},
+    {x:58,y:20,n:'梁上的铜铃',t:'铃舌是用纸搓的。它自己会响，间隔和你心跳一样。',g:{clue:'铜铃破幻'}}
+  ],
+  acts:[
+    {k:'A',t:'敲铜铃，把这一层幻境破掉',rk:'铃一响，醒着和睡着的都会被叫来',next:4,need:2,san:-10,sum:20,res:'铃声很短，像指甲弹了一下瓷。数数的声音停了，殿里的黄符同时落地。'},
+    {k:'B',t:'闭眼，进入快速眼动期找答案',rk:'梦里找到的答案，醒来不一定算数',san:-18,sum:20,clue:'梦境规则',res:'你闭上眼。黑暗里有人把一张名册翻到最后一页，那页是空白的。'},
+    {k:'C',t:'烧掉功德箱里的名字',rk:'名字烧掉，人也就不在册上了',san:-12,clue:'名字',v:1,res:'火从箱口窜出来，纸灰往上走，走到一半不动了。'}
+  ],
+  who:'hezheng', line:'“别敲那铃。我在梦里听过一次，醒来的时候，人已经在门外了。”'
+},
+{
+  code:'EXAM 04', name:'考场四 · 仙门', level:'A', bg:'gate', portent:'门缝里的红光，在跟着你的呼吸明暗。',
+  env:'雾里有一座青铜门，铁链从看不见的高处垂下来。门缝合着一道红光，像有人在门后点了灯。石阶上的凹槽排成行，像一份被刻进石头的名单。',
+  rules:['不要读石阶上的名字，读到自己的就停不下来。','不要用分数兑换你带不走的东西。','不要在门前回头，回头就是交卷。'],
+  hot:[
+    {x:22,y:38,n:'断裂的锁链',t:'断口是新的。链条上打着编号，和监考系统一模一样。',g:{clue:'系统同源'}},
+    {x:50,y:44,n:'门缝里的光',t:'红光从缝里出来，是暖的。贴近能听见里面有呼吸，很慢，像在等。',g:{san:-8,clue:'门后有人'}},
+    {x:52,y:82,n:'石阶刻痕',t:'刻痕排成行，一行二十七个名字，最后一行只刻了姓。',g:{san:-10,clue:'石阶名单'}},
+    {x:74,y:60,n:'名册残页',t:'你那一页写着：夜林，编号 017，评分待定。下面一行铅笔字：已见过的神，不算神。',g:{clue:'评分待定',sum:10}}
+  ],
+  acts:[
+    {k:'A',t:'推开青铜门，走进去',rk:'门后不是出口，是另一份考卷',end:'win',res:'你把手按在门上。'},
+    {k:'B',t:'用分数兑换暴君基因',rk:'兑换窗口只开一次，且不找零',end:'gene',req:100,res:'你报出自己的分数。'},
+    {k:'C',t:'在门前回头，交卷离开',rk:'回头就是交卷，卷子由别人来批',end:'lose',res:'你转过身。'}
+  ],
+  who:'yelin', line:'“门后面不是神。是有人想把‘神’这两个字，写进我们的档案里。”'
+}
+];
+
+/* ================= 状态 ================= */
+const state = {
+  stage:0, san:100, sum:0, clues:[], items:[], violations:0,
+  explored:{}, logs:[], overlay:null, teamStatus:[]
+};
+
+/* ================= 渲染 ================= */
+const $ = s=>document.querySelector(s);
+const hudEl = $('#hud'), colL = $('#colL'), colC = $('#colC'), colR = $('#colR');
+
+function pushLog(t){ state.logs.unshift(t); if(state.logs.length>4) state.logs.pop(); }
+function addClue(c){ if(c && !state.clues.includes(c)){ state.clues.push(c); pushLog('记下线索：'+c); } }
+
+function renderHUD(){
+  const s = state;
+  hudEl.innerHTML =
+    '<span class="sum">分数 <b>'+s.sum+'</b></span>'+
+    '<span>理智 <b>'+Math.max(s.san,0)+'</b><span class="bar"><i style="width:'+Math.max(s.san,0)+'%"></i></span></span>'+
+    '<span>线索 <b>'+s.clues.length+'</b> 条</span>'+
+    '<span class="viol '+(s.violations?'on':'')+'">违规 <b>'+s.violations+'</b> / 2</span>';
+}
+
+function renderStages(){
+  const list = S.map((st,i)=>{
+    const done = i < state.stage;
+    const cur = i === state.stage;
+    const lock = i > state.stage;
+    return '<div class="stg '+(cur?'cur':'')+(lock?' lock':'')+'" data-st="'+i+'">'+
+      '<div class="c">'+st.code+'</div><div class="n">'+st.name+'</div>'+
+      '<div class="s">'+(done?'已通过':(cur?'进行中':(lock?'未解锁':'待进入')))+'</div></div>';
+  }).join('');
+  const st = S[state.stage];
+  const rules = '<div class="rules"><div class="sec-t">本场致命规则</div><ul>'+
+    st.rules.map((r,i)=>'<li><b>'+['一','二','三'][i]+'</b> · '+r+'</li>').join('')+'</ul></div>';
+  const cl = state.clues.length
+    ? state.clues.map(c=>'<span class="clue new">'+c+'</span>').join('')
+    : '<span class="clue">还没有记下任何东西</span>';
+  colL.innerHTML = '<div class="sec-t">考场序列</div><div class="stages">'+list+'</div>'+rules+
+    '<div class="clues"><div class="sec-t">已获得的线索</div><div class="list">'+cl+'</div></div>';
+  colL.querySelectorAll('.stg').forEach(el=>{
+    el.onclick = ()=>{ const i=+el.dataset.st; if(i<=state.stage){ state.stage=i; renderAll(); } };
+  });
+}
+
+function renderCenter(){
+  const st = S[state.stage];
+  const ex = state.explored[state.stage]||[];
+  const hotHTML = st.hot.map((h,i)=>{
+    const done = ex.includes(i);
+    return '<div class="hot '+(done?'done':'')+(h.x>68?' rev':'')+'" style="left:'+h.x+'%;top:'+h.y+'%" data-h="'+i+'">'+
+      '<div class="ring"></div><div class="dot"></div><div class="lab">'+h.n+'</div></div>';
+  }).join('');
+  const hint = '<div class="hintline"><b>'+st.code+' · '+st.env.slice(0,20)+'…</b>'+
+    '<span>可查看 '+ex.length+' / '+st.hot.length+' · 至少 2 处才能推进</span></div>';
+
+  colC.innerHTML =
+    '<div class="scene" id="scene"><img src="'+IMG[st.bg]+'" alt="">'+
+      '<div class="shade"></div>'+
+      '<div class="tag-l">'+st.name+'</div><div class="tag-r">'+st.level+' 级</div>'+
+      hotHTML + hint +
+      '<div class="hotcard" id="hotcard"><div class="hn"></div><div class="ht"></div><div class="hg"></div><div class="hc">关闭</div></div>'+
+    '</div>'+
+    '<div class="env"><div class="p">环境</div><div class="t">'+st.env+'</div><div class="pt"><i></i>异象 · '+st.portent+'</div></div>'+
+    '<div class="acts">'+st.acts.map((a,i)=>{
+      const dim = a.need && (state.explored[state.stage]||[]).length < a.need;
+      return '<div class="act '+(dim?'dim':'')+'" data-a="'+i+'"><div class="k">行动 '+a.k+'</div>'+
+        '<div class="tt">'+a.t+'</div><div class="rk">'+a.rk+'</div><div class="go">'+(dim?'线索不足':'执行 →')+'</div></div>';
+    }).join('')+'</div>';
+
+  const scene = $('#scene');
+  scene.querySelectorAll('.hot').forEach(el=>{
+    el.onclick = ()=> openHot(+el.dataset.h);
+  });
+  $('#hotcard').querySelector('.hc').onclick = ()=>{ $('#hotcard').classList.remove('on'); };
+  document.querySelectorAll('#colC .act').forEach(el=>{
+    el.onclick = ()=>{ if(!el.classList.contains('dim')) doAct(+el.dataset.a); };
+  });
+}
+
+function openHot(i){
+  const st = S[state.stage], h = st.hot[i];
+  const ex = state.explored[state.stage] || (state.explored[state.stage]=[]);
+  const first = !ex.includes(i);
+  if(first){
+    ex.push(i);
+    if(h.g){
+      if(h.g.sum){ state.sum += h.g.sum; }
+      if(h.g.san){ state.san += h.g.san; }
+      if(h.g.clue){ addClue(h.g.clue); }
+      if(h.g.item && !state.items.includes(h.g.item)){ state.items.push(h.g.item); pushLog('获得：'+h.g.item); }
+    }
+    pushLog('查看：'+h.n);
+    document.querySelectorAll('#scene .hot')[i].classList.add('done');
+  }
+  const card = $('#hotcard');
+  card.querySelector('.hn').textContent = first ? '首次查看 · '+h.n : '再次查看 · '+h.n;
+  card.querySelector('.ht').textContent = h.t;
+  const gains = [];
+  if(h.g && h.g.sum) gains.push('<em>+'+h.g.sum+' 分</em>');
+  if(h.g && h.g.san) gains.push((h.g.san>0?'+':'')+h.g.san+' 理智');
+  if(h.g && h.g.clue) gains.push('线索「'+h.g.clue+'」');
+  if(h.g && h.g.item) gains.push('道具「'+h.g.item+'」');
+  card.querySelector('.hg').innerHTML = gains.length? gains.join(' ') : '<span>没有留下可以计分的东西</span>';
+  card.classList.add('on');
+  renderHUD(); renderRight(); renderStages2();
+}
+
+function renderStages2(){
+  const st = S[state.stage];
+  const ex = state.explored[state.stage]||[];
+  const hint = document.querySelector('.hintline');
+  if(hint) hint.querySelector('span').textContent = '可查看 '+ex.length+' / '+st.hot.length+' · 至少 2 处才能推进';
+  refreshActs();
+}
+
+function refreshActs(){
+  const st = S[state.stage];
+  const ex = (state.explored[state.stage]||[]).length;
+  document.querySelectorAll('#colC .act').forEach((el,i)=>{
+    const a = st.acts[i];
+    if(a.need && ex < a.need) el.classList.add('dim');
+    else el.classList.remove('dim');
+  });
+}
+
+function renderRight(){
+  const st = S[state.stage];
+  const p = CAST[st.who];
+  const teamRows = [
+    ['夜林', '在场', 'ok'],
+    ['安可', state.stage>=2?'右臂负伤 · 在场':'未汇合', state.stage>=2?'hurt':'ok'],
+    ['贺铮', state.stage>=3?'失联 · 信号中断':'尸潮断后', state.stage>=3?'gone':'ok'],
+    ['黄粱', state.stage>=3?'设备断电 · 手写记录':'在场', state.stage>=3?'hurt':'ok']
+  ].map(r=>'<div class="row '+r[2]+'"><b>'+r[0]+'</b><i>'+r[1]+'</i></div>').join('');
+
+  colR.innerHTML =
+    '<div class="portrait"><img src="'+IMG[p.img]+'" alt="">'+
+      '<div class="ov"></div><div class="no">'+st.code+'</div>'+
+      '<div class="nm"><b>'+p.name+'</b><i>'+p.role+'</i></div></div>'+
+    '<div class="speech"><div class="who">'+p.name+' · 当前发言</div><div class="ln">'+st.line+'</div></div>'+
+    '<div class="team"><div class="sec-t">队伍状态</div>'+teamRows+'</div>'+
+    '<div class="log"><div class="sec-t">行动记录</div>'+
+      (state.logs.length? state.logs.map(l=>'<div class="li"><em>·</em>'+l+'</div>').join('') : '<div class="li"><em>·</em>考场尚未开始</div>')+
+    '</div>';
+}
+
+function renderAll(){ renderHUD(); renderStages(); renderCenter(); renderRight(); }
+
+/* ================= 行动 ================= */
+function doAct(i){
+  const st = S[state.stage], a = st.acts[i];
+  if(a.v){ violate(a, st); return; }
+  if(a.req && state.sum < a.req){
+    showWarp('兑换窗口 · 分数不足', '窗口后面的人看了一眼你的分数，把帘子放下了。帘子后面有金属摩擦声，很轻，像有人在数零钱。', false, ()=>{
+      state.san -= 10; if(state.san<=0) return ending('death', a); renderAll();
+    });
+    return;
+  }
+  if(a.need && (state.explored[state.stage]||[]).length < a.need){
+    state.san -= 8; pushLog('推进失败：线索不足，你多绕了一圈');
+    renderAll(); return;
+  }
+  if(a.sum) state.sum += a.sum;
+  if(a.san) state.san += a.san;
+  if(a.clue) addClue(a.clue);
+  pushLog(a.t);
+  if(a.res) st.line = '“'+a.res+'”';
+
+  if(a.end){ return ending(a.end, a); }
+  if(a.next!=null){ state.stage = a.next; }
+
+  if(state.san <= 0){ return ending('death', a); }
+  renderAll();
+}
+
+/* 规则触犯 */
+function violate(a, st){
+  if(state.violations >= 1){
+    state.violations = 2;
+    return ending('death', a);
+  }
+  state.violations = 1;
+  const texts = {
+    1:'灯从最远处开始灭，一盏一盏，朝你过来。墙上渗出带铁锈味的薄液，顺着木纹往下爬。你听见很多人在很近的地方，一起把一口气放完。',
+    2:'所有舱里的“人形”同时转头。玻璃上浮出一层白雾，雾里有一个手印，从里面按的。走廊的金属摩擦声停了——它已经知道你在哪。',
+    3:'开阔地的声音传得比你想的远。远处成片的黑影像被一根线拽着，一起转头。你的脚步已经连成一条线，那条线通向它们。'
+  };
+  showWarp('第一次触犯 · 世界开始扭曲', texts[a.v], false, ()=>{
+    state.san -= 14;
+    state.violations = 1;
+    if(state.san<=0) return ending('death', a);
+    renderAll();
+  });
+}
+
+function showWarp(k, text, fatal, cb){
+  const el = document.createElement('div');
+  el.className='warp';
+  el.innerHTML='<div class="wb"><div class="wk">规则判定</div><h3>'+k+'</h3><p>'+text+'</p>'+
+    '<button class="btn" id="wbtn">'+(fatal?'承受结果':'撑住 —— 回到那一刻')+'</button></div>';
+  document.querySelector('main').appendChild(el);
+  el.querySelector('#wbtn').onclick=()=>{ el.remove(); cb(); };
+}
+
+/* ================= 结局 ================= */
+const ENDINGS = {
+  win:{t:'存活 · 通关', p:'你推开了青铜门。门后没有神，只有一间更旧的教室：黑板上写着一行粉笔字——“本次考试到此结束，请考生把名字留在门口”。你回头时，门已经不见了，队伍里少了一个人，谁也没说是谁。'},
+  gene:{t:'存活 · 兑换完成', p:'你把分数推到窗口。暴君基因落进你手里的时候，你听见系统说了一句很客气的话：“欢迎成为考题。”你的名字从名册上被移到了另一本册子上。'},
+  lose:{t:'存活 · 弃考', p:'你在门前回头。雾一下子散了，青铜门变成一堵墙。你回到现实，带着一张没有成绩的准考证。很多年后你还在想：那扇门后面，到底有没有人在等。'},
+  death:{t:'死亡 · 副本失败', p:'规则完成了它的判定。你最后看到的，是名册上你的名字被人用红笔轻轻描了一遍，描完之后，那一行变得比其他行都亮。'}
+};
+
+function ending(kind, a){
+  const e = ENDINGS[kind] || ENDINGS.death;
+  if(kind==='death' && state.violations<2) state.violations = 2;
+  const score = kind==='win'? state.sum + 60 : (kind==='gene'? state.sum : (kind==='lose'? Math.round(state.sum*0.6): 0));
+  const html = '<div class="ov"><div class="box">'+
+    '<div class="sub">结算 · '+S[state.stage].name+'</div>'+
+    '<h2>'+e.t.replace(' · ','<em> · </em>')+'</h2>'+
+    '<p>'+e.p+'</p>'+
+    '<div class="endstat">'+
+      '<div><span>本场得分</span><b>'+state.sum+'</b></div>'+
+      '<div><span>理智剩余</span><b>'+Math.max(state.san,0)+'</b></div>'+
+      '<div><span>线索</span><b>'+state.clues.length+'</b></div>'+
+      '<div><span>违规次数</span><b>'+state.violations+'</b></div>'+
+    '</div>'+
+    '<p style="margin-top:14px;color:#8c8578">道具：'+(state.items.length?state.items.join(' / '):'无')+
+    '　·　记录分数（含结算加成）：<b style="color:#d8b06a">'+score+'</b></p>'+
+    '<div class="btns"><button class="btn" id="again">再进一次</button>'+
+    '<button class="btn ghost" id="tohome">返回封面</button></div>'+
+  '</div></div>';
+  const el=document.createElement('div'); el.innerHTML=html;
+  const ov = el.firstChild;
+  document.querySelector('main').appendChild(ov);
+  ov.querySelector('#again').onclick=()=>{ ov.remove(); reset(); renderAll(); };
+  ov.querySelector('#tohome').onclick=()=>{ ov.remove(); reset(); renderAll(); showIntro(); };
+}
+
+/* ================= 遮罩：封面 / 人物 / 档案 ================= */
+function showIntro(){
+  const ov=document.createElement('div');
+  ov.className='ov';
+  ov.innerHTML='<img class="coverbg" src="'+IMG.gate+'" alt="">'+
+    '<div class="covshade"></div>'+
+    '<div class="covwrap">'+
+      '<div class="covleft">'+
+        '<div class="kick">无限流 · 场景互动 · 单人</div>'+
+        '<h2>死<em>考</em></h2>'+
+        '<div class="en">DEATH EXAM · 三千万考生</div>'+
+        '<p>死亡高考降临，<b>三千万考生</b>被拉进地狱。考题被换成了丧尸、异种、厉鬼——答对得分，答错完蛋。</p>'+
+        '<p>你是<b>夜林</b>，十八岁，前盗墓贼，死囚。军方把你从刑场提出来，只提了一个条件：活下去，并传回情报。</p>'+
+        '<div class="how">点场景里的亮点查看环境与线索，每一处都有代价或收益<br>'+
+        '每场至少查看 2 处，才能推进到下一个考场<br>'+
+        '触犯致命规则第一次只会“世界扭曲”，第二次才判死</div>'+
+        '<div class="btns"><button class="btn" id="start">进入判场</button>'+
+        '<button class="btn ghost" id="codex">先看人物</button></div>'+
+      '</div>'+
+      '<div class="covright">'+
+        '<div class="ph"><img src="'+IMG.yelin+'" alt=""><div class="pl">考生 017 · 夜林</div></div>'+
+        '<div class="meta"><div><span>考场</span><b>04</b></div>'+
+        '<div><span>考生</span><b>3000万</b></div>'+
+        '<div><span>规则</span><b>即死</b></div></div>'+
+      '</div>'+
+    '</div>';
+  document.querySelector('main').appendChild(ov);
+  ov.querySelector('#start').onclick=()=>{ ov.remove(); };
+  ov.querySelector('#codex').onclick=()=>{ ov.remove(); showCast(); };
+}
+
+function showCast(){
+  const ov=document.createElement('div'); ov.className='ov';
+  const cards = Object.keys(CAST).map(k=>{
+    const c=CAST[k];
+    const stats = Object.keys(c.stats).map(s=>'<div class="stat"><span>'+s+'</span><u><i style="width:'+c.stats[s]+'%"></i></u></div>').join('');
+    return '<div class="gcard"><img src="'+IMG[c.img]+'" alt="">'+
+      '<div class="gi"><div class="gn">'+c.name+'</div><div class="gr">'+c.role+'</div>'+stats+
+      '<div class="gq">「'+c.quote+'」</div></div></div>';
+  }).join('');
+  ov.innerHTML='<div class="box"><div class="sub">人物建模 · 灵安小队</div><h2>档案</h2>'+
+    '<div class="gallery">'+cards+'</div>'+
+    '<div class="btns"><button class="btn" id="cl">关闭</button></div></div>';
+  document.querySelector('main').appendChild(ov);
+  ov.querySelector('#cl').onclick=()=>ov.remove();
+}
+
+function showArch(){
+  const ov=document.createElement('div'); ov.className='ov';
+  const unlocked = new Set(state.clues.concat(['死亡高考','异管局','分数兑换']));
+  const items = ARCH.map(a=>{
+    const on = unlocked.has(a.n) || unlocked.has(a.id) || (a.id==='exam') || (a.id==='bureau') || (a.id==='score');
+    return '<div class="ac '+(on?'':'lock')+'"><div class="an">'+(on?a.n:'未解锁')+'</div>'+
+      '<div class="at">'+(on?a.t:'继续推进考场，才能读到这条记录。')+'</div></div>';
+  }).join('');
+  ov.innerHTML='<div class="box"><div class="sub">世界观档案 · 随线索解锁</div><h2>死考</h2>'+
+    '<div class="arch">'+items+'</div>'+
+    '<div class="btns"><button class="btn" id="cl">关闭</button></div></div>';
+  document.querySelector('main').appendChild(ov);
+  ov.querySelector('#cl').onclick=()=>ov.remove();
+}
+
+/* ================= 结算按钮 ================= */
+function settleNow(){
+  const sum=state.sum, san=Math.max(state.san,0);
+  const ov=document.createElement('div'); ov.className='ov';
+  ov.innerHTML='<div class="box"><div class="sub">中途结算</div><h2>交卷</h2>'+
+    '<p>你现在可以停在这里。已拿到的分数按六成记账，线索与道具保留在档案里。</p>'+
+    '<div class="endstat"><div><span>当前分数</span><b>'+sum+'</b></div>'+
+    '<div><span>理智</span><b>'+san+'</b></div><div><span>线索</span><b>'+state.clues.length+'</b></div>'+
+    '<div><span>记录得分</span><b>'+Math.round(sum*0.6)+'</b></div></div>'+
+    '<div class="btns"><button class="btn" id="ok">确认交卷</button><button class="btn ghost" id="no">继续</button></div></div>';
+  document.querySelector('main').appendChild(ov);
+  ov.querySelector('#no').onclick=()=>ov.remove();
+  ov.querySelector('#ok').onclick=()=>{ ov.remove(); reset(); renderAll(); };
+}
+
+/* ================= 启动 ================= */
+function reset(){
+  state.stage=0; state.san=100; state.sum=0; state.clues=[]; state.items=[];
+  state.violations=0; state.explored={}; state.logs=[]; state.overlay=null;
+}
+renderAll();
+if(location.hash === '#play'){ /* 直接进入场景，用于预览 */ } else { showIntro(); }
+
+document.querySelectorAll('.navb button').forEach(b=>{
+  b.onclick=()=>{
+    const n=b.dataset.nav;
+    if(n==='cast') showCast();
+    else if(n==='arch') showArch();
+    else settleNow();
+  };
+});
+</script>
+</body>
+</html>
+
+
+
+
+
+
+
