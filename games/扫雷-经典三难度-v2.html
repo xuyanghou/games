@@ -1,0 +1,921 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-canvas-width="1280" data-canvas-height="820" style="width:1280px;height:820px;">
+<head>
+<meta charset="UTF-8">
+<title>扫雷 · 经典三难度</title>
+<style>
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+  html, body { width:1280px; height:820px; }
+  body {
+    font-family: "PingFang SC", "Microsoft YaHei", "Segoe UI", system-ui, sans-serif;
+    background: #070b16;
+    color: #e8eeff;
+    overflow: hidden;
+    -webkit-font-smoothing: antialiased;
+    position: relative;
+  }
+
+  /* ================= 背景光晕 ================= */
+  .bg { position: absolute; inset: 0; pointer-events: none; overflow: hidden; }
+  .bg::before {
+    content:""; position:absolute; inset:0;
+    background:
+      radial-gradient(880px 460px at 78% -6%, rgba(64,110,255,.22), transparent 62%),
+      radial-gradient(720px 420px at 6% 104%, rgba(31,196,168,.16), transparent 64%),
+      radial-gradient(620px 360px at 96% 96%, rgba(255,120,170,.12), transparent 66%),
+      linear-gradient(160deg, #0a1022 0%, #0b1328 44%, #060a14 100%);
+  }
+  .bg .grid {
+    position:absolute; inset:0; opacity:.4;
+    background-image: linear-gradient(rgba(120,160,255,.055) 1px, transparent 1px),
+                      linear-gradient(90deg, rgba(120,160,255,.055) 1px, transparent 1px);
+    background-size: 40px 40px;
+    mask-image: radial-gradient(circle at 62% 26%, #000 0%, transparent 76%);
+  }
+  .bg .orb { position:absolute; border-radius:50%; filter: blur(46px); opacity:.5; }
+  .orb.a { width: 320px; height: 320px; left: -80px; top: 120px; background: rgba(56,120,255,.35); animation: drift 16s ease-in-out infinite; }
+  .orb.b { width: 280px; height: 280px; right: 40px; bottom: -60px; background: rgba(255,170,70,.22); animation: drift 21s ease-in-out infinite reverse; }
+  .orb.c { width: 240px; height: 240px; right: 260px; top: -90px; background: rgba(40,220,190,.18); animation: drift 26s ease-in-out infinite; }
+  @keyframes drift { 0%,100%{ transform: translate3d(0,0,0) } 50%{ transform: translate3d(26px,-22px,0) } }
+
+  /* ================= 主布局 ================= */
+  main[data-canvas-root] {
+    position: relative; z-index: 1;
+    width: 1280px; height: 820px;
+    padding: 20px 24px;
+    display: flex; gap: 22px;
+  }
+
+  /* ---------- 左侧栏 ---------- */
+  .rail {
+    width: 296px; flex: none; height: 780px;
+    display: flex; flex-direction: column; gap: 16px;
+  }
+
+  .brand { display: flex; align-items: center; gap: 13px; padding: 2px 2px 0; }
+  .logo {
+    width: 54px; height: 54px; border-radius: 16px; flex: none;
+    display:flex; align-items:center; justify-content:center;
+    background: linear-gradient(150deg, #2a3d68, #131c33);
+    border: 1px solid rgba(140,180,255,.42);
+    box-shadow: 0 0 0 5px rgba(70,110,200,.10), 0 12px 26px rgba(0,0,0,.45), inset 0 1px 0 rgba(255,255,255,.18);
+  }
+  .logo svg { width: 30px; height: 30px; }
+  .brand h1 {
+    font-size: 26px; letter-spacing: 3px; font-weight: 800; line-height: 1.15;
+    background: linear-gradient(94deg, #ffffff, #9fc0ff 52%, #ffd479);
+    -webkit-background-clip: text; background-clip: text; color: transparent;
+  }
+  .brand p { font-size: 10px; color: #7b8ab2; letter-spacing: 2.6px; margin-top: 6px; }
+
+  .panel-card {
+    border-radius: 18px; padding: 16px;
+    background: linear-gradient(180deg, rgba(22,31,54,.86), rgba(11,17,32,.9));
+    border: 1px solid rgba(120,158,240,.20);
+    box-shadow: 0 16px 34px rgba(0,0,0,.32), inset 0 1px 0 rgba(255,255,255,.06);
+  }
+
+  .card-label {
+    font-size: 10px; letter-spacing: 3px; color: #7787ad; margin-bottom: 12px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .card-label::after { content:""; flex:1; height:1px; background: linear-gradient(90deg, rgba(130,165,240,.3), transparent); }
+
+  .diff-list { display: flex; flex-direction: column; gap: 9px; }
+  .diff {
+    position: relative; text-align: left; cursor: pointer; font-family: inherit;
+    border-radius: 13px; padding: 11px 13px 10px; color: #c9d6f5;
+    background: linear-gradient(150deg, rgba(38,52,86,.55), rgba(16,23,42,.7));
+    border: 1px solid rgba(130,168,240,.16);
+    transition: .2s ease; overflow: hidden;
+  }
+  .diff:hover { border-color: rgba(150,190,255,.4); transform: translateX(2px); }
+  .diff.on {
+    border-color: rgba(255,196,92,.58);
+    background: linear-gradient(150deg, rgba(96,72,32,.42), rgba(26,26,42,.8));
+    box-shadow: 0 0 0 1px rgba(255,196,92,.18), 0 10px 22px rgba(255,150,40,.12);
+  }
+  .diff.on::before {
+    content:""; position:absolute; left:0; top:10px; bottom:10px; width:3px; border-radius:2px;
+    background: linear-gradient(180deg, #ffd479, #ff9f3e);
+    box-shadow: 0 0 12px rgba(255,180,70,.8);
+  }
+  .diff-top { display:flex; align-items:baseline; justify-content: space-between; margin-bottom: 7px; }
+  .diff-name { font-size: 15px; font-weight: 800; letter-spacing: 1.5px; }
+  .diff.on .diff-name { color: #ffd479; }
+  .diff-spec { font-size: 11px; color: #8494bb; letter-spacing: .5px; font-variant-numeric: tabular-nums; }
+  .diff-bar { height: 4px; border-radius: 3px; background: rgba(255,255,255,.08); margin-bottom: 8px; overflow: hidden; }
+  .diff-bar i { display:block; height:100%; border-radius:3px; background: linear-gradient(90deg, #5f8dff, #59e0c0); opacity:.85; }
+  .diff.on .diff-bar i { background: linear-gradient(90deg, #ffd479, #ff9f3e); }
+  .diff-foot { display:flex; justify-content: space-between; font-size: 10.5px; color: #7c8cb4; letter-spacing: .5px; }
+  .diff-foot b { color: #a9bde6; font-weight: 600; font-variant-numeric: tabular-nums; }
+  .diff.on .diff-foot b { color: #ffe0a0; }
+
+  .rules { display: flex; flex-direction: column; gap: 10px; }
+  .rule { display: flex; align-items: flex-start; gap: 9px; font-size: 11.5px; color: #93a2c6; line-height: 1.6; }
+  .rule .dot {
+    width: 18px; height: 18px; border-radius: 6px; flex: none; margin-top: 1px;
+    display:flex; align-items:center; justify-content:center; font-size: 9px; font-weight: 700;
+    background: rgba(120,160,240,.14); border: 1px solid rgba(130,170,240,.28); color: #9dc0ff;
+  }
+  .rule b { color: #dbe6ff; font-weight: 600; }
+
+  .rail-foot {
+    margin-top: auto; display: flex; flex-wrap: wrap; gap: 6px;
+  }
+  .kbd {
+    font-size: 9.5px; color: #7585ab; letter-spacing: .8px; padding: 4px 7px; border-radius: 6px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(130,165,240,.14);
+  }
+  .kbd b { color: #a8bce4; font-weight: 600; }
+
+  .overall .ov-row { display: flex; align-items: center; justify-content: space-between; }
+  .ov-item { text-align: center; flex: 1; }
+  .ov-item b {
+    display: block; font-size: 20px; font-weight: 800; color: #ffd479;
+    font-variant-numeric: tabular-nums; text-shadow: 0 0 14px rgba(255,180,70,.25);
+  }
+  .ov-item span { display: block; margin-top: 3px; font-size: 9px; letter-spacing: 2px; color: #7382a8; }
+  .ov-sep { width: 1px; height: 26px; background: linear-gradient(180deg, transparent, rgba(130,165,240,.3), transparent); }
+
+  /* ---------- 右侧舞台 ---------- */
+  .stage { flex: 1; min-width: 0; height: 780px; display: flex; flex-direction: column; gap: 12px; }
+
+  .stage-top { height: 44px; display: flex; align-items: center; justify-content: space-between; }
+  .level-meta { display: flex; align-items: center; gap: 10px; }
+  .level-meta .tag {
+    font-size: 11px; letter-spacing: 2px; padding: 5px 10px; border-radius: 7px;
+    background: rgba(255,196,92,.12); border: 1px solid rgba(255,196,92,.3); color: #ffd479;
+  }
+  .level-meta .name { font-size: 15px; font-weight: 700; letter-spacing: 1.5px; color: #e1eaff; }
+  .level-meta .sep { color: #4a5878; }
+  .level-meta .dim { font-size: 11.5px; color: #8494bb; letter-spacing: .6px; font-variant-numeric: tabular-nums; }
+
+  .stage-tools { display: flex; align-items: center; gap: 8px; }
+  .tool {
+    height: 38px; padding: 0 14px; border-radius: 10px; cursor: pointer; font-family: inherit;
+    font-size: 12px; letter-spacing: .8px; color: #b9c7e8;
+    background: rgba(24,34,58,.8); border: 1px solid rgba(130,168,240,.24);
+    display: flex; align-items: center; gap: 7px; transition: .18s;
+  }
+  .tool:hover { color: #ffe2ae; border-color: rgba(255,190,90,.5); transform: translateY(-1px); }
+  .tool.on { color: #0f1626; font-weight: 700; background: linear-gradient(150deg,#ffd479,#ffab42); border-color: transparent; }
+  .tool.on svg path { stroke: #4a3210 !important; fill: #c0503f !important; }
+  .tool svg { width: 15px; height: 15px; }
+
+  /* ---------- HUD ---------- */
+  .hud {
+    height: 78px; flex: none; border-radius: 16px; padding: 0 18px;
+    display: grid; grid-template-columns: 1fr auto 1fr; align-items: center;
+    background: linear-gradient(180deg, rgba(26,37,66,.92), rgba(12,18,34,.94));
+    border: 1px solid rgba(120,158,240,.22);
+    box-shadow: 0 14px 30px rgba(0,0,0,.34), inset 0 1px 0 rgba(255,255,255,.07);
+  }
+  .led-wrap { display: flex; align-items: center; gap: 11px; }
+  .led-ico {
+    width: 32px; height: 32px; border-radius: 9px; display:flex; align-items:center; justify-content:center;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(140,180,255,.22);
+  }
+  .led-ico svg { width: 17px; height: 17px; }
+  .led {
+    min-width: 84px; padding: 5px 12px 4px; border-radius: 9px; text-align: center;
+    background: linear-gradient(180deg, rgba(4,9,18,.9), rgba(10,17,30,.85));
+    border: 1px solid rgba(255,196,92,.22);
+    box-shadow: inset 0 2px 8px rgba(0,0,0,.6), 0 0 18px rgba(255,180,60,.06);
+  }
+  .led b {
+    display:block; font-family: ui-monospace, "Consolas", "JetBrains Mono", monospace;
+    font-size: 26px; font-weight: 700; letter-spacing: 5px; line-height: 1.05;
+    color: #ffcf72; text-shadow: 0 0 14px rgba(255,180,60,.55);
+  }
+  .led.timer b { color: #86e3ff; text-shadow: 0 0 14px rgba(90,200,255,.5); }
+  .led.timer { border-color: rgba(120,210,255,.24); }
+  .led small { display:block; font-size: 9px; letter-spacing: 2.4px; color: #6f7fa5; margin-top: 2px; }
+
+  .mid { display: flex; flex-direction: column; align-items: center; gap: 4px; }
+  .face {
+    width: 56px; height: 56px; border-radius: 16px; cursor: pointer; border: none;
+    background: linear-gradient(160deg, #33497a, #182643);
+    border: 1px solid rgba(160,195,255,.4);
+    box-shadow: 0 8px 18px rgba(0,0,0,.4), inset 0 1px 0 rgba(255,255,255,.18);
+    display: flex; align-items: center; justify-content: center; transition: .16s;
+  }
+  .face:hover { transform: translateY(-2px) scale(1.02); border-color: rgba(255,205,110,.7); }
+  .face:active { transform: scale(.96); }
+  .face svg { width: 30px; height: 30px; }
+  .mid .hint { font-size: 9.5px; letter-spacing: 1.6px; color: #7484ab; }
+
+  .right-hud { display: flex; align-items: center; justify-content: flex-end; gap: 10px; }
+  .best-chip {
+    font-size: 10px; letter-spacing: 1px; color: #8494bb; padding: 5px 9px; border-radius: 7px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(130,165,240,.16);
+  }
+  .best-chip b { color: #9fd8ff; font-variant-numeric: tabular-nums; margin-left: 4px; }
+
+  /* ---------- 棋盘控制台 ---------- */
+  .board-panel {
+    position: relative; flex: 1; border-radius: 22px; padding: 16px 20px;
+    display: flex; align-items: center; justify-content: center;
+    background:
+      radial-gradient(circle at 50% 45%, rgba(46,72,128,.24), transparent 62%),
+      linear-gradient(180deg, rgba(16,24,44,.94), rgba(7,11,22,.96));
+    border: 1px solid rgba(120,158,240,.26);
+    box-shadow: 0 26px 54px rgba(0,0,0,.5), inset 0 1px 0 rgba(255,255,255,.07), 0 0 70px rgba(60,100,220,.09);
+  }
+  .corner { position: absolute; width: 26px; height: 26px; border: 1.5px solid rgba(255,196,92,.42); pointer-events: none; }
+  .corner.tl { top: 12px; left: 12px; border-right: 0; border-bottom: 0; border-radius: 10px 0 0 0; }
+  .corner.tr { top: 12px; right: 12px; border-left: 0; border-bottom: 0; border-radius: 0 10px 0 0; }
+  .corner.bl { bottom: 12px; left: 12px; border-right: 0; border-top: 0; border-radius: 0 0 0 10px; }
+  .corner.br { bottom: 12px; right: 12px; border-left: 0; border-top: 0; border-radius: 0 0 10px 0; }
+
+  .watermark {
+    position: absolute; inset: 0; display: flex; align-items: center; justify-content: center;
+    pointer-events: none; font-size: 62px; font-weight: 800; letter-spacing: 14px;
+    color: rgba(126,166,255,.045); white-space: nowrap; user-select: none;
+    text-transform: uppercase;
+  }
+  .scan {
+    position: absolute; inset: 0; border-radius: 22px; pointer-events: none; opacity: .5;
+    background: repeating-linear-gradient(180deg, rgba(150,190,255,.03) 0 1px, transparent 1px 4px);
+  }
+
+  .panel-foot {
+    position: absolute; left: 46px; right: 46px; bottom: 13px;
+    display: flex; align-items: center; justify-content: space-between;
+    font-size: 9.5px; letter-spacing: 2px; color: #61708f; pointer-events: none;
+  }
+  .panel-foot b { color: #8fa3cc; font-weight: 600; letter-spacing: 1px; }
+
+  #board {
+    display: grid; gap: 3px; position: relative; z-index: 1;
+    filter: drop-shadow(0 10px 20px rgba(0,0,0,.4));
+    user-select: none; touch-action: manipulation;
+  }
+
+  .cell {
+    position: relative; border-radius: 6px; display: flex; align-items: center; justify-content: center;
+    cursor: pointer; font-weight: 800; font-variant-numeric: tabular-nums;
+    background:
+      linear-gradient(158deg, #566fa8 0%, #31456f 44%, #22304e 100%);
+    border: 1px solid rgba(168,200,255,.34);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.26), inset 0 -3px 6px rgba(0,0,0,.38), 0 3px 6px rgba(0,0,0,.4);
+    transition: background .14s, transform .08s, box-shadow .14s, border-color .14s;
+  }
+  .cell:hover:not(.open) {
+    background: linear-gradient(158deg, #6b85c0 0%, #3c5487 44%, #2a3d63 100%);
+    border-color: rgba(200,222,255,.55);
+    box-shadow: inset 0 1px 0 rgba(255,255,255,.22), 0 4px 10px rgba(30,60,140,.35), 0 0 0 1px rgba(120,170,255,.25);
+    transform: translateY(-1px);
+  }
+  .cell:active:not(.open) { transform: scale(.96); }
+
+  .cell.open {
+    cursor: default;
+    background: linear-gradient(180deg, rgba(8,14,26,.98), rgba(14,22,38,.94));
+    border-color: rgba(84,116,180,.16);
+    box-shadow: inset 0 3px 8px rgba(0,0,0,.62), inset 0 0 0 1px rgba(120,160,240,.05);
+    animation: pop .18s ease-out;
+  }
+  .cell.open:hover { background: linear-gradient(180deg, rgba(11,18,32,.98), rgba(17,26,44,.94)); }
+  @keyframes pop { from { transform: scale(.9); opacity: .55; } to { transform: scale(1); opacity: 1; } }
+
+  .cell.flag {
+    background: linear-gradient(158deg, rgba(120,78,110,.5), rgba(52,30,48,.94) 52%, rgba(30,18,32,.96));
+    border-color: rgba(255,150,175,.4);
+  }
+  .cell.mine-open { background: #2a1018; border-color: rgba(255,110,120,.45); }
+  .cell.boom {
+    background: radial-gradient(circle, #ff6a5a, #8a1024 78%);
+    box-shadow: 0 0 26px rgba(255,80,80,.65), inset 0 0 14px rgba(255,200,120,.5);
+    border-color: rgba(255,180,140,.7);
+  }
+  .cell.wrong { background: #2c1626; border-color: rgba(255,120,150,.5); }
+
+  .num { position: relative; z-index: 1; text-shadow: 0 0 12px currentColor; }
+  .n1 { color:#67aeff; } .n2 { color:#63e2a0; } .n3 { color:#ff8177; } .n4 { color:#bd9dff; }
+  .n5 { color:#ffbe62; } .n6 { color:#54dfd2; } .n7 { color:#ffe884; } .n8 { color:#cdd7ef; }
+
+  .cell svg.icon { width: 60%; height: 60%; filter: drop-shadow(0 1px 2px rgba(0,0,0,.5)); }
+  .cell svg.mine-ico { width: 64%; height: 64%; }
+
+  .cell.hint { animation: hintPulse .9s ease; }
+  @keyframes hintPulse {
+    0% { box-shadow: 0 0 0 0 rgba(255,214,120,.8), inset 0 3px 8px rgba(0,0,0,.62); }
+    100% { box-shadow: 0 0 0 14px rgba(255,214,120,0), inset 0 3px 8px rgba(0,0,0,.62); }
+  }
+
+  /* ---------- 结算层 ---------- */
+  .overlay {
+    position: absolute; inset: 0; border-radius: 22px; z-index: 5;
+    display: flex; align-items: center; justify-content: center;
+    background: radial-gradient(circle at 50% 42%, rgba(24,36,68,.66), rgba(4,7,14,.9));
+    backdrop-filter: blur(3px);
+    animation: fadeIn .25s ease;
+  }
+  .overlay.hide { display: none; }
+  @keyframes fadeIn { from { opacity: 0 } to { opacity: 1 } }
+  .overlay .card {
+    position: relative; width: 430px; text-align: center; padding: 30px 34px 26px;
+    border-radius: 20px;
+    background: linear-gradient(180deg, rgba(38,51,86,.98), rgba(13,19,34,.99));
+    border: 1px solid rgba(155,190,255,.32);
+    box-shadow: 0 30px 70px rgba(0,0,0,.6), inset 0 1px 0 rgba(255,255,255,.12), 0 0 40px rgba(90,140,255,.14);
+    animation: cardIn .32s cubic-bezier(.2,.9,.3,1.2);
+  }
+  @keyframes cardIn { from { transform: translateY(14px) scale(.94); opacity: 0 } to { transform: none; opacity: 1 } }
+  .overlay .emblem { font-size: 42px; line-height: 1; margin-bottom: 8px; filter: drop-shadow(0 6px 14px rgba(255,180,80,.35)); }
+  .overlay h2 {
+    font-size: 23px; letter-spacing: 3px; margin-bottom: 9px;
+    background: linear-gradient(92deg, #ffd479, #9fe4ff); -webkit-background-clip:text; background-clip:text; color:transparent;
+  }
+  .overlay .sub { font-size: 12px; color: #93a1c6; line-height: 1.95; margin-bottom: 18px; }
+  .overlay .grade { display:flex; justify-content:center; gap: 12px; margin-bottom: 20px; }
+  .overlay .grade div {
+    padding: 9px 16px; border-radius: 10px; font-size: 10px; color: #7f8fb6; letter-spacing: 1px;
+    background: rgba(255,255,255,.04); border: 1px solid rgba(130,165,240,.16);
+  }
+  .overlay .grade b {
+    display:block; font-size: 21px; margin-top: 4px; color: #ffd479; font-variant-numeric: tabular-nums;
+    text-shadow: 0 0 14px rgba(255,180,70,.3);
+  }
+  .overlay .grade b.blue { color:#9fe4ff; text-shadow: 0 0 14px rgba(90,200,255,.3); }
+  .overlay .btn {
+    border: none; cursor: pointer; padding: 12px 34px; border-radius: 12px; font-family: inherit;
+    font-size: 14px; letter-spacing: 2px; font-weight: 800; color: #14192a;
+    background: linear-gradient(150deg, #ffd479, #ffab42);
+    box-shadow: 0 12px 26px rgba(255,170,60,.34), inset 0 1px 0 rgba(255,255,255,.55);
+    transition: .16s;
+  }
+  .overlay .btn:hover { filter: brightness(1.07); transform: translateY(-1px); }
+
+  .btn-quiet {
+    display:block; margin: 12px auto 0; border: none; background: transparent; cursor: pointer;
+    font-family: inherit; font-size: 11.5px; letter-spacing: 1.5px; color: #8291b6; text-decoration: underline;
+    text-underline-offset: 4px; text-decoration-color: rgba(140,170,240,.35);
+  }
+  .btn-quiet:hover { color: #c7d6f7; }
+
+  .confetti { position: absolute; inset: 0; pointer-events: none; overflow: hidden; border-radius: 22px; z-index: 6; }
+  .confetti span {
+    position: absolute; top: -14px; width: 7px; height: 12px; border-radius: 2px; opacity: .9;
+    animation: fall linear forwards;
+  }
+  @keyframes fall {
+    to { transform: translateY(660px) rotate(720deg); opacity: .15; }
+  }
+
+  /* ---------- 底部提示 ---------- */
+  .tips { height: 44px; flex: none; display: flex; align-items: center; justify-content: space-between; }
+  .tip-list { display: flex; gap: 8px; }
+  .tip {
+    display: flex; align-items: center; gap: 7px; height: 30px; padding: 0 11px; border-radius: 9px;
+    background: rgba(255,255,255,.035); border: 1px solid rgba(130,165,240,.14);
+    font-size: 11px; color: #98a6c8; letter-spacing: .4px;
+  }
+  .tip b { color: #dbe6ff; font-weight: 600; }
+  .tip i { width: 6px; height: 6px; border-radius: 50%; background: #ffd479; box-shadow: 0 0 8px #ffd479; }
+  .tips .note { font-size: 10px; color: #66738f; letter-spacing: .6px; }
+</style>
+</head>
+<body>
+<div class="bg" aria-hidden="true">
+  <div class="grid"></div>
+  <div class="orb a"></div><div class="orb b"></div><div class="orb c"></div>
+</div>
+
+<main data-canvas-root style="width:1280px;height:820px;">
+
+  <!-- ============ 左侧栏 ============ -->
+  <aside class="rail">
+    <div class="brand">
+      <div class="logo" aria-hidden="true">
+        <svg viewBox="0 0 24 24" fill="none">
+          <circle cx="12" cy="13" r="6.6" fill="#ffd479"/>
+          <rect x="10.7" y="2.4" width="2.6" height="6.4" rx="1" fill="#dbe6ff"/>
+          <path d="M12 1.8 L13.4 5.3 L12 4.9 L10.6 5.3 Z" fill="#8fe0ff"/>
+          <circle cx="9.4" cy="10.9" r="1.1" fill="#4a3210"/>
+          <circle cx="14.6" cy="10.9" r="1.1" fill="#4a3210"/>
+          <path d="M9.1 15.4 Q12 17.9 14.9 15.4" stroke="#4a3210" stroke-width="1.3" stroke-linecap="round" fill="none"/>
+        </svg>
+      </div>
+      <div>
+        <h1>扫雷</h1>
+        <p>MINESWEEPER · CLASSIC</p>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <div class="card-label">难度选择</div>
+      <div class="diff-list" id="diffList">
+        <button class="diff on" data-level="easy">
+          <div class="diff-top"><span class="diff-name">初级</span><span class="diff-spec">9 × 9 · 10 雷</span></div>
+          <div class="diff-bar"><i style="width:57%"></i></div>
+          <div class="diff-foot"><span>最佳 <b data-best>—</b></span><span>胜率 <b data-rate>—</b></span></div>
+        </button>
+        <button class="diff" data-level="medium">
+          <div class="diff-top"><span class="diff-name">中级</span><span class="diff-spec">16 × 16 · 40 雷</span></div>
+          <div class="diff-bar"><i style="width:76%"></i></div>
+          <div class="diff-foot"><span>最佳 <b data-best>—</b></span><span>胜率 <b data-rate>—</b></span></div>
+        </button>
+        <button class="diff" data-level="hard">
+          <div class="diff-top"><span class="diff-name">高级</span><span class="diff-spec">30 × 16 · 99 雷</span></div>
+          <div class="diff-bar"><i style="width:100%"></i></div>
+          <div class="diff-foot"><span>最佳 <b data-best>—</b></span><span>胜率 <b data-rate>—</b></span></div>
+        </button>
+      </div>
+    </div>
+
+    <div class="panel-card">
+      <div class="card-label">规则速记</div>
+      <div class="rules">
+        <div class="rule"><span class="dot">1</span><span><b>首点必安全</b>：第一次落点及周围 8 格不会布雷。</span></div>
+        <div class="rule"><span class="dot">2</span><span><b>数字 = 雷数</b>：周围 8 格里的地雷总数，0 会连锁展开。</span></div>
+        <div class="rule"><span class="dot">3</span><span><b>旗子不验真假</b>：右键插旗只防误点，翻完所有安全格即胜。</span></div>
+        <div class="rule"><span class="dot">4</span><span><b>联动翻开</b>：双击数字，周围旗数等于数字时翻开其余邻格。</span></div>
+      </div>
+    </div>
+
+    <div class="panel-card overall">
+      <div class="card-label">总体战绩</div>
+      <div class="ov-row">
+        <div class="ov-item"><b id="statGames">0</b><span>总对局</span></div>
+        <i class="ov-sep"></i>
+        <div class="ov-item"><b id="statWins">0</b><span>总胜场</span></div>
+        <i class="ov-sep"></i>
+        <div class="ov-item"><b id="statRate">—</b><span>胜率</span></div>
+      </div>
+    </div>
+
+    <div class="rail-foot">
+      <span class="kbd"><b>1/2/3</b> 难度</span>
+      <span class="kbd"><b>R</b> 重开</span>
+      <span class="kbd"><b>F</b> 插旗模式</span>
+    </div>
+  </aside>
+
+  <!-- ============ 右侧舞台 ============ -->
+  <section class="stage">
+    <div class="stage-top">
+      <div class="level-meta">
+        <span class="tag">LEVEL</span>
+        <span class="name" id="lvName">初级</span>
+        <span class="sep">·</span>
+        <span class="dim" id="lvSpec">9 × 9 · 10 雷 · 密度 12%</span>
+      </div>
+      <div class="stage-tools">
+        <button class="tool" id="flagMode">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5.5 21.5V2.6" stroke="#ffd479" stroke-width="2.1"/><path d="M6.6 3.6h10.6l-2.2 4 2.2 4H6.6z" fill="#ff7a72"/></svg>
+          <span id="flagModeText">插旗 关</span>
+        </button>
+        <button class="tool" id="btnNew">
+          <svg viewBox="0 0 24 24" fill="none" stroke="#b9c7e8" stroke-width="2" stroke-linecap="round"><path d="M3 12a9 9 0 1 0 3-6.7"/><path d="M3 4v5h5"/></svg>
+          重新开局
+        </button>
+      </div>
+    </div>
+
+    <!-- HUD -->
+    <div class="hud">
+      <div class="led-wrap">
+        <div class="led-ico">
+          <svg viewBox="0 0 24 24" fill="none"><path d="M5 20V4" stroke="#ffd479" stroke-width="2.2" stroke-linecap="round"/><path d="M6 5h11l-2.4 4 2.4 4H6z" fill="#ff7a72"/></svg>
+        </div>
+        <div class="led">
+          <b id="mineLeft">010</b>
+          <small>剩余雷数</small>
+        </div>
+      </div>
+
+      <div class="mid">
+        <button class="face" id="face" title="重新开局">
+          <svg viewBox="0 0 24 24" fill="none">
+            <circle cx="12" cy="12" r="9.2" fill="#ffd479"/>
+            <circle cx="8.7" cy="9.9" r="1.4" fill="#3a2a10"/>
+            <circle cx="15.3" cy="9.9" r="1.4" fill="#3a2a10"/>
+            <path id="faceMouth" d="M7.7 14.5 Q12 18.7 16.3 14.5" stroke="#3a2a10" stroke-width="1.7" stroke-linecap="round" fill="none"/>
+          </svg>
+        </button>
+        <span class="hint">点击重开</span>
+      </div>
+
+      <div class="right-hud">
+        <div class="best-chip">最佳<b id="bestTime">—</b></div>
+        <div class="led timer">
+          <b id="timer">000</b>
+          <small>用时（秒）</small>
+        </div>
+      </div>
+    </div>
+
+    <!-- 棋盘 -->
+    <div class="board-panel" id="boardPanel">
+      <i class="corner tl"></i><i class="corner tr"></i><i class="corner bl"></i><i class="corner br"></i>
+      <div class="watermark" aria-hidden="true">MINE FIELD</div>
+      <div class="scan" aria-hidden="true"></div>
+      <div id="board" role="grid" aria-label="扫雷棋盘"></div>
+      <div class="panel-foot">
+        <span>MF · <b id="footLevel">BEGINNER 09×09</b></span>
+        <span id="footState">READY · 首点保护开启</span>
+      </div>
+
+      <div class="overlay hide" id="overlay">
+        <div class="card">
+          <div class="emblem" id="ovEmoji">🎉</div>
+          <h2 id="ovTitle">通关</h2>
+          <div class="sub" id="ovSub"></div>
+          <div class="grade">
+            <div>本局用时<b id="ovTime">0s</b></div>
+            <div>历史最佳<b class="blue" id="ovBest">—</b></div>
+            <div>累计胜场<b id="ovWins">0</b></div>
+          </div>
+          <button class="btn" id="ovBtn">再来一局</button>
+          <button class="btn-quiet" id="ovClose">先看看棋盘</button>
+        </div>
+        <div class="confetti" id="confetti"></div>
+      </div>
+    </div>
+
+    <div class="tips">
+      <div class="tip-list">
+        <div class="tip"><i></i>左键<b>翻开</b></div>
+        <div class="tip"><i></i>右键 / 长按<b>插旗</b></div>
+        <div class="tip"><i></i>双击数字<b>联动</b></div>
+        <div class="tip"><i></i>数字即<b>周围 8 格雷数</b></div>
+      </div>
+      <div class="note">翻开全部安全格即获胜 · 高级 21% 密度偶尔需要推理到最后一格</div>
+    </div>
+  </section>
+</main>
+
+<script>
+/* ===================== 难度配置 ===================== */
+const LEVELS = {
+  easy:   { rows: 9,  cols: 9,  mines: 10, cell: 50, font: 21, label: '初级', code: 'BEGINNER 09×09' },
+  medium: { rows: 16, cols: 16, mines: 40, cell: 27, font: 14, label: '中级', code: 'INTERMEDIATE 16×16' },
+  hard:   { rows: 16, cols: 30, mines: 99, cell: 25, font: 12, label: '高级', code: 'EXPERT 30×16' }
+};
+
+const reel = {
+  level: 'easy',
+  rows: 0, cols: 0, mines: 0, cell: 44, font: 18,
+  cells: [], total: 0, opened: 0, flags: 0,
+  started: false, over: false, won: false,
+  time: 0, timerId: null, first: true, flagMode: false
+};
+
+const boardEl     = document.getElementById('board');
+const mineLeftEl  = document.getElementById('mineLeft');
+const timerEl     = document.getElementById('timer');
+const bestEl      = document.getElementById('bestTime');
+const overlay     = document.getElementById('overlay');
+const faceMouth   = document.getElementById('faceMouth');
+const footState   = document.getElementById('footState');
+
+const pad3 = n => String(Math.max(0, Math.min(999, n))).padStart(3, '0');
+const idx = (r, c) => r * reel.cols + c;
+const inBoard = (r, c) => r >= 0 && r < reel.rows && c >= 0 && c < reel.cols;
+
+const ICON_FLAG = '<svg class="icon" viewBox="0 0 24 24" fill="none"><path d="M5.6 21.6V2.8" stroke="#ffd479" stroke-width="2" stroke-linecap="round"/><path d="M6.5 3.7c2.1-1.5 4.3 1.2 6.7.1 2-.9 3.3-.2 4.2.5l-2.1 4.1c-1-.7-2.2-1.4-4.2-.5-2.4 1.1-4.6-1.6-6.7-.1z" fill="#ff7a72"/><path d="M3.2 21.6h6.4" stroke="#ffd479" stroke-width="1.8" stroke-linecap="round"/></svg>';
+const ICON_MINE = '<svg class="mine-ico" viewBox="0 0 24 24" fill="none"><circle cx="12" cy="12.6" r="6.4" fill="#eef3ff"/><circle cx="9.7" cy="10.6" r="1.9" fill="#ff5a5a"/><path d="M12 1.6v3.2M12 20.4v2.4M1.7 12.6h3M19.3 12.6h3M4.6 5.2l2.1 2.1M17.3 17.9l2.1 2.1M4.6 20l2.1-2.1M17.3 7.3l2.1-2.1" stroke="#eef3ff" stroke-width="1.9" stroke-linecap="round"/></svg>';
+const ICON_CROSS = '<svg class="icon" viewBox="0 0 24 24" fill="none" stroke="#ff7a72" stroke-width="2.4" stroke-linecap="round"><path d="M7 7l10 10M17 7l-10 10"/></svg>';
+
+/* ===================== 战绩存储 ===================== */
+const STATS_KEY = 'ms_stats_v3';
+function loadStats() {
+  try {
+    const o = JSON.parse(localStorage.getItem(STATS_KEY) || '{}');
+    return {
+      easy:   { best: o.easy?.best ?? null,   wins: o.easy?.wins ?? 0,   played: o.easy?.played ?? 0 },
+      medium: { best: o.medium?.best ?? null, wins: o.medium?.wins ?? 0, played: o.medium?.played ?? 0 },
+      hard:   { best: o.hard?.best ?? null,   wins: o.hard?.wins ?? 0,   played: o.hard?.played ?? 0 }
+    };
+  } catch (e) {
+    return { easy:{best:null,wins:0,played:0}, medium:{best:null,wins:0,played:0}, hard:{best:null,wins:0,played:0} };
+  }
+}
+function saveStats(s) { try { localStorage.setItem(STATS_KEY, JSON.stringify(s)); } catch (e) {} }
+function markStarted() {
+  const s = loadStats(); s[reel.level].played++; saveStats(s); renderRail();
+}
+function markWin() {
+  const s = loadStats();
+  s[reel.level].wins++;
+  if (s[reel.level].best === null || reel.time < s[reel.level].best) s[reel.level].best = reel.time;
+  saveStats(s); renderRail();
+}
+function renderRail() {
+  const s = loadStats();
+  document.querySelectorAll('.diff').forEach(btn => {
+    const st = s[btn.dataset.level];
+    const best = st.best === null ? '—' : st.best + 's';
+    const rate = st.played ? Math.round(st.wins / st.played * 100) + '%' : '—';
+    btn.querySelector('[data-best]').textContent = best;
+    btn.querySelector('[data-rate]').textContent = rate;
+  });
+  const cur = s[reel.level];
+  bestEl.textContent = cur.best === null ? '—' : cur.best + 's';
+
+  const tg = s.easy.played + s.medium.played + s.hard.played;
+  const tw = s.easy.wins + s.medium.wins + s.hard.wins;
+  document.getElementById('statGames').textContent = tg;
+  document.getElementById('statWins').textContent = tw;
+  document.getElementById('statRate').textContent = tg ? Math.round(tw / tg * 100) + '%' : '—';
+}
+
+/* ===================== 新局 ===================== */
+function newGame(levelKey) {
+  clearInterval(reel.timerId);
+  reel.level = levelKey || reel.level;
+  const L = LEVELS[reel.level];
+  reel.rows = L.rows; reel.cols = L.cols; reel.mines = L.mines;
+  reel.cell = L.cell; reel.font = L.font;
+  reel.total = L.rows * L.cols;
+  reel.opened = 0; reel.flags = 0; reel.started = false; reel.over = false;
+  reel.won = false; reel.time = 0; reel.first = true;
+  reel.cells = Array.from({ length: reel.total }, () => ({ mine:false, adj:0, open:false, flag:false }));
+
+  timerEl.textContent = pad3(0);
+  mineLeftEl.textContent = pad3(reel.mines);
+  setFace('normal');
+  overlay.classList.add('hide');
+  document.getElementById('confetti').innerHTML = '';
+
+  document.getElementById('lvName').textContent = L.label;
+  document.getElementById('lvSpec').textContent = `${L.rows} × ${L.cols} · ${L.mines} 雷 · 密度 ${Math.round(L.mines / reel.total * 100)}%`;
+  document.getElementById('footLevel').textContent = L.code;
+  footState.textContent = 'READY · 首点保护开启';
+
+  document.querySelectorAll('.diff').forEach(b => b.classList.toggle('on', b.dataset.level === reel.level));
+  renderRail();
+
+  boardEl.style.gridTemplateColumns = `repeat(${reel.cols}, ${reel.cell}px)`;
+  boardEl.style.gridAutoRows = `${reel.cell}px`;
+  boardEl.style.fontSize = `${reel.font}px`;
+  boardEl.style.gap = (reel.cell >= 40 ? '4px' : '3px');
+  buildDom();
+}
+
+function buildDom() {
+  boardEl.innerHTML = '';
+  const frag = document.createDocumentFragment();
+  for (let r = 0; r < reel.rows; r++) {
+    for (let c = 0; c < reel.cols; c++) {
+      const d = document.createElement('div');
+      d.className = 'cell';
+      d.dataset.r = r; d.dataset.c = c;
+      d.setAttribute('role', 'gridcell');
+      attachCellEvents(d);
+      frag.appendChild(d);
+    }
+  }
+  boardEl.appendChild(frag);
+}
+
+function cellEl(r, c) { return boardEl.children[idx(r, c)]; }
+
+/* ===================== 交互 ===================== */
+let pressTimer = null, longPressed = false;
+
+function attachCellEvents(el) {
+  el.addEventListener('click', () => {
+    if (longPressed) { longPressed = false; return; }
+    const r = +el.dataset.r, c = +el.dataset.c;
+    if (reel.over) return;
+    if (reel.flagMode) { toggleFlag(r, c); return; }
+    if (el.classList.contains('open')) { chord(r, c); return; }
+    reveal(r, c);
+  });
+
+  el.addEventListener('contextmenu', e => {
+    e.preventDefault();
+    if (reel.over) return;
+    const r = +el.dataset.r, c = +el.dataset.c;
+    if (!reel.cells[idx(r, c)].open) toggleFlag(r, c);
+  });
+
+  el.addEventListener('dblclick', e => {
+    e.preventDefault();
+    const r = +el.dataset.r, c = +el.dataset.c;
+    if (reel.over || !reel.cells[idx(r, c)].open) return;
+    chord(r, c);
+  });
+
+  el.addEventListener('pointerdown', e => {
+    if (e.pointerType === 'mouse') return;
+    longPressed = false;
+    pressTimer = setTimeout(() => {
+      longPressed = true;
+      const r = +el.dataset.r, c = +el.dataset.c;
+      if (!reel.over && !reel.cells[idx(r, c)].open) toggleFlag(r, c);
+    }, 420);
+  });
+  ['pointerup', 'pointercancel', 'pointerleave'].forEach(ev =>
+    el.addEventListener(ev, () => clearTimeout(pressTimer)));
+}
+
+/* ===================== 布雷 ===================== */
+function placeMines(sr, sc) {
+  let placed = 0;
+  const safe = new Set();
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (inBoard(sr + dr, sc + dc)) safe.add(idx(sr + dr, sc + dc));
+  }
+  if (reel.mines > reel.total - safe.size) safe.clear();
+  while (placed < reel.mines) {
+    const p = Math.floor(Math.random() * reel.total);
+    if (safe.has(p) || reel.cells[p].mine) continue;
+    reel.cells[p].mine = true; placed++;
+  }
+  for (let r = 0; r < reel.rows; r++) for (let c = 0; c < reel.cols; c++) {
+    let n = 0;
+    for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+      if (!dr && !dc) continue;
+      if (inBoard(r + dr, c + dc) && reel.cells[idx(r + dr, c + dc)].mine) n++;
+    }
+    reel.cells[idx(r, c)].adj = n;
+  }
+}
+
+/* ===================== 翻开 ===================== */
+function reveal(r, c) {
+  if (reel.over) return;
+  const cell = reel.cells[idx(r, c)];
+  if (!cell || cell.open || cell.flag) return;
+
+  if (reel.first) {
+    reel.first = false; reel.started = true;
+    placeMines(r, c);
+    markStarted();
+    startTimer();
+    footState.textContent = 'RUNNING · 雷区已布置';
+  }
+
+  if (cell.mine) { boom(r, c); return; }
+
+  const stack = [[r, c]];
+  while (stack.length) {
+    const [cr, cc] = stack.pop();
+    const cd = reel.cells[idx(cr, cc)];
+    if (cd.open || cd.flag || cd.mine) continue;
+    cd.open = true; reel.opened++;
+    const el = cellEl(cr, cc);
+    el.classList.add('open');
+    el.innerHTML = cd.adj > 0 ? `<span class="num n${cd.adj}">${cd.adj}</span>` : '';
+    if (cd.adj === 0) {
+      for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+        if (!dr && !dc) continue;
+        if (inBoard(cr + dr, cc + dc) && !reel.cells[idx(cr + dr, cc + dc)].open) stack.push([cr + dr, cc + dc]);
+      }
+    }
+  }
+  paintCounter();
+  checkWin();
+}
+
+/* ===================== 插旗 ===================== */
+function toggleFlag(r, c) {
+  const cell = reel.cells[idx(r, c)];
+  if (!cell || cell.open || reel.over) return;
+  cell.flag = !cell.flag;
+  reel.flags += cell.flag ? 1 : -1;
+  const el = cellEl(r, c);
+  el.classList.toggle('flag', cell.flag);
+  el.innerHTML = cell.flag ? ICON_FLAG : '';
+  paintCounter();
+}
+
+/* ===================== 联动 ===================== */
+function chord(r, c) {
+  const cell = reel.cells[idx(r, c)];
+  if (!cell.open || cell.adj === 0 || reel.over) return;
+  let flags = 0; const closed = [];
+  for (let dr = -1; dr <= 1; dr++) for (let dc = -1; dc <= 1; dc++) {
+    if (!dr && !dc) continue;
+    if (!inBoard(r + dr, c + dc)) continue;
+    const n = reel.cells[idx(r + dr, c + dc)];
+    if (n.flag) flags++;
+    else if (!n.open) closed.push([r + dr, c + dc]);
+  }
+  if (flags !== cell.adj || closed.length === 0) {
+    const el = cellEl(r, c);
+    el.classList.remove('hint'); void el.offsetWidth; el.classList.add('hint');
+    return;
+  }
+  closed.forEach(([rr, cc]) => { if (!reel.over) reveal(rr, cc); });
+}
+
+/* ===================== 爆雷 / 胜利 ===================== */
+function boom(r, c) {
+  reel.over = true; clearInterval(reel.timerId);
+  const cell = reel.cells[idx(r, c)];
+  cell.open = true;
+  const el = cellEl(r, c);
+  el.classList.add('open', 'boom');
+  el.innerHTML = ICON_MINE;
+  setFace('dead');
+  footState.textContent = 'BOOM · 踩雷结束';
+  for (let i = 0; i < reel.total; i++) {
+    const cd = reel.cells[i], node = boardEl.children[i];
+    if (cd.mine && !cd.flag) { node.classList.add('open', 'mine-open'); node.innerHTML = ICON_MINE; }
+    else if (!cd.mine && cd.flag) { node.classList.add('open', 'wrong'); node.innerHTML = ICON_CROSS; }
+  }
+  showOverlay(false);
+}
+
+function checkWin() {
+  if (reel.opened !== reel.total - reel.mines) return;
+  reel.over = true; reel.won = true; clearInterval(reel.timerId);
+  for (let i = 0; i < reel.total; i++) {
+    const cd = reel.cells[i], node = boardEl.children[i];
+    if (cd.mine && !cd.flag) {
+      cd.flag = true; reel.flags++;
+      node.classList.add('flag'); node.innerHTML = ICON_FLAG;
+    }
+  }
+  paintCounter();
+  setFace('win');
+  footState.textContent = 'CLEAR · 雷区已清空';
+  markWin();
+  showOverlay(true);
+}
+
+function showOverlay(win) {
+  const st = loadStats()[reel.level];
+  document.getElementById('ovEmoji').textContent = win ? '🎉' : '💥';
+  document.getElementById('ovTitle').textContent = win ? '雷区清空' : '轰——踩雷了';
+  document.getElementById('ovSub').textContent = win
+    ? `在「${LEVELS[reel.level].label}」难度翻开了全部 ${reel.total - reel.mines} 个安全格。`
+    : `「${LEVELS[reel.level].label}」难度，坚持了 ${reel.time} 秒；红旗只挡误点，不挡真相。`;
+  document.getElementById('ovTime').textContent = reel.time + 's';
+  document.getElementById('ovBest').textContent = st.best === null ? '—' : st.best + 's';
+  document.getElementById('ovWins').textContent = st.wins;
+  document.getElementById('ovBtn').textContent = win ? '再来一局' : '重新挑战';
+  document.getElementById('ovBtn').onclick = () => newGame(reel.level);
+  document.getElementById('ovClose').onclick = () => overlay.classList.add('hide');
+  overlay.classList.remove('hide');
+  if (win) burstConfetti();
+}
+
+function burstConfetti() {
+  const wrap = document.getElementById('confetti');
+  if (!wrap) return;
+  wrap.innerHTML = '';
+  const colors = ['#ffd479', '#ff9f3e', '#6ee7c8', '#7aa7ff', '#ff7a9c', '#ffffff'];
+  for (let i = 0; i < 34; i++) {
+    const s = document.createElement('span');
+    s.style.left = (Math.random() * 100) + '%';
+    s.style.background = colors[i % colors.length];
+    s.style.animationDuration = (1.6 + Math.random() * 1.6) + 's';
+    s.style.animationDelay = (Math.random() * .8) + 's';
+    s.style.transform = `rotate(${Math.random() * 180}deg)`;
+    wrap.appendChild(s);
+  }
+}
+
+/* ===================== 计时 / 界面 ===================== */
+function startTimer() {
+  clearInterval(reel.timerId);
+  reel.timerId = setInterval(() => {
+    if (reel.over) return;
+    reel.time++;
+    timerEl.textContent = pad3(reel.time);
+  }, 1000);
+}
+function paintCounter() { mineLeftEl.textContent = pad3(reel.mines - reel.flags); }
+function setFace(kind) {
+  faceMouth.setAttribute('d', ({
+    normal: 'M7.7 14.5 Q12 18.7 16.3 14.5',
+    win:    'M7.5 13.6 Q12 19.6 16.5 13.6',
+    dead:   'M8 16.5 Q12 12.3 16 16.5'
+  }[kind]) || 'M7.7 14.5 Q12 18.7 16.3 14.5');
+}
+
+/* ===================== 控件 ===================== */
+document.querySelectorAll('.diff').forEach(btn => {
+  btn.addEventListener('click', () => newGame(btn.dataset.level));
+});
+document.getElementById('btnNew').addEventListener('click', () => newGame(reel.level));
+document.getElementById('face').addEventListener('click', () => newGame(reel.level));
+document.getElementById('flagMode').addEventListener('click', () => {
+  reel.flagMode = !reel.flagMode;
+  const b = document.getElementById('flagMode');
+  b.classList.toggle('on', reel.flagMode);
+  document.getElementById('flagModeText').textContent = reel.flagMode ? '插旗 开' : '插旗 关';
+});
+document.addEventListener('keydown', e => {
+  if (e.key === 'f' || e.key === 'F') document.getElementById('flagMode').click();
+  if (e.key === 'r' || e.key === 'R' || e.key === 'n' || e.key === 'N') newGame(reel.level);
+  if (e.key === '1') newGame('easy');
+  if (e.key === '2') newGame('medium');
+  if (e.key === '3') newGame('hard');
+});
+
+/* ===================== 启动 ===================== */
+newGame('easy');
+window.__reel = reel;
+window.__api = { newGame, reveal, toggleFlag, chord, placeMines };
+</script>
+</body>
+</html>
+
+
