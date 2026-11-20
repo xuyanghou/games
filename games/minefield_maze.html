@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>雷区迷阵 · 扫雷</title>
+<style>
+    :root {
+        --bg: #0e1420;
+        --panel: rgba(255,255,255,0.06);
+        --stroke: rgba(255,255,255,0.12);
+        --text: #fff;
+        --dim: rgba(255,255,255,0.55);
+        --cyan: #35e0ff;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; }
+    html, body { width:100%; height:100%; overflow:hidden; background: var(--bg); color: var(--text);
+        font-family:'Noto Sans SC', -apple-system, "Segoe UI", sans-serif; }
+    #wrap { position:relative; width:100vw; height:100vh; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:12px; padding:16px; }
+
+    .head { width:100%; max-width:min(92vw, 480px); display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .title h1 { font-size:1.5rem; font-weight:900; letter-spacing:2px; }
+    .title p { font-size:0.72rem; color:var(--dim); margin-top:2px; }
+    .counter {
+        background: var(--panel); border:1px solid var(--stroke); border-radius:12px; padding:6px 14px;
+        font-size:1.2rem; font-weight:900; font-variant-numeric:tabular-nums; min-width:78px; text-align:center;
+    }
+    .counter.mine { color:#ff5c5c; }
+    .counter.flag { color:var(--cyan); }
+
+    .board {
+        width:100%; max-width:min(92vw, 480px);
+        display:grid; gap:2px; background:#1b2536; padding:6px; border-radius:12px;
+        box-shadow:0 16px 44px rgba(0,0,0,0.45);
+    }
+    .c {
+        background:#3a4a66; border-radius:4px; aspect-ratio:1; display:flex; align-items:center; justify-content:center;
+        font-weight:900; font-size:clamp(0.7rem, 2.6vw, 1.05rem); cursor:pointer;
+        transition:background 0.1s ease; border:1px solid rgba(255,255,255,0.05);
+    }
+    .c:hover { background:#4a5c7c; }
+    .c.open { background:#24304a; cursor:default; border-color:transparent; }
+    .c.open:hover { background:#24304a; }
+    .c.mine { background:#7a2530; }
+    .c.minehit { background:#ff5c5c; }
+    .c.flag { background:#2c4a6e; }
+    .c.wrong { background:rgba(255,92,92,0.25); }
+
+    .bar { width:100%; max-width:min(92vw, 480px); display:flex; gap:8px; }
+    .btn { flex:1; padding:11px; border-radius:12px; border:1px solid var(--stroke); cursor:pointer;
+        background:var(--panel); color:var(--text); font-family:inherit; font-size:0.88rem; font-weight:700; letter-spacing:1px; }
+    .btn:hover { background:rgba(255,255,255,0.12); }
+    .btn.primary { background:linear-gradient(90deg,#35e0ff,#46e08a); color:#052330; border:none; }
+
+    .tip { font-size:0.72rem; color:var(--dim); letter-spacing:1px; text-align:center; }
+    .tip b { color:var(--cyan); }
+
+    #overlay { position:fixed; inset:0; z-index:40; background:rgba(8,12,20,0.88); backdrop-filter:blur(6px);
+        display:none; align-items:center; justify-content:center; }
+    #overlay.show { display:flex; }
+    .card { background:linear-gradient(170deg,rgba(30,40,60,0.96),rgba(16,21,33,0.98));
+        border:2px solid rgba(53,224,255,0.35); border-radius:22px; padding:28px 26px; width:100%; max-width:380px; text-align:center; }
+    .card h2 { font-size:1.7rem; font-weight:900; margin-bottom:8px; }
+    .card p { color:var(--dim); font-size:0.9rem; line-height:1.7; margin-bottom:18px; }
+    .stat { display:flex; justify-content:center; gap:26px; margin-bottom:20px; }
+    .stat div { text-align:center; }
+    .stat .k { font-size:0.72rem; color:var(--dim); }
+    .stat .v { font-size:1.6rem; font-weight:900; color:var(--cyan); }
+</style>
+</head>
+<body>
+<div id="wrap">
+    <div class="head">
+        <div class="title">
+            <h1>雷区迷阵</h1>
+            <p>经典扫雷 · 推理每一步</p>
+        </div>
+        <div class="counter mine" id="mine-count">💣 --</div>
+    </div>
+
+    <div class="board" id="board"></div>
+
+    <div class="bar">
+        <button class="btn" id="flag-btn">🚩 插旗模式</button>
+        <button class="btn primary" id="new-btn">新雷区</button>
+    </div>
+
+    <p class="tip">左键翻开 · 右键插旗 · <b>插旗模式</b>可切换左键行为</p>
+</div>
+
+<div id="overlay">
+    <div class="card">
+        <h2 id="ov-title">通 关</h2>
+        <p id="ov-desc"></p>
+        <div class="stat">
+            <div><div class="k">用时</div><div class="v" id="ov-time">0s</div></div>
+            <div><div class="k">难度</div><div class="v" id="ov-diff">中</div></div>
+        </div>
+        <button class="btn primary" id="ov-btn">再来一局</button>
+    </div>
+</div>
+
+<script>
+'use strict';
+
+const LEVELS = {
+    easy:   { w: 9,  h: 9,  m: 10, name: '简单' },
+    normal: { w: 12, h: 12, m: 24, name: '中等' },
+    hard:   { w: 16, h: 14, m: 45, name: '困难' }
+};
+
+let W = 12, H = 12, MINES = 24;
+let cells = [];          // {mine, open, flag, around}
+let started = false;
+let dead = false;
+let flagMode = false;
+let opened = 0;
+let flags = 0;
+let startTime = 0;
+let timer = null;
+let difficulty = 'normal';
+
+const boardEl = document.getElementById('board');
+
+function setup(diff) {
+    difficulty = diff;
+    const cfg = LEVELS[diff];
+    W = cfg.w; H = cfg.h; MINES = cfg.m;
+    cells = [];
+    for (let r = 0; r < H; r++) {
+        const row = [];
+        for (let c = 0; c < W; c++) row.push({ mine: false, open: false, flag: false, around: 0 });
+        cells.push(row);
+    }
+    started = false; dead = false; opened = 0; flags = 0; startTime = 0;
+    clearInterval(timer); timer = null;
+    document.getElementById('overlay').classList.remove('show');
+    buildBoard();
+    updateCounters();
+}
+
+function buildBoard() {
+    boardEl.style.gridTemplateColumns = `repeat(${W}, 1fr)`;
+    boardEl.innerHTML = '';
+    for (let r = 0; r < H; r++) {
+        for (let c = 0; c < W; c++) {
+            const d = document.createElement('div');
+            d.className = 'c';
+            d.dataset.r = r; d.dataset.c = c;
+            d.addEventListener('click', onClick);
+            d.addEventListener('contextmenu', (e) => { e.preventDefault(); onFlag(r, c); });
+            boardEl.appendChild(d);
+        }
+    }
+}
+
+/* 布雷：保证首个点击位置及其周围无雷 */
+function placeMines(safeR, safeC) {
+    let placed = 0;
+    const total = W * H;
+    while (placed < MINES) {
+        const r = Math.floor(Math.random() * H);
+        const c = Math.floor(Math.random() * W);
+        if (cells[r][c].mine) continue;
+        if (Math.abs(r - safeR) <= 1 && Math.abs(c - safeC) <= 1) continue;
+        cells[r][c].mine = true;
+        placed++;
+    }
+    for (let r = 0; r < H; r++) {
+        for (let c = 0; c < W; c++) {
+            cells[r][c].around = countAround(r, c);
+        }
+    }
+}
+
+function countAround(r, c) {
+    let n = 0;
+    for (let dr = -1; dr <= 1; dr++) {
+        for (let dc = -1; dc <= 1; dc++) {
+            if (dr === 0 && dc === 0) continue;
+            const nr = r + dr, nc = c + dc;
+            if (nr >= 0 && nr < H && nc >= 0 && nc < W && cells[nr][nc].mine) n++;
+        }
+    }
+    return n;
+}
+
+function startTimer() {
+    started = true;
+    startTime = Date.now();
+    timer = setInterval(() => {
+        document.getElementById('mine-count').textContent =
+            '💣 ' + (MINES - flags) + ' ⏱ ' + Math.floor((Date.now() - startTime) / 1000) + 's';
+    }, 500);
+}
+
+function onClick(e) {
+    const el = e.currentTarget;
+    const r = +el.dataset.r, c = +el.dataset.c;
+    if (flagMode) { onFlag(r, c); return; }
+    openCell(r, c);
+}
+
+function onFlag(r, c) {
+    if (dead || cells[r][c].open) return;
+    const cell = cells[r][c];
+    cell.flag = !cell.flag;
+    flags += cell.flag ? 1 : -1;
+    updateCounters();
+    paint();
+}
+
+function updateCounters() {
+    const el = document.getElementById('mine-count');
+    el.textContent = '💣 ' + (MINES - flags) + (started ? ' ⏱ ' + Math.floor((Date.now() - startTime) / 1000) + 's' : '');
+    el.classList.toggle('flag', flags > 0);
+}
+
+function openCell(r, c) {
+    if (dead || cells[r][c].open || cells[r][c].flag) return;
+    if (!started) {
+        placeMines(r, c);
+        startTimer();
+    }
+    const cell = cells[r][c];
+    if (cell.mine) {
+        cell.open = true;
+        dead = true;
+        revealAll();
+        paint();
+        clearInterval(timer);
+        const secs = Math.floor((Date.now() - startTime) / 1000);
+        showOverlay('踩 到 雷 了', '你在第 ' + (opened + 1) + ' 步倒下了，用时 ' + secs + ' 秒。', '再来一局');
+        return;
+    }
+    floodOpen(r, c);
+    paint();
+    checkWin();
+}
+
+function floodOpen(r, c) {
+    const stack = [[r, c]];
+    while (stack.length) {
+        const [rr, cc] = stack.pop();
+        const cell = cells[rr][cc];
+        if (cell.open || cell.flag || cell.mine) continue;
+        cell.open = true;
+        opened++;
+        if (cell.around === 0) {
+            for (let dr = -1; dr <= 1; dr++) {
+                for (let dc = -1; dc <= 1; dc++) {
+                    if (dr === 0 && dc === 0) continue;
+                    const nr = rr + dr, nc = cc + dc;
+                    if (nr >= 0 && nr < H && nc >= 0 && nc < W) stack.push([nr, nc]);
+                }
+            }
+        }
+    }
+}
+
+function revealAll() {
+    for (let r = 0; r < H; r++)
+        for (let c = 0; c < W; c++)
+            if (cells[r][c].mine) cells[r][c].open = true;
+}
+
+function checkWin() {
+    if (opened >= W * H - MINES) {
+        clearInterval(timer);
+        const secs = Math.floor((Date.now() - startTime) / 1000);
+        showOverlay('全 部 排 雷', '你成功扫清了 ' + LEVELS[difficulty].name + '难度的雷区，用时 ' + secs + ' 秒。', '再来一局');
+    }
+}
+
+const COLORS = ['', '#4d9bff', '#46e08a', '#ff7a5c', '#a06eff', '#ffcc00', '#00d9d9', '#ffffff', '#ff5c5c'];
+
+function paint() {
+    const els = boardEl.children;
+    for (let r = 0; r < H; r++) {
+        for (let c = 0; c < W; c++) {
+            const el = els[r * W + c];
+            const cell = cells[r][c];
+            el.className = 'c';
+            el.textContent = '';
+            el.style.color = '';
+            if (cell.open) {
+                el.classList.add('open');
+                if (cell.mine) {
+                    el.classList.add('mine');
+                    el.textContent = '💣';
+                    if (dead) el.classList.add('minehit');
+                } else if (cell.around > 0) {
+                    el.textContent = cell.around;
+                    el.style.color = COLORS[cell.around];
+                }
+            } else if (cell.flag) {
+                el.classList.add('flag');
+                el.textContent = '🚩';
+            } else if (dead && cell.mine) {
+                el.classList.add('wrong');
+                el.textContent = '💣';
+            }
+        }
+    }
+    updateCounters();
+}
+
+function showOverlay(title, desc, btn) {
+    document.getElementById('ov-title').textContent = title;
+    document.getElementById('ov-desc').textContent = desc;
+    document.getElementById('ov-btn').textContent = btn;
+    document.getElementById('ov-time').textContent = Math.floor((Date.now() - startTime) / 1000) + 's';
+    document.getElementById('ov-diff').textContent = LEVELS[difficulty].name;
+    document.getElementById('overlay').classList.add('show');
+}
+
+document.getElementById('new-btn').addEventListener('click', () => {
+    const order = ['easy', 'normal', 'hard'];
+    const next = order[(order.indexOf(difficulty) + 1) % order.length];
+    setup(next);
+});
+document.getElementById('flag-btn').addEventListener('click', (e) => {
+    flagMode = !flagMode;
+    e.currentTarget.textContent = flagMode ? '🚩 插旗模式（开）' : '🚩 插旗模式';
+    e.currentTarget.style.background = flagMode ? 'rgba(53,224,255,0.2)' : '';
+});
+document.getElementById('ov-btn').addEventListener('click', () => setup(difficulty));
+
+setup('normal');
+</script>
+</body>
+</html>

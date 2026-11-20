@@ -1,0 +1,408 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>霓虹弹跳 · 打砖块</title>
+<style>
+    :root {
+        --bg: #0a0e1a;
+        --panel: rgba(255,255,255,0.06);
+        --stroke: rgba(255,255,255,0.12);
+        --text: #fff;
+        --dim: rgba(255,255,255,0.55);
+        --cyan: #35e0ff;
+        --pink: #ff4d9d;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none; }
+    html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text);
+        font-family:'Noto Sans SC', -apple-system, "Segoe UI", sans-serif; }
+    #wrap { position:relative; width:100vw; height:100vh; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:12px; padding:16px; }
+
+    .head { width:100%; max-width:560px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .title h1 { font-size:1.5rem; font-weight:900; letter-spacing:2px;
+        background:linear-gradient(90deg,var(--cyan),var(--pink)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .title p { font-size:0.72rem; color:var(--dim); margin-top:2px; }
+    .scores { display:flex; gap:8px; }
+    .box { background:var(--panel); border:1px solid var(--stroke); border-radius:12px; padding:6px 13px; text-align:center; min-width:72px; }
+    .box .k { font-size:0.62rem; color:var(--dim); }
+    .box .v { font-size:1.15rem; font-weight:900; font-variant-numeric:tabular-nums; }
+
+    canvas { width:100%; max-width:560px; aspect-ratio:4/3; background:#0d1424; border-radius:14px;
+        border:1px solid var(--stroke); display:block; box-shadow:0 18px 50px rgba(0,0,0,0.5); }
+
+    .bar { width:100%; max-width:560px; display:flex; gap:8px; }
+    .btn { flex:1; padding:11px; border-radius:12px; border:1px solid var(--stroke); cursor:pointer;
+        background:var(--panel); color:var(--text); font-family:inherit; font-size:0.88rem; font-weight:700; letter-spacing:1px; }
+    .btn:hover { background:rgba(255,255,255,0.12); }
+    .btn.primary { background:linear-gradient(90deg,var(--cyan),var(--pink)); color:#06121c; border:none; }
+
+    .tip { font-size:0.72rem; color:var(--dim); letter-spacing:1px; text-align:center; }
+    .tip b { color:var(--cyan); }
+</style>
+</head>
+<body>
+<div id="wrap">
+    <div class="head">
+        <div class="title">
+            <h1>霓虹弹跳</h1>
+            <p>打砖块 · 越打越快</p>
+        </div>
+        <div class="scores">
+            <div class="box"><div class="k">分数</div><div class="v" id="score">0</div></div>
+            <div class="box"><div class="k">最高</div><div class="v" id="best">0</div></div>
+            <div class="box"><div class="k">关卡</div><div class="v" id="level">1</div></div>
+            <div class="box"><div class="k">生命</div><div class="v" id="lives">♥♥♥</div></div>
+        </div>
+    </div>
+
+    <canvas id="cv" width="800" height="600"></canvas>
+
+    <div class="bar">
+        <button class="btn" id="pause-btn">⏸ 暂停</button>
+        <button class="btn" id="launch-btn">🚀 发球</button>
+        <button class="btn primary" id="new-btn">新游戏</button>
+    </div>
+
+    <p class="tip">← → / A D 移动挡板 · 空格发球 · 鼠标也可控制</p>
+</div>
+
+<script>
+'use strict';
+
+const cv = document.getElementById('cv');
+const ctx = cv.getContext('2d');
+const W = cv.width, H = cv.height;
+
+let paddle, ball, bricks, score, best, level, running, paused, gameOver, launchTimer, lives;
+
+best = parseInt(localStorage.getItem('breakout_best') || '0', 10) || 0;
+
+const BRICK_COLORS = ['#ff4d9d', '#ff7a5c', '#ffcc00', '#46e08a', '#35e0ff', '#a06eff'];
+
+function init() {
+    paddle = { x: W / 2 - 60, w: 120, h: 14, y: H - 40 };
+    ball = { x: W / 2, y: H - 70, vx: 5, vy: -5, r: 8, stuck: true };
+    score = 0; level = 1; lives = 3;
+    running = true; paused = false; gameOver = false;
+    launchTimer = 0;
+    buildBricks();
+    updateHUD();
+    document.getElementById('pause-btn').textContent = '⏸ 暂停';
+}
+
+function buildBricks() {
+    bricks = [];
+    const rows = 4 + Math.min(level, 4);
+    const cols = 10;
+    const bw = 68, bh = 24, gap = 6;
+    const totalW = cols * bw + (cols - 1) * gap;
+    const ox = (W - totalW) / 2;
+    for (let r = 0; r < rows; r++) {
+        for (let c = 0; c < cols; c++) {
+            bricks.push({
+                x: ox + c * (bw + gap),
+                y: 60 + r * (bh + gap),
+                w: bw, h: bh,
+                hp: r < 1 ? 2 : 1,
+                color: BRICK_COLORS[r % BRICK_COLORS.length]
+            });
+        }
+    }
+}
+
+function updateHUD() {
+    document.getElementById('score').textContent = score;
+    document.getElementById('best').textContent = best;
+    document.getElementById('level').textContent = level;
+    document.getElementById('lives').textContent = '♥'.repeat(Math.max(0, lives)) || '—';
+}
+
+function resetBall() {
+    ball.x = paddle.x + paddle.w / 2;
+    ball.y = paddle.y - ball.r - 2;
+    ball.vx = (Math.random() * 2 - 1) * 5;
+    ball.vy = -5;
+    ball.stuck = true;
+    launchTimer = 0;
+}
+
+function launch() {
+    if (!running || gameOver) return;
+    if (ball.stuck) {
+        ball.stuck = false;
+        const sp = 5 + (level - 1) * 0.55;
+        const ang = -Math.PI / 2 + (Math.random() * 0.8 - 0.4);
+        ball.vx = Math.cos(ang) * sp;
+        ball.vy = Math.sin(ang) * sp;
+    }
+}
+
+function nextLevel() {
+    level++;
+    buildBricks();
+    resetBall();
+    showBanner('第 ' + level + ' 关');
+}
+
+let banner = '', bannerTime = 0;
+function showBanner(t) { banner = t; bannerTime = 1.6; }
+
+function update(dt) {
+    if (!running || paused || gameOver) return;
+
+    /* 挡板跟随 */
+    if (keys.left) paddle.x -= 620 * dt;
+    if (keys.right) paddle.x += 620 * dt;
+    paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
+
+    if (ball.stuck) {
+        ball.x = paddle.x + paddle.w / 2;
+        ball.y = paddle.y - ball.r - 2;
+        launchTimer += dt;
+        if (launchTimer > 3.5) launch();
+    } else {
+        /* 防止卡在水平方向 */
+        if (Math.abs(ball.vx) < 1.2) ball.vx = 1.2 * (ball.vx >= 0 ? 1 : -1);
+        ball.x += ball.vx * dt * 60;
+        ball.y += ball.vy * dt * 60;
+
+        /* 墙壁 */
+        if (ball.x - ball.r < 0) { ball.x = ball.r; ball.vx = Math.abs(ball.vx); tone(300, 0.05, 0.05); }
+        if (ball.x + ball.r > W) { ball.x = W - ball.r; ball.vx = -Math.abs(ball.vx); tone(300, 0.05, 0.05); }
+        if (ball.y - ball.r < 0) { ball.y = ball.r; ball.vy = Math.abs(ball.vy); tone(300, 0.05, 0.05); }
+
+        /* 挡板 */
+        if (ball.vy > 0 && ball.y + ball.r >= paddle.y && ball.y + ball.r <= paddle.y + paddle.h + 12 &&
+            ball.x >= paddle.x - ball.r && ball.x <= paddle.x + paddle.w + ball.r) {
+            ball.y = paddle.y - ball.r;
+            const rel = (ball.x - (paddle.x + paddle.w / 2)) / (paddle.w / 2);
+            const angle = rel * (Math.PI / 3);
+            const sp = Math.min(14, Math.hypot(ball.vx, ball.vy) * 1.02);
+            ball.vx = Math.sin(angle) * sp;
+            ball.vy = -Math.cos(angle) * sp;
+            tone(520, 0.05, 0.06);
+        }
+
+        /* 砖块碰撞 */
+        for (let i = bricks.length - 1; i >= 0; i--) {
+            const b = bricks[i];
+            if (ball.x + ball.r < b.x || ball.x - ball.r > b.x + b.w ||
+              ball.y + ball.r < b.y || ball.y - ball.r > b.y + b.h) continue;
+
+            /* 沿最小重叠方向把球推出并反弹 */
+            const dxR = (ball.x + ball.r) - b.x;
+            const dxL = (b.x + b.w) - (ball.x - ball.r);
+            const dyD = (ball.y + ball.r) - b.y;
+            const dyU = (b.y + b.h) - (ball.y - ball.r);
+            const minX = Math.min(dxR, dxL);
+            const minY = Math.min(dyD, dyU);
+
+            if (minX < minY) {
+                if (dxR < dxL) { ball.x = b.x - ball.r; ball.vx = -Math.abs(ball.vx); }
+                else { ball.x = b.x + b.w + ball.r; ball.vx = Math.abs(ball.vx); }
+            } else {
+                if (dyD < dyU) { ball.y = b.y - ball.r; ball.vy = -Math.abs(ball.vy); }
+                else { ball.y = b.y + b.h + ball.r; ball.vy = Math.abs(ball.vy); }
+            }
+
+            b.hp--;
+            score += b.hp <= 0 ? 15 : 5;
+            tone(b.hp <= 0 ? 780 : 620, 0.045, 0.06);
+            spawnParticles(ball.x, ball.y, b.color, 6);
+            if (b.hp <= 0) bricks.splice(i, 1);
+            updateHUD();
+            break;
+        }
+
+        if (!bricks.length) {
+            nextLevel();
+        }
+
+        /* 掉落：扣一条命 */
+        if (ball.y - ball.r > H) {
+            lives--;
+            updateHUD();
+            if (lives <= 0) {
+                gameOver = true;
+                if (score > best) { best = score; localStorage.setItem('breakout_best', String(best)); }
+                updateHUD();
+                showBanner('游戏结束');
+                return;
+            }
+            resetBall();
+        }
+    }
+
+    if (bannerTime > 0) bannerTime -= dt;
+    updateParticles(dt);
+}
+
+/* 修正：返回正数偏移 */
+function updateParticles(dt) {
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 500 * dt;
+        p.life -= dt;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+}
+
+const particles = [];
+function spawnParticles(x, y, color, n) {
+    for (let i = 0; i < n; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 60 + Math.random() * 220;
+        particles.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 60, life: 0.5 + Math.random() * 0.4, color, size: 2 + Math.random() * 3 });
+    }
+}
+
+/* ---------------- 音效 ---------------- */
+let actx = null;
+function tone(freq, dur, vol) {
+    if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+    if (!actx) return;
+    if (actx.state === 'suspended') actx.resume();
+    const o = actx.createOscillator(), g = actx.createGain();
+    o.type = 'triangle'; o.frequency.value = freq;
+    g.gain.value = vol;
+    g.gain.exponentialRampToValueAtTime(0.001, actx.currentTime + dur);
+    o.connect(g); g.connect(actx.destination);
+    o.start(); o.stop(actx.currentTime + dur);
+}
+
+/* ---------------- 渲染 ---------------- */
+function render() {
+    ctx.clearRect(0, 0, W, H);
+
+    /* 背景网格 */
+    ctx.strokeStyle = 'rgba(255,255,255,0.04)';
+    ctx.lineWidth = 1;
+    for (let x = 0; x <= W; x += 40) { ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke(); }
+    for (let y = 0; y <= H; y += 40) { ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(W, y); ctx.stroke(); }
+
+    /* 砖块 */
+    for (const b of bricks) {
+        ctx.fillStyle = b.color;
+        ctx.globalAlpha = b.hp > 1 ? 1 : 0.75;
+        ctx.beginPath();
+        ctx.roundRect(b.x, b.y, b.w, b.h, 5);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        /* 高光 */
+        ctx.fillStyle = 'rgba(255,255,255,0.22)';
+        ctx.beginPath();
+        ctx.roundRect(b.x + 3, b.y + 3, b.w - 6, b.h * 0.38, 4);
+        ctx.fill();
+        if (b.hp > 1) {
+            ctx.fillStyle = 'rgba(0,0,0,0.35)';
+            ctx.font = 'bold 13px sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.fillText('◆', b.x + b.w / 2, b.y + b.h / 2 + 1);
+        }
+    }
+
+    /* 挡板 */
+    const pg = ctx.createLinearGradient(paddle.x, 0, paddle.x + paddle.w, 0);
+    pg.addColorStop(0, '#35e0ff'); pg.addColorStop(1, '#ff4d9d');
+    ctx.fillStyle = pg;
+    ctx.beginPath();
+    ctx.roundRect(paddle.x, paddle.y, paddle.w, paddle.h, 7);
+    ctx.fill();
+    ctx.fillStyle = 'rgba(255,255,255,0.3)';
+    ctx.beginPath();
+    ctx.roundRect(paddle.x + 4, paddle.y + 2, paddle.w - 8, 4, 3);
+    ctx.fill();
+
+    /* 球 */
+    ctx.fillStyle = '#ffffff';
+    ctx.shadowColor = '#35e0ff'; ctx.shadowBlur = 18;
+    ctx.beginPath();
+    ctx.arc(ball.x, ball.y, ball.r, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    /* 粒子 */
+    for (const p of particles) {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    /* 提示 */
+    if (ball.stuck && running && !paused) {
+        ctx.fillStyle = 'rgba(255,255,255,0.8)';
+        ctx.font = 'bold 20px "Noto Sans SC", sans-serif';
+        ctx.textAlign = 'center';
+        ctx.fillText('按 空格 或点击「发球」', W / 2, H / 2);
+    }
+    if (paused) {
+        ctx.fillStyle = 'rgba(8,12,20,0.72)';
+        ctx.fillRect(0, 0, W, H);
+        ctx.fillStyle = '#fff';
+        ctx.font = 'bold 40px "Noto Sans SC", sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('已 暂 停', W / 2, H / 2);
+    }
+    if (bannerTime > 0) {
+        ctx.fillStyle = 'rgba(255,255,255,' + Math.min(1, bannerTime) + ')';
+        ctx.font = 'bold 44px "Noto Sans SC", sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(banner, W / 2, H / 2);
+    }
+}
+
+/* ---------------- 输入 ---------------- */
+const keys = { left: false, right: false };
+window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowleft' || k === 'a') { keys.left = true; e.preventDefault(); }
+    if (k === 'arrowright' || k === 'd') { keys.right = true; e.preventDefault(); }
+    if (k === ' ') { launch(); e.preventDefault(); }
+    if (k === 'p') togglePause();
+});
+window.addEventListener('keyup', (e) => {
+    const k = e.key.toLowerCase();
+    if (k === 'arrowleft' || k === 'a') keys.left = false;
+    if (k === 'arrowright' || k === 'd') keys.right = false;
+});
+cv.addEventListener('mousemove', (e) => {
+    const r = cv.getBoundingClientRect();
+    const mx = (e.clientX - r.left) / r.width * W;
+    paddle.x = mx - paddle.w / 2;
+    paddle.x = Math.max(0, Math.min(W - paddle.w, paddle.x));
+});
+cv.addEventListener('click', launch);
+
+function togglePause() {
+    if (!running || gameOver) return;
+    paused = !paused;
+    document.getElementById('pause-btn').textContent = paused ? '▶ 继续' : '⏸ 暂停';
+}
+
+document.getElementById('launch-btn').addEventListener('click', launch);
+document.getElementById('pause-btn').addEventListener('click', togglePause);
+document.getElementById('new-btn').addEventListener('click', () => { init(); resetBall(); });
+
+/* ---------------- 主循环 ---------------- */
+let last = 0;
+function loop(ts) {
+    if (!last) last = ts;
+    const dt = Math.min((ts - last) / 1000, 0.033);
+    last = ts;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+}
+init();
+resetBall();
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>

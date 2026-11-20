@@ -1,6 +1,6 @@
 /* 自动生成，请勿手改 —— 运行 node scan.js 或双击「刷新游戏列表.bat」更新 */
 window.FISH_ARCADE_MANIFEST = {
-  "generatedAt": "2026-11-20T03:21:33.545Z",
+  "generatedAt": "2026-11-20T05:15:58.323Z",
   "games": [
     {
       "file": "code_artifact.html",
@@ -15,10 +15,34 @@ window.FISH_ARCADE_MANIFEST = {
       "size": 24484
     },
     {
+      "file": "minefield_maze.html",
+      "title": "雷区迷阵 · 扫雷",
+      "desc": "",
+      "size": 12020
+    },
+    {
+      "file": "neon_bounce_breakout.html",
+      "title": "霓虹弹跳 · 打砖块",
+      "desc": "",
+      "size": 14958
+    },
+    {
       "file": "neon_pulse_orbit.html",
       "title": "霓虹脉冲：轨道 | NEON PULSE: ORBIT",
       "desc": "",
       "size": 45314
+    },
+    {
+      "file": "number_phantom_2048.html",
+      "title": "数字幻方 · 2048",
+      "desc": "",
+      "size": 11239
+    },
+    {
+      "file": "pixel_devourer_snake.html",
+      "title": "像素吞噬者 · 贪吃蛇",
+      "desc": "",
+      "size": 11778
     },
     {
       "file": "starport_tactical_defense.html",

@@ -55,7 +55,7 @@ window.FISH_ARCADE_GAMES = [
     },
     {
         file: 'super_mario.html',
-        title: '超级玛丽 · 六关版',
+        title: '超级玛丽',
         en: 'Super Mario · Six Worlds',
         icon: '🍄',
         desc: '经典横版卷轴平台跳跃：顶砖块、吃蘑菇变大、踩敌人，一路冲向旗杆。六关连闯，三条命，限时通关。',
@@ -92,5 +92,45 @@ window.FISH_ARCADE_GAMES = [
         tags: ['文字', '养成', '轮回'],
         tone: 'amber',
         scoreKey: null
+    },
+    {
+        file: 'number_phantom_2048.html',
+        title: '数字幻方 · 2048',
+        en: 'Number Phantom · 2048',
+        icon: '🔢',
+        desc: '经典数字合成：滑动合并相同数字，两两相加一路向上冲击 2048。每走一步都会随机冒出新数字，格子越挤越考验规划与取舍。',
+        tags: ['益智', '数字', '经典'],
+        tone: 'amber',
+        scoreKey: 'g2048_best'
+    },
+    {
+        file: 'minefield_maze.html',
+        title: '雷区迷阵 · 扫雷',
+        en: 'Minefield Maze · Minesweeper',
+        icon: '💣',
+        desc: '经典扫雷推理：在雷区里翻格子，用数字提示推算周围雷数，右键插旗标记。简单到困难三档随机切换，首点必安全，考的是逻辑不是运气。',
+        tags: ['推理', '逻辑', '经典'],
+        tone: 'blue',
+        scoreKey: null
+    },
+    {
+        file: 'neon_bounce_breakout.html',
+        title: '霓虹弹跳 · 打砖块',
+        en: 'Neon Bounce · Breakout',
+        icon: '🧱',
+        desc: '霓虹风打砖块：挡板接球撞碎砖块，每清空一层就升一关，球速越来越快。踩准反弹角度才能一路打到最高分，掉球三次即结束。',
+        tags: ['街机', '弹球', '反应'],
+        tone: 'magenta',
+        scoreKey: 'breakout_best'
+    },
+    {
+        file: 'pixel_devourer_snake.html',
+        title: '像素吞噬者 · 贪吃蛇',
+        en: 'Pixel Devourer · Snake',
+        icon: '🐍',
+        desc: '复古像素贪吃蛇：吃掉光点让身体越变越长，别撞墙也别咬自己。每得 50 分就加速一档，越到后期越考验走位规划。',
+        tags: ['街机', '像素', '经典'],
+        tone: 'green',
+        scoreKey: 'snake_best'
     }
 ];
