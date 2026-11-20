@@ -1,6 +1,6 @@
 /* 自动生成，请勿手改 —— 运行 node scan.js 或双击「刷新游戏列表.bat」更新 */
 window.FISH_ARCADE_MANIFEST = {
-  "generatedAt": "2026-11-20T07:17:02.443Z",
+  "generatedAt": "2026-11-20T07:49:44.485Z",
   "games": [
     {
       "file": "code_artifact.html",
@@ -49,6 +49,12 @@ window.FISH_ARCADE_MANIFEST = {
       "title": "彩虹岛冒险 · 横版平台",
       "desc": "",
       "size": 43083
+    },
+    {
+      "file": "saolei-3-v2.html",
+      "title": "扫雷 · 经典三难度",
+      "desc": "",
+      "size": 42826
     },
     {
       "file": "starport_tactical_defense.html",

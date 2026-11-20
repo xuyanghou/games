@@ -114,6 +114,16 @@ window.FISH_ARCADE_GAMES = [
         scoreKey: null
     },
     {
+        file: 'saolei-3-v2.html',
+        title: '扫雷 · 经典3难度',
+        en: 'Minesweeper · Classic 3 Difficulty',
+        icon: '💣',
+        desc: '经典扫雷推理：在雷区里翻格子，用数字提示推算周围雷数，右键插旗标记。简单到困难三档随机切换，首点必安全，考的是逻辑不是运气。',
+        tags: ['推理', '逻辑', '经典'],
+        tone: 'blue',
+        scoreKey: null
+    },
+    {
         file: 'neon_bounce_breakout.html',
         title: '霓虹弹跳 · 打砖块',
         en: 'Neon Bounce · Breakout',
