@@ -68,7 +68,7 @@ window.FISH_ARCADE_GAMES = [
         title: '卡通三角洲：搜打撤',
         en: 'Toon Delta · Extract',
         icon: '🚁',
-        desc: 'Q 版小人潜入玩具城：搜刮战利品、击退巡逻小怪，在 60 秒内赶到绿色撤离区，按住 E 完成撤离。搜得越多越值钱，也越危险。',
+        desc: 'Q 版小人潜入玩具城：搜刮战利品、击退巡逻小怪，在 3 分钟内赶到绿色撤离区，按住 E 完成撤离。屏幕边缘有撤离箭头指引，搜得越多越值钱，也越危险。',
         tags: ['俯视角', '射击', '搜刮撤离'],
         tone: 'purple',
         scoreKey: 'toon_delta_best'

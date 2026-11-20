@@ -41,6 +41,20 @@
     .hud-box { display: flex; flex-direction: column; gap: 4px; }
     .hud-box.right { align-items: flex-end; }
 
+    /* 撤离罗盘 */
+    #compass {
+        position: absolute; right: 16px; top: 96px;
+        width: 74px; height: 74px; border-radius: 50%;
+        background: var(--panel); border: 1px solid var(--stroke);
+        z-index: 10; pointer-events: none;
+        display: flex; align-items: center; justify-content: center;
+    }
+    #compass-arrow { font-size: 1.5rem; color: var(--green); transition: transform 0.08s linear; }
+    #compass-dist {
+        position: absolute; bottom: -20px; left: 0; width: 100%; text-align: center;
+        font-size: 0.68rem; font-weight: 900; color: var(--green);
+    }
+
     .label { font-size: 0.68rem; color: var(--dim); letter-spacing: 2px; }
     .val { font-size: 1.5rem; font-weight: 900; font-variant-numeric: tabular-nums; }
     .val.gold { color: var(--gold); text-shadow: 0 0 14px rgba(255, 204, 0, 0.45); }
@@ -174,7 +188,7 @@
         <div class="hud-box right">
             <span class="label">携出价值</span>
             <span class="val gold" id="loot-value">0</span>
-            <span class="label" id="timer">剩余 60s</span>
+            <span class="label" id="timer">剩余 3:00</span>
         </div>
     </div>
 
@@ -182,6 +196,12 @@
     <div id="extract-box">
         <div class="title">⏱ 正在撤离…</div>
         <div class="ex-track"><div class="ex-fill" id="ex-fill"></div></div>
+    </div>
+
+    <!-- 撤离罗盘 -->
+    <div id="compass">
+        <div id="compass-arrow">➤</div>
+        <div id="compass-dist">--m</div>
     </div>
 
     <!-- 物资栏 -->
@@ -200,7 +220,7 @@
             <h1>卡通三角洲<span>搜 打 撤</span></h1>
             <p class="desc">
                 你是 Q 版小人突击队的一员，潜入 <b>玩具城</b> 搜刮战利品。<br>
-                找到 <b>撤离点</b> 并在倒计时结束前带着战利品撤离 —— <b>搜打撤</b> 的精髓就在这一取舍：
+                找到 <b>撤离点</b>（右上角绿色 🚁，屏幕边缘会有箭头指引），在 <b>3 分钟</b>内带着战利品撤离 —— <b>搜打撤</b> 的精髓就在这一取舍：
                 搜得越多越值钱，但时间也越紧。<br>
                 被小怪抓到会掉装备，撤离成功才算真正带出去。
             </p>
@@ -347,8 +367,8 @@ const LOOT_TYPES = [
 --------------------------------------------------------------- */
 let state = 'menu';  // menu | playing | paused | over
 let player;
-let timeLeft = 60;
-let totalTime = 60;
+let timeLeft = 180;
+let totalTime = 180;
 let lootValue = 0;
 let kills = 0;
 let bestValue = parseInt(localStorage.getItem('toon_delta_best') || '0', 10);
@@ -612,10 +632,18 @@ function update(dt) {
         player.walkPhase += dt * (spd > player.speed ? 16 : 11);
     }
 
-    /* 速度积分（带阻尼，手感更顺） */
-    const accel = len > 0 ? 14 : 0;
-    player.vx += (mx * spd - player.vx) * Math.min(1, accel * dt);
-    player.vy += (my * spd - player.vy) * Math.min(1, accel * dt);
+    /* 速度积分：松开方向键时强力减速，停下即停 */
+    if (len > 0) {
+        player.vx += (mx * spd - player.vx) * Math.min(1, 14 * dt);
+        player.vy += (my * spd - player.vy) * Math.min(1, 14 * dt);
+    } else {
+        /* 无输入：摩擦力快速衰减速度，避免惯性滑行 */
+        const stop = Math.min(1, 18 * dt);
+        player.vx -= player.vx * stop;
+        player.vy -= player.vy * stop;
+        if (Math.abs(player.vx) < 4) player.vx = 0;
+        if (Math.abs(player.vy) < 4) player.vy = 0;
+    }
 
     moveEntity(player, player.vx * dt, player.vy * dt);
 
@@ -1076,6 +1104,78 @@ function render() {
 
     ctx.restore();
 
+    /* ---- 撤离区指引（屏幕坐标系，不受相机平移影响） ---- */
+    if (extractZone && player) {
+        const z = extractZone;
+        const sxE = screenX(z.x);
+        const syE = screenY(z.y);
+        const margin = 72;
+        const offScreen = sxE < margin || sxE > VW - margin || syE < margin || syE > VH - margin;
+        const dist = Math.round(Math.hypot(z.x - player.x, z.y - player.y));
+
+        if (offScreen) {
+            /* 从屏幕中心指向撤离点，投影到屏幕边缘 */
+            const cx = VW / 2, cy = VH / 2;
+            const dx = sxE - cx, dy = syE - cy;
+            const len = Math.hypot(dx, dy) || 1;
+            const ux = dx / len, uy = dy / len;
+            const t = Math.min(
+                (VW / 2 - margin) / Math.max(Math.abs(ux), 0.0001),
+                (VH / 2 - margin) / Math.max(Math.abs(uy), 0.0001)
+            );
+            const ax = cx + ux * t;
+            const ay = cy + uy * t;
+            const ang = Math.atan2(uy, ux);
+
+            ctx.save();
+            /* 底衬 */
+            ctx.fillStyle = 'rgba(70, 224, 138, 0.18)';
+            ctx.beginPath();
+            ctx.arc(ax, ay, 22, 0, Math.PI * 2);
+            ctx.fill();
+
+            ctx.translate(ax, ay);
+            ctx.rotate(ang);
+            ctx.fillStyle = '#46e08a';
+            ctx.beginPath();
+            ctx.moveTo(15, 0);
+            ctx.lineTo(-9, -11);
+            ctx.lineTo(-3, 0);
+            ctx.lineTo(-9, 11);
+            ctx.closePath();
+            ctx.fill();
+            ctx.restore();
+
+            /* 距离文字（正立，放在箭头外侧） */
+            const tx = ax + ux * 34;
+            const ty = ay + uy * 34;
+            ctx.save();
+            ctx.font = '900 13px "Noto Sans SC", sans-serif';
+            ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+            ctx.strokeStyle = 'rgba(0,0,0,0.8)';
+            ctx.lineWidth = 4;
+            ctx.strokeText(dist + 'm', tx, ty);
+            ctx.fillStyle = '#7bf0aa';
+            ctx.fillText(dist + 'm', tx, ty);
+            ctx.restore();
+        } else {
+            /* 撤离点在屏幕内：画一条从玩家指向撤离点的虚线 */
+            const px = screenX(player.x);
+            const py = screenY(player.y);
+            ctx.save();
+            ctx.strokeStyle = 'rgba(70, 224, 138, 0.22)';
+            ctx.lineWidth = 2;
+            ctx.setLineDash([6, 10]);
+            ctx.lineDashOffset = -performance.now() * 0.015;
+            ctx.beginPath();
+            ctx.moveTo(px, py);
+            ctx.lineTo(sxE, syE);
+            ctx.stroke();
+            ctx.setLineDash([]);
+            ctx.restore();
+        }
+    }
+
     /* 受击红闪 */
     if (flashTime > 0) {
         ctx.fillStyle = 'rgba(255, 60, 60, ' + (flashTime * 1.6) + ')';
@@ -1137,6 +1237,14 @@ function showToast(msg, keep) {
     }
 }
 
+/* 秒 → mm:ss */
+function fmtTime(s) {
+    s = Math.max(0, Math.ceil(s));
+    const m = Math.floor(s / 60);
+    const r = s % 60;
+    return m + ':' + (r < 10 ? '0' : '') + r;
+}
+
 function updateHUD() {
     if (!player) return;
     const pct = Math.max(0, player.hp / player.maxHp);
@@ -1145,7 +1253,17 @@ function updateHUD() {
     fill.classList.toggle('low', pct < 0.35);
     document.getElementById('hp-text').textContent = 'HP ' + Math.ceil(player.hp) + ' / ' + player.maxHp;
     document.getElementById('loot-value').textContent = lootValue;
-    document.getElementById('timer').textContent = '剩余 ' + Math.ceil(timeLeft) + 's';
+    document.getElementById('timer').textContent = '剩余 ' + fmtTime(timeLeft);
+
+    /* 撤离罗盘 */
+    if (extractZone) {
+        const dx = extractZone.x - player.x;
+        const dy = extractZone.y - player.y;
+        const dist = Math.round(Math.hypot(dx, dy));
+        const arrow = document.getElementById('compass-arrow');
+        arrow.style.transform = 'rotate(' + (Math.atan2(dy, dx) * 180 / Math.PI + 90) + 'deg)';
+        document.getElementById('compass-dist').textContent = dist + 'm';
+    }
 
     /* 物资栏 */
     const bar = document.getElementById('loot-bar');

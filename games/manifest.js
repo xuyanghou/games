@@ -1,6 +1,6 @@
 /* 自动生成，请勿手改 —— 运行 node scan.js 或双击「刷新游戏列表.bat」更新 */
 window.FISH_ARCADE_MANIFEST = {
-  "generatedAt": "2026-11-20T02:20:49.038Z",
+  "generatedAt": "2026-11-20T02:38:44.838Z",
   "games": [
     {
       "file": "code_artifact.html",
@@ -30,7 +30,7 @@ window.FISH_ARCADE_MANIFEST = {
       "file": "toon_delta_extract.html",
       "title": "卡通三角洲：搜打撤 | TOON DELTA: EXTRACT",
       "desc": "",
-      "size": 45877
+      "size": 50297
     }
   ]
 };
