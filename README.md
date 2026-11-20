@@ -3,7 +3,7 @@
 上班摸鱼专用的小游戏合集。一个页面统一收纳多个 HTML 小游戏，双击即可开玩，无需安装、无需联网、无需任何授权。
 
 > 技术栈：原生 HTML + CSS + JavaScript，界面层使用 Vue 3（已本地化，离线可用）。
-> 游戏本体均为**单文件原生 HTML**，零依赖、零构建。
+> 游戏本体均为**单文件原生 HTML**，零依赖、零构建。（当前共 7 款：夜市大排档、霓虹脉冲、星际港湾、超级玛丽、卡通三角洲、灵蛇渡劫、修仙人生模拟器）
 
 ### 🌐 在线体验
 
@@ -71,6 +71,8 @@ d:\nodeJs学习\games\
 │   ├── starport_tactical_defense.html  星际港湾：战术防御
 │   ├── super_mario.html            超级玛丽 · 六关版
 │   ├── toon_delta_extract.html     卡通三角洲：搜打撤
+│   ├── lingshe.html                灵蛇渡劫 · 修仙贪吃蛇
+│   ├── xiuxian.html                修仙人生模拟器
 │   └── manifest.js         ← 【自动生成】扫描结果清单，请勿手改
 │
 ├── games.config.js         ← 【可选】卡片图标 / 配色 / 简介 / 最高分配置
@@ -110,6 +112,8 @@ games/
 ├── starport_tactical_defense.html
 ├── super_mario.html
 ├── toon_delta_extract.html
+├── lingshe.html
+├── xiuxian.html
 └── my_new_game.html      ← 👈 放这里
 ```
 
@@ -190,6 +194,8 @@ window.FISH_ARCADE_GAMES = [
 | `green` | 草绿（超级玛丽） |
 | `blue` | 科技蓝 |
 | `purple` | 梦幻紫（卡通三角洲） |
+| `cyan` | 赛博青（霓虹脉冲 / 灵蛇渡劫） |
+| `amber` | 暖橙（夜市大排档 / 修仙人生模拟器） |
 
 不写 `tone` 时会按 `amber → cyan → magenta → green → blue → purple` 循环自动分配，保证相邻卡片不撞色。
 

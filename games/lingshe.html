@@ -1,0 +1,863 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>灵蛇渡劫 · 修仙贪吃蛇</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" />
+<style>
+  :root{
+    --ink:#050810;
+    --jade:#4fe3c1;
+    --gold:#ffd479;
+    --danger:#ff5c7a;
+    --text:#dfe9f5;
+    --muted:#8296aa;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ min-height:100%; }
+  body{
+    margin:0;
+    padding:22px 16px 30px;
+    display:flex;
+    background:
+      radial-gradient(1200px 700px at 50% -12%, #12203a 0%, rgba(18,32,58,0) 62%),
+      radial-gradient(900px 640px at 84% 112%, #1b1430 0%, rgba(27,20,48,0) 58%),
+      var(--ink);
+    color:var(--text);
+    font-family:"Noto Sans SC",system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    width:100%;
+    max-width:520px;
+    margin:auto;
+    display:flex;
+    flex-direction:column;
+    gap:13px;
+  }
+
+  /* ===== 标题 ===== */
+  .head{ display:flex; align-items:center; gap:14px; }
+  .seal{
+    width:46px; height:46px; flex:0 0 46px;
+    border-radius:11px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:"Noto Serif SC",serif; font-size:20px; font-weight:600;
+    color:var(--gold);
+    background:linear-gradient(145deg,#1c3b34,#0b1817);
+    border:1px solid rgba(79,227,193,0.32);
+    box-shadow:inset 0 0 22px rgba(79,227,193,0.18), 0 6px 18px rgba(0,0,0,0.5);
+    letter-spacing:0;
+  }
+  .head h1{
+    margin:0;
+    font-family:"Noto Serif SC",serif;
+    font-size:26px; font-weight:700;
+    letter-spacing:7px;
+    color:#eaf6ff;
+    text-shadow:0 0 24px rgba(79,227,193,0.22);
+  }
+  .head .sub{
+    margin:4px 0 0;
+    font-size:11.5px;
+    letter-spacing:2.5px;
+    color:var(--muted);
+  }
+
+  /* ===== 状态栏 ===== */
+  .hud{ display:grid; grid-template-columns:repeat(3,1fr); gap:10px; }
+  .cell{
+    padding:8px 11px 9px;
+    border-radius:12px;
+    border:1px solid rgba(90,180,200,0.15);
+    background:linear-gradient(180deg, rgba(28,52,72,0.5), rgba(11,18,30,0.5));
+    display:flex; flex-direction:column; gap:2px;
+    min-width:0;
+  }
+  .cell .k{ font-size:10.5px; letter-spacing:2px; color:var(--muted); }
+  .cell .v{
+    font-family:"Noto Serif SC",serif;
+    font-size:19px; font-weight:700;
+    color:var(--jade);
+    text-shadow:0 0 16px rgba(79,227,193,0.4);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+
+  /* ===== 画面 ===== */
+  .stage{
+    position:relative;
+    width:100%;
+    aspect-ratio:1/1;
+    border-radius:16px;
+    overflow:hidden;
+    background:#070c15;
+    box-shadow:
+      0 26px 60px rgba(0,0,0,0.6),
+      0 0 0 1px rgba(90,220,200,0.16),
+      0 0 46px rgba(60,180,160,0.1);
+  }
+  canvas{ display:block; width:100%; height:100%; touch-action:none; }
+
+  .toast{
+    position:absolute; left:50%; top:15%;
+    transform:translate(-50%,-10px);
+    padding:8px 18px;
+    border-radius:999px;
+    font-family:"Noto Serif SC",serif;
+    font-size:14px; letter-spacing:3px;
+    color:#fff3cf;
+    background:rgba(9,24,22,0.88);
+    border:1px solid rgba(255,212,121,0.45);
+    box-shadow:0 0 26px rgba(255,212,121,0.22);
+    opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease;
+    white-space:nowrap;
+  }
+  .toast.show{ opacity:1; transform:translate(-50%,0); }
+
+  .overlay{
+    position:absolute; inset:0;
+    display:flex; align-items:center; justify-content:center;
+    padding:26px;
+    text-align:center;
+    background:rgba(4,8,14,0.84);
+    -webkit-backdrop-filter:blur(7px);
+    backdrop-filter:blur(7px);
+    opacity:0; pointer-events:none;
+    transition:opacity .28s ease;
+  }
+  .overlay.show{ opacity:1; pointer-events:auto; }
+  .ov-inner{ width:100%; max-width:380px; }
+  .overlay h2{
+    margin:0 0 12px;
+    font-family:"Noto Serif SC",serif;
+    font-size:25px; font-weight:700;
+    letter-spacing:9px;
+    color:#eaf6ff;
+    text-shadow:0 0 30px rgba(79,227,193,0.3);
+  }
+  .overlay p{
+    margin:0 auto;
+    max-width:340px;
+    font-size:12.5px; line-height:2;
+    color:#9db4c7;
+    letter-spacing:0.6px;
+  }
+  .ov-stats{
+    display:flex; flex-direction:column; gap:7px;
+    margin:16px auto 0; max-width:250px;
+  }
+  .stat{
+    display:flex; justify-content:space-between; align-items:baseline;
+    font-size:12.5px; color:var(--muted);
+    padding-bottom:6px;
+    border-bottom:1px dashed rgba(120,180,200,0.14);
+  }
+  .stat b{
+    font-family:"Noto Serif SC",serif;
+    font-size:15px; color:var(--jade);
+  }
+  .btn{
+    margin-top:20px;
+    padding:12px 30px;
+    border:none; border-radius:999px;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:14.5px; letter-spacing:3px;
+    color:#04211b;
+    background:linear-gradient(135deg,#96f4da,#4fe3c1 46%,#ffd479);
+    box-shadow:0 10px 26px rgba(79,227,193,0.3);
+    transition:transform .15s ease, box-shadow .15s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); box-shadow:0 14px 32px rgba(79,227,193,0.42); }
+  .btn:active{ transform:translateY(1px); }
+
+  /* ===== 方向键 ===== */
+  .pad{
+    display:none;
+    grid-template-areas:". up ." "left . right" ". down .";
+    grid-template-columns:repeat(3,1fr);
+    gap:8px;
+  }
+  .pk{
+    height:52px;
+    border-radius:14px;
+    border:1px solid rgba(120,200,220,0.18);
+    background:rgba(24,42,58,0.45);
+    color:var(--text);
+    font-size:19px;
+    font-family:inherit;
+    cursor:pointer;
+    -webkit-user-select:none;
+    user-select:none;
+    transition:background .12s ease;
+  }
+  .pk:active{ background:rgba(79,227,193,0.26); }
+  .pk[data-dir="up"]{ grid-area:up; }
+  .pk[data-dir="left"]{ grid-area:left; }
+  .pk[data-dir="down"]{ grid-area:down; }
+  .pk[data-dir="right"]{ grid-area:right; }
+  @media (max-width:680px), (pointer:coarse){
+    .pad{ display:grid; }
+  }
+
+  .hint{
+    margin:0;
+    text-align:center;
+    font-size:11.5px;
+    line-height:1.9;
+    letter-spacing:1.2px;
+    color:var(--muted);
+  }
+</style>
+</head>
+<body>
+<div class="app">
+
+  <!-- ===== 标题 ===== -->
+  <header class="head">
+    <div class="seal">道</div>
+    <div>
+      <h1>灵蛇渡劫</h1>
+      <p class="sub">吞灵石 · 破雷劫 · 步步登仙</p>
+    </div>
+  </header>
+
+  <!-- ===== 状态栏 ===== -->
+  <section class="hud">
+    <div class="cell"><span class="k">境界</span><span class="v" id="hud-realm">炼气</span></div>
+    <div class="cell"><span class="k">灵石</span><span class="v" id="hud-score">0</span></div>
+    <div class="cell"><span class="k">最高</span><span class="v" id="hud-best">0</span></div>
+  </section>
+
+  <!-- ===== 画面 ===== -->
+  <div class="stage" id="stage">
+    <canvas id="game" width="504" height="504" aria-label="灵蛇渡劫游戏画面"></canvas>
+    <div class="toast" id="toast"></div>
+    <div class="overlay" id="overlay">
+      <div class="ov-inner">
+        <h2 id="ov-title">准备御剑</h2>
+        <p id="ov-desc"></p>
+        <div class="ov-stats" id="ov-stats"></div>
+        <button class="btn" id="ov-btn">开始修行</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- ===== 触屏方向键 ===== -->
+  <div class="pad">
+    <button class="pk" data-dir="up" aria-label="上">↑</button>
+    <button class="pk" data-dir="left" aria-label="左">←</button>
+    <button class="pk" data-dir="right" aria-label="右">→</button>
+    <button class="pk" data-dir="down" aria-label="下">↓</button>
+  </div>
+
+  <p class="hint">方向键 / WASD 操控 · 空格键暂停<br>每吞五枚灵石提升一境，雷劫随之落下</p>
+</div>
+
+<script>
+(() => {
+  'use strict';
+
+  // ================= 基础常量 =================
+  const COLS = 21;
+  const CELL = 24;
+  const SIZE = COLS * CELL;          // 504
+  const STEP_START = 200;
+  const STEP_MIN = 44;
+  const STEP_DEC = 11;
+  const REALMS = ['炼气','筑基','金丹','元婴','化神','炼虚','合体','大乘','渡劫'];
+
+  const canvas   = document.getElementById('game');
+  const ctx      = canvas.getContext('2d');
+  const overlay  = document.getElementById('overlay');
+  const ovTitle  = document.getElementById('ov-title');
+  const ovDesc   = document.getElementById('ov-desc');
+  const ovStats  = document.getElementById('ov-stats');
+  const ovBtn    = document.getElementById('ov-btn');
+  const toastEl  = document.getElementById('toast');
+  const hudRealm = document.getElementById('hud-realm');
+  const hudScore = document.getElementById('hud-score');
+  const hudBest  = document.getElementById('hud-best');
+
+  // ================= 画布适配 =================
+  let BG = null;
+  function fitCanvas(){
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
+    canvas.width  = SIZE * dpr;
+    canvas.height = SIZE * dpr;
+    ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
+  }
+  function buildBG(){
+    BG = ctx.createLinearGradient(0, 0, SIZE, SIZE);
+    BG.addColorStop(0,   '#07121c');
+    BG.addColorStop(0.48,'#0a1020');
+    BG.addColorStop(1,   '#0c0a1c');
+  }
+
+  // 背景星尘
+  const STARS = Array.from({ length: 70 }, () => ({
+    x: Math.random() * SIZE,
+    y: Math.random() * SIZE,
+    r: Math.random() * 1.3 + 0.4,
+    a: Math.random() * 0.32 + 0.07
+  }));
+
+  // ================= 游戏状态 =================
+  const G = {
+    phase: 'ready',        // ready | running | paused | dead
+    snake: [],
+    dir: { x: 1, y: 0 },
+    queue: [],
+    food: { x: 0, y: 0 },
+    obstacles: [],
+    particles: [],
+    score: 0,
+    level: 0,
+    stepMs: STEP_START,
+    acc: 0,
+    best: Number(localStorage.getItem('lingshe_best') || 0) || 0,
+    pop: 0,
+    shake: 0,
+    last: 0
+  };
+
+  // ================= 工具 =================
+  function rr(c, x, y, w, h, r){
+    r = Math.max(0, Math.min(r, w / 2, h / 2));
+    c.beginPath();
+    if (typeof c.roundRect === 'function'){
+      c.roundRect(x, y, w, h, r);
+      return;
+    }
+    c.moveTo(x + r, y);
+    c.arcTo(x + w, y,     x + w, y + r,     r);
+    c.arcTo(x + w, y + h, x + w - r, y + h, r);
+    c.arcTo(x,     y + h, x,     y + h - r, r);
+    c.arcTo(x,     y,     x + r, y,         r);
+    c.closePath();
+  }
+
+  function realmName(){
+    if (G.level < REALMS.length) return REALMS[G.level];
+    return '真仙' + (G.level - REALMS.length + 1) + '重';
+  }
+
+  function updateHUD(){
+    hudRealm.textContent = realmName();
+    hudScore.textContent = String(G.score);
+    hudBest.textContent  = String(G.best);
+  }
+
+  // ================= 场地生成 =================
+  function isOccupied(x, y){
+    for (let i = 0; i < G.snake.length; i++){
+      if (G.snake[i].x === x && G.snake[i].y === y) return true;
+    }
+    for (let i = 0; i < G.obstacles.length; i++){
+      if (G.obstacles[i].x === x && G.obstacles[i].y === y) return true;
+    }
+    return false;
+  }
+
+  function findFree(minDist){
+    const head = G.snake[0] || { x: -99, y: -99 };
+    for (let k = 0; k < 500; k++){
+      const x = Math.floor(Math.random() * COLS);
+      const y = Math.floor(Math.random() * COLS);
+      if (isOccupied(x, y)) continue;
+      if (minDist && (Math.abs(x - head.x) + Math.abs(y - head.y) < minDist)) continue;
+      return { x, y };
+    }
+    return null;
+  }
+
+  function spawnFood(){
+    const p = findFree(1);
+    if (p) G.food = p;
+  }
+
+  function spawnObstacle(){
+    const p = findFree(4);
+    if (p) G.obstacles.push(p);
+  }
+
+  // ================= 生命周期 =================
+  function reset(){
+    G.snake = [{ x: 8, y: 10 }, { x: 7, y: 10 }, { x: 6, y: 10 }];
+    G.dir = { x: 1, y: 0 };
+    G.queue = [];
+    G.obstacles = [];
+    G.particles = [];
+    G.score = 0;
+    G.level = 0;
+    G.stepMs = STEP_START;
+    G.acc = 0;
+    G.pop = 0;
+    G.shake = 0;
+    spawnFood();
+    updateHUD();
+  }
+
+  function startGame(){
+    reset();
+    G.phase = 'running';
+    G.acc = 0;
+    hideOverlay();
+  }
+
+  function togglePause(){
+    if (G.phase === 'running'){
+      G.phase = 'paused';
+      showOverlay('入定中', '灵息内敛，天地俱寂。', [], '继续修行');
+    } else if (G.phase === 'paused'){
+      G.phase = 'running';
+      hideOverlay();
+    }
+  }
+
+  function die(reason){
+    G.phase = 'dead';
+    G.shake = 1;
+    if (G.score > G.best){
+      G.best = G.score;
+      try { localStorage.setItem('lingshe_best', String(G.best)); } catch (e) {}
+    }
+    updateHUD();
+    showOverlay('身死道消', reason, [
+      ['此世境界', realmName()],
+      ['吞下灵石', G.score + ' 枚'],
+      ['历史最高', G.best + ' 枚']
+    ], '再来一世');
+  }
+
+  function levelUp(){
+    G.level++;
+    G.stepMs = Math.max(STEP_MIN, STEP_START - G.level * STEP_DEC);
+    spawnObstacle();
+    updateHUD();
+    toast('境界提升 · ' + realmName());
+  }
+
+  // ================= 核心步进 =================
+  function step(){
+    if (G.queue.length) G.dir = G.queue.shift();
+
+    const head = G.snake[0];
+    const nx = head.x + G.dir.x;
+    const ny = head.y + G.dir.y;
+
+    // 撞护山结界
+    if (nx < 0 || ny < 0 || nx >= COLS || ny >= COLS){
+      die('一头撞上护山结界，灵体崩散。');
+      return;
+    }
+
+    // 撞雷劫
+    for (let i = 0; i < G.obstacles.length; i++){
+      if (G.obstacles[i].x === nx && G.obstacles[i].y === ny){
+        die('踏入雷劫之地，被天雷劈散。');
+        return;
+      }
+    }
+
+    const eating = (nx === G.food.x && ny === G.food.y);
+    const limit = eating ? G.snake.length : G.snake.length - 1;
+    for (let i = 0; i < limit; i++){
+      if (G.snake[i].x === nx && G.snake[i].y === ny){
+        die('被自己的灵体缠住，经脉逆行。');
+        return;
+      }
+    }
+
+    G.snake.unshift({ x: nx, y: ny });
+    if (!eating) G.snake.pop();
+
+    if (eating){
+      G.score++;
+      G.pop = 1;
+      G.shake = Math.max(G.shake, 0.32);
+      burst(nx, ny);
+      if (G.score % 5 === 0) levelUp();
+      spawnFood();
+      updateHUD();
+    }
+  }
+
+  // ================= 粒子 =================
+  function burst(gx, gy){
+    const cx = gx * CELL + CELL / 2;
+    const cy = gy * CELL + CELL / 2;
+    for (let i = 0; i < 16; i++){
+      const a = Math.random() * Math.PI * 2;
+      const sp = 40 + Math.random() * 130;
+      G.particles.push({
+        x: cx, y: cy,
+        vx: Math.cos(a) * sp,
+        vy: Math.sin(a) * sp,
+        life: 1,
+        hue: 42 + Math.random() * 22,
+        size: 1.4 + Math.random() * 2.6
+      });
+    }
+  }
+
+  function updateParticles(dt){
+    for (let i = G.particles.length - 1; i >= 0; i--){
+      const p = G.particles[i];
+      p.x += p.vx * dt;
+      p.y += p.vy * dt;
+      p.vx *= 0.93;
+      p.vy *= 0.93;
+      p.life -= dt * 1.7;
+      if (p.life <= 0) G.particles.splice(i, 1);
+    }
+  }
+
+  // ================= 绘制 =================
+  function drawObstacle(o, now){
+    const cx = o.x * CELL + CELL / 2;
+    const cy = o.y * CELL + CELL / 2;
+    const pulse = 0.55 + 0.45 * Math.sin(now * 0.005 + o.x * 1.7 + o.y);
+
+    ctx.fillStyle = 'rgba(255,92,122,0.09)';
+    rr(ctx, cx - CELL / 2 + 2, cy - CELL / 2 + 2, CELL - 4, CELL - 4, 6);
+    ctx.fill();
+
+    ctx.strokeStyle = 'rgba(255,92,122,0.42)';
+    ctx.lineWidth = 1.1;
+    ctx.stroke();
+
+    const s = CELL * 0.33;
+    ctx.strokeStyle = 'rgba(255,138,158,' + (0.55 + 0.4 * pulse).toFixed(3) + ')';
+    ctx.lineWidth = 2;
+    ctx.beginPath();
+    ctx.moveTo(cx - s * 0.35, cy - s);
+    ctx.lineTo(cx + s * 0.5,  cy - s * 0.15);
+    ctx.lineTo(cx - s * 0.12, cy + s * 0.05);
+    ctx.lineTo(cx + s * 0.45, cy + s);
+    ctx.stroke();
+  }
+
+  function drawFood(now){
+    const f = G.food;
+    const cx = f.x * CELL + CELL / 2;
+    const cy = f.y * CELL + CELL / 2;
+    const pulse = 0.5 + 0.5 * Math.sin(now * 0.0045);
+    const r = CELL * 0.26 + pulse * 3.2;
+
+    ctx.shadowColor = 'rgba(255,214,121,0.9)';
+    ctx.shadowBlur = 16 + pulse * 12;
+    ctx.fillStyle = '#ffd479';
+    ctx.beginPath();
+    ctx.moveTo(cx, cy - r);
+    ctx.lineTo(cx + r * 0.7, cy);
+    ctx.lineTo(cx, cy + r);
+    ctx.lineTo(cx - r * 0.7, cy);
+    ctx.closePath();
+    ctx.fill();
+    ctx.shadowBlur = 0;
+
+    ctx.fillStyle = '#fff8e2';
+    ctx.beginPath();
+    ctx.arc(cx, cy, r * 0.34, 0, Math.PI * 2);
+    ctx.fill();
+  }
+
+  function drawSnake(){
+    const n = G.snake.length;
+
+    for (let i = n - 1; i >= 0; i--){
+      const seg = G.snake[i];
+      const t = i / Math.max(1, n - 1);
+      const hue = 166 + t * 74;
+      const light = 63 - t * 23;
+      const cx = seg.x * CELL + CELL / 2;
+      const cy = seg.y * CELL + CELL / 2;
+
+      let size = CELL - 4;
+      if (i === 0) size *= 1 + G.pop * 0.24;
+      const rad = Math.max(3, size * 0.34);
+
+      if (i < 5){
+        ctx.shadowColor = 'hsla(' + hue.toFixed(0) + ',92%,60%,0.7)';
+        ctx.shadowBlur = (i === 0) ? 16 : 9;
+      }
+      ctx.fillStyle = 'hsl(' + hue.toFixed(0) + ', 88%, ' + light.toFixed(0) + '%)';
+      rr(ctx, cx - size / 2, cy - size / 2, size, size, rad);
+      ctx.fill();
+      ctx.shadowBlur = 0;
+
+      // 头部青金高光
+      if (i === 0){
+        ctx.fillStyle = 'rgba(255,248,214,0.85)';
+        ctx.beginPath();
+        ctx.arc(
+          cx - G.dir.x * size * 0.14,
+          cy - G.dir.y * size * 0.14,
+          size * 0.12, 0, Math.PI * 2
+        );
+        ctx.fill();
+      }
+    }
+
+    // 眼睛
+    const head = G.snake[0];
+    if (!head) return;
+    const s = (CELL - 4) * (1 + G.pop * 0.24);
+    const hx = head.x * CELL + CELL / 2;
+    const hy = head.y * CELL + CELL / 2;
+    const fx = G.dir.x * s * 0.25;
+    const fy = G.dir.y * s * 0.25;
+    const px = G.dir.y * s * 0.21;
+    const py = -G.dir.x * s * 0.21;
+
+    ctx.fillStyle = '#04211d';
+    for (let k = -1; k <= 1; k += 2){
+      ctx.beginPath();
+      ctx.arc(hx + fx + px * k, hy + fy + py * k, s * 0.13, 0, Math.PI * 2);
+      ctx.fill();
+    }
+  }
+
+  function draw(){
+    const now = performance.now();
+
+    ctx.save();
+    if (G.shake > 0.001){
+      const amp = G.shake * 7;
+      ctx.translate(
+        (Math.random() - 0.5) * amp,
+        (Math.random() - 0.5) * amp
+      );
+    }
+
+    // 底
+    ctx.clearRect(-12, -12, SIZE + 24, SIZE + 24);
+    ctx.fillStyle = BG || '#08101a';
+    ctx.fillRect(0, 0, SIZE, SIZE);
+
+    // 星尘
+    for (let i = 0; i < STARS.length; i++){
+      const st = STARS[i];
+      ctx.globalAlpha = st.a * (0.55 + 0.45 * Math.sin(now * 0.0011 + st.x * 0.7));
+      ctx.fillStyle = '#b9e7ff';
+      ctx.beginPath();
+      ctx.arc(st.x, st.y, st.r, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // 网格
+    ctx.strokeStyle = 'rgba(110,190,220,0.065)';
+    ctx.lineWidth = 1;
+    ctx.beginPath();
+    for (let i = 0; i <= COLS; i++){
+      const p = i * CELL + 0.5;
+      ctx.moveTo(p, 0);  ctx.lineTo(p, SIZE);
+      ctx.moveTo(0, p);  ctx.lineTo(SIZE, p);
+    }
+    ctx.stroke();
+
+    // 实体
+    for (let i = 0; i < G.obstacles.length; i++) drawObstacle(G.obstacles[i], now);
+    drawFood(now);
+    drawSnake();
+
+    // 粒子
+    for (let i = 0; i < G.particles.length; i++){
+      const p = G.particles[i];
+      ctx.globalAlpha = Math.max(0, Math.min(1, p.life));
+      ctx.fillStyle = 'hsl(' + p.hue.toFixed(0) + ', 100%, 66%)';
+      ctx.beginPath();
+      ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+      ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    // 结界边框
+    ctx.strokeStyle = 'rgba(90,220,200,0.32)';
+    ctx.lineWidth = 2;
+    ctx.shadowColor = 'rgba(79,227,193,0.55)';
+    ctx.shadowBlur = 14;
+    rr(ctx, 1, 1, SIZE - 2, SIZE - 2, 10);
+    ctx.stroke();
+    ctx.shadowBlur = 0;
+
+    ctx.restore();
+  }
+
+  // ================= 主循环 =================
+  function loop(ts){
+    if (!G.last) G.last = ts;
+    let dt = ts - G.last;
+    G.last = ts;
+    if (dt > 250) dt = 250;
+    if (dt < 0) dt = 0;
+
+    if (G.phase === 'running'){
+      G.acc += dt;
+      let guard = 0;
+      while (G.acc >= G.stepMs && guard < 6){
+        guard++;
+        G.acc -= G.stepMs;
+        step();
+        if (G.phase !== 'running') break;
+      }
+      if (G.phase === 'running' && G.acc >= G.stepMs) G.acc = 0;
+    }
+
+    updateParticles(dt / 1000);
+    if (G.pop > 0) G.pop = Math.max(0, G.pop - dt * 0.0038);
+    if (G.shake > 0) G.shake = Math.max(0, G.shake - dt * 0.0042);
+
+    draw();
+    requestAnimationFrame(loop);
+  }
+
+  // ================= 遮罩 / 提示 =================
+  function showOverlay(title, desc, stats, btnText){
+    ovTitle.textContent = title;
+    ovDesc.textContent = desc || '';
+    ovStats.innerHTML = '';
+    (stats || []).forEach(function(pair){
+      const row = document.createElement('div');
+      row.className = 'stat';
+      const k = document.createElement('span');
+      k.textContent = pair[0];
+      const v = document.createElement('b');
+      v.textContent = pair[1];
+      row.appendChild(k);
+      row.appendChild(v);
+      ovStats.appendChild(row);
+    });
+    ovBtn.textContent = btnText || '开始修行';
+    overlay.classList.add('show');
+  }
+
+  function hideOverlay(){
+    overlay.classList.remove('show');
+  }
+
+  let toastTimer = 0;
+  function toast(text){
+    toastEl.textContent = text;
+    toastEl.classList.remove('show');
+    // 强制重播动画
+    void toastEl.offsetWidth;
+    toastEl.classList.add('show');
+    clearTimeout(toastTimer);
+    toastTimer = setTimeout(function(){
+      toastEl.classList.remove('show');
+    }, 1500);
+  }
+
+  // ================= 输入 =================
+  function turn(x, y){
+    if (G.phase !== 'running') return;
+    const ref = G.queue.length ? G.queue[G.queue.length - 1] : G.dir;
+    if (ref.x === -x && ref.y === -y) return;   // 不能原路折返
+    if (ref.x === x && ref.y === y) return;
+    if (G.queue.length >= 2) return;
+    G.queue.push({ x: x, y: y });
+  }
+
+  const KEYS = {
+    ArrowUp: [0, -1], w: [0, -1], W: [0, -1],
+    ArrowDown: [0, 1], s: [0, 1],  S: [0, 1],
+    ArrowLeft: [-1, 0], a: [-1, 0], A: [-1, 0],
+    ArrowRight: [1, 0], d: [1, 0],  D: [1, 0]
+  };
+
+  document.addEventListener('keydown', function(e){
+    const k = e.key;
+
+    if (k === ' ' || k === 'Spacebar' || k === 'Enter' || k === 'Escape'){
+      e.preventDefault();
+      if (G.phase === 'running' || G.phase === 'paused') togglePause();
+      else startGame();
+      return;
+    }
+
+    const m = KEYS[k];
+    if (!m) return;
+    e.preventDefault();
+
+    if (G.phase === 'ready' || G.phase === 'dead'){
+      startGame();
+    }
+    turn(m[0], m[1]);
+  });
+
+  ovBtn.addEventListener('click', function(){
+    if (G.phase === 'paused') togglePause();
+    else startGame();
+  });
+
+  // 触屏滑动
+  let sx = 0, sy = 0, tracking = false;
+  canvas.addEventListener('touchstart', function(e){
+    const p = e.touches[0];
+    sx = p.clientX; sy = p.clientY;
+    tracking = true;
+    if (G.phase === 'ready' || G.phase === 'dead') startGame();
+  }, { passive: true });
+
+  canvas.addEventListener('touchmove', function(e){
+    if (!tracking) return;
+    const p = e.touches[0];
+    const dx = p.clientX - sx;
+    const dy = p.clientY - sy;
+    if (Math.abs(dx) < 26 && Math.abs(dy) < 26) return;
+
+    if (Math.abs(dx) > Math.abs(dy)) turn(dx > 0 ? 1 : -1, 0);
+    else turn(0, dy > 0 ? 1 : -1);
+
+    sx = p.clientX; sy = p.clientY;
+  }, { passive: true });
+
+  canvas.addEventListener('touchend', function(){ tracking = false; }, { passive: true });
+
+  // 方向键按钮
+  const padBtns = document.querySelectorAll('[data-dir]');
+  for (let i = 0; i < padBtns.length; i++){
+    const btn = padBtns[i];
+    btn.addEventListener('pointerdown', function(e){
+      e.preventDefault();
+      if (G.phase === 'ready' || G.phase === 'dead') startGame();
+      const d = btn.getAttribute('data-dir');
+      if (d === 'up') turn(0, -1);
+      else if (d === 'down') turn(0, 1);
+      else if (d === 'left') turn(-1, 0);
+      else turn(1, 0);
+    });
+  }
+
+  // 失焦自动暂停
+  document.addEventListener('visibilitychange', function(){
+    if (document.hidden && G.phase === 'running') togglePause();
+  });
+
+  window.addEventListener('resize', function(){
+    fitCanvas();
+    buildBG();
+  });
+
+  // ================= 启动 =================
+  fitCanvas();
+  buildBG();
+  reset();
+  G.phase = 'ready';
+  showOverlay(
+    '准备御剑',
+    '你是一条初开灵智的小蛇。吞下灵石可淬炼灵体，每得五分便提升一境——境界越高，身形越疾，雷劫亦随之落下。撞上结界、雷劫或自身，便是身死道消。',
+    [],
+    '开始修行'
+  );
+  requestAnimationFrame(loop);
+
+})();
+</script>
+</body>
+</html>

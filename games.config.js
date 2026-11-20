@@ -72,5 +72,25 @@ window.FISH_ARCADE_GAMES = [
         tags: ['俯视角', '射击', '搜刮撤离'],
         tone: 'purple',
         scoreKey: 'toon_delta_best'
+    },
+    {
+        file: 'lingshe.html',
+        title: '灵蛇渡劫 · 修仙贪吃蛇',
+        en: 'Spirit Snake · Snake xianxia',
+        icon: '🐍',
+        desc: '一条初开灵智的小蛇闯荡仙途：吞灵石淬炼灵体，每得五枚便提升一境。境界越高身形越快，天雷劫雷也随之落下 —— 撞上结界、劫雷或自己，身死道消。',
+        tags: ['贪吃蛇', '修仙', '躲避'],
+        tone: 'cyan',
+        scoreKey: 'lingshe_best'
+    },
+    {
+        file: 'xiuxian.html',
+        title: '修仙人生模拟器',
+        en: 'Xianxia Life Simulator',
+        icon: '🧘',
+        desc: '一命一世的人生模拟器：开局抽天赋选种族，从凡人一路修到大乘再渡天劫。天赋、属性、法宝、道侣、宗门抉择轮番登场，寿元耗尽后转动命轮继承前世机缘 —— 活得久、境界高，未必就是最好的一世。',
+        tags: ['文字', '养成', '轮回'],
+        tone: 'amber',
+        scoreKey: null
     }
 ];

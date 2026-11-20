@@ -1,0 +1,3849 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+<title>修仙人生模拟器</title>
+<link rel="stylesheet" href="https://miaoda.feishu.cn/fonts/css2?family=Noto+Serif+SC:wght@400;600;700&family=Noto+Sans+SC:wght@300;400;500&display=swap" />
+<style>
+  :root{
+    --ink:#05070d;
+    --jade:#4fe3c1;
+    --gold:#ffd479;
+    --text:#e2ecf6;
+    --muted:#7f8fa3;
+    --line:rgba(120,180,200,0.16);
+    --q0:#8b98a6;
+    --q1:#63a9ff;
+    --q2:#c07bff;
+    --q3:#ffb84d;
+  }
+  *{ box-sizing:border-box; -webkit-tap-highlight-color:transparent; }
+  html,body{ min-height:100%; }
+  body{
+    margin:0;
+    padding:20px 16px 28px;
+    display:flex;
+    background:
+      radial-gradient(1100px 620px at 50% -14%, #13233c 0%, rgba(19,35,60,0) 62%),
+      radial-gradient(880px 600px at 88% 114%, #1c1533 0%, rgba(28,21,51,0) 58%),
+      var(--ink);
+    color:var(--text);
+    font-family:"Noto Sans SC",system-ui,-apple-system,"Segoe UI","Microsoft YaHei",sans-serif;
+    -webkit-font-smoothing:antialiased;
+  }
+  .app{
+    width:100%;
+    max-width:560px;
+    margin:auto;
+    display:flex;
+    flex-direction:column;
+    gap:14px;
+  }
+
+  /* ---------- 页头 ---------- */
+  .head{ display:flex; align-items:center; gap:13px; }
+  .seal{
+    width:44px; height:44px; flex:0 0 44px;
+    border-radius:10px;
+    display:flex; align-items:center; justify-content:center;
+    font-family:"Noto Serif SC",serif; font-size:19px;
+    color:var(--gold);
+    background:linear-gradient(145deg,#1c3b34,#0b1817);
+    border:1px solid rgba(79,227,193,0.3);
+    box-shadow:inset 0 0 20px rgba(79,227,193,0.16), 0 6px 16px rgba(0,0,0,0.5);
+  }
+  .head h1{
+    margin:0;
+    font-family:"Noto Serif SC",serif;
+    font-size:25px; letter-spacing:6px; font-weight:700;
+    color:#eaf6ff;
+    text-shadow:0 0 22px rgba(79,227,193,0.2);
+  }
+  .head .sub{
+    margin:3px 0 0;
+    font-size:11px; letter-spacing:2.4px; color:var(--muted);
+  }
+
+  /* ---------- 通用面板 ---------- */
+  .panel{
+    border-radius:14px;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(20,38,54,0.5), rgba(8,14,24,0.5));
+    padding:14px;
+  }
+  .panel-title{
+    display:flex; align-items:baseline; justify-content:space-between;
+    margin-bottom:10px;
+  }
+  .panel-title h2{
+    margin:0;
+    font-family:"Noto Serif SC",serif;
+    font-size:17px; letter-spacing:3px; font-weight:600;
+    color:#eaf6ff;
+  }
+  .panel-title .tip{ font-size:11.5px; color:var(--muted); letter-spacing:1px; }
+
+  .btn{
+    width:100%;
+    padding:13px 20px;
+    border:none; border-radius:999px;
+    cursor:pointer;
+    font-family:inherit;
+    font-size:14.5px; letter-spacing:2.5px;
+    color:#04211b;
+    background:linear-gradient(135deg,#96f4da,#4fe3c1 46%,#ffd479);
+    box-shadow:0 10px 24px rgba(79,227,193,0.26);
+    transition:transform .14s ease, box-shadow .14s ease, opacity .14s ease;
+  }
+  .btn:hover{ transform:translateY(-1px); box-shadow:0 14px 30px rgba(79,227,193,0.36); }
+  .btn:active{ transform:translateY(1px); }
+  .btn:disabled{ opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
+  .btn.ghost{
+    color:#cfe4f2;
+    background:rgba(28,48,64,0.55);
+    border:1px solid var(--line);
+    box-shadow:none;
+  }
+  .btn.ghost:hover{ background:rgba(38,66,86,0.6); box-shadow:none; }
+
+  /* ---------- 天赋卡 ---------- */
+  .tgrid{ display:flex; flex-direction:column; gap:8px; margin:12px 0 4px; }
+  .tcard{
+    position:relative;
+    padding:10px 12px;
+    border-radius:10px;
+    border:1px solid rgba(120,180,200,0.14);
+    background:rgba(16,26,38,0.65);
+    cursor:pointer;
+    transition:border-color .15s ease, background .15s ease, transform .12s ease;
+  }
+  .tcard:hover{ transform:translateX(2px); background:rgba(22,36,52,0.75); }
+  .tcard.sel{
+    border-color:rgba(79,227,193,0.7);
+    background:rgba(31,64,62,0.5);
+    box-shadow:0 0 0 1px rgba(79,227,193,0.25) inset, 0 0 20px rgba(79,227,193,0.12);
+  }
+  .tcard .tn{
+    font-family:"Noto Serif SC",serif;
+    font-size:15px; font-weight:600; letter-spacing:1.6px;
+  }
+  .tcard .td{ font-size:11.5px; color:#9fb2c4; margin-top:3px; line-height:1.6; }
+  .tcard .tq{
+    position:absolute; right:10px; top:9px;
+    font-size:10px; letter-spacing:1.4px; padding:2px 6px; border-radius:4px;
+    border:1px solid currentColor; opacity:.8;
+  }
+  .q0 .tn, .q0 .tq{ color:var(--q0); }
+  .q1 .tn, .q1 .tq{ color:var(--q1); }
+  .q2 .tn, .q2 .tq{ color:var(--q2); }
+  .q3 .tn, .q3 .tq{ color:var(--q3); }
+  .q3.sel{ box-shadow:0 0 0 1px rgba(255,184,77,0.35) inset, 0 0 22px rgba(255,184,77,0.16); }
+
+  /* ---------- 属性分配 ---------- */
+  .attr-list{ display:flex; flex-direction:column; gap:2px; margin:4px 0 2px; }
+  .attr-row{
+    display:flex; align-items:center; gap:10px;
+    padding:9px 2px;
+    border-bottom:1px dashed rgba(120,180,200,0.12);
+  }
+  .attr-row .an{ width:64px; font-size:13px; letter-spacing:1.4px; color:#c2d4e2; }
+  .attr-row .ad{ flex:1; font-size:11px; color:var(--muted); line-height:1.5; }
+  .step{
+    width:30px; height:30px; flex:0 0 30px;
+    border-radius:8px; cursor:pointer;
+    border:1px solid rgba(120,180,200,0.2);
+    background:rgba(24,40,56,0.7);
+    color:#d6e8f5; font-size:16px; line-height:1;
+    font-family:inherit;
+  }
+  .step:active{ background:rgba(79,227,193,0.25); }
+  .attr-row .av{
+    width:34px; text-align:center;
+    font-family:"Noto Serif SC",serif; font-size:17px; color:var(--jade);
+  }
+  .points-bar{
+    display:flex; align-items:center; justify-content:space-between;
+    margin-top:10px; font-size:12px; color:var(--muted); letter-spacing:1px;
+  }
+  .points-bar b{ color:var(--gold); font-family:"Noto Serif SC",serif; font-size:16px; }
+
+  /* ---------- 人生状态栏 ---------- */
+  .status{
+    display:grid; grid-template-columns:repeat(4,1fr); gap:8px;
+  }
+  .cell{
+    padding:7px 9px;
+    border-radius:10px;
+    border:1px solid var(--line);
+    background:linear-gradient(180deg, rgba(26,48,66,0.5), rgba(10,17,28,0.5));
+    min-width:0;
+  }
+  .cell .k{ font-size:10px; letter-spacing:1.5px; color:var(--muted); }
+  .cell .v{
+    font-family:"Noto Serif SC",serif; font-size:17px; font-weight:600;
+    color:var(--jade); text-shadow:0 0 14px rgba(79,227,193,0.3);
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .cell .v.gold{ color:var(--gold); text-shadow:0 0 14px rgba(255,212,121,0.3); }
+  .cell .v.small{ font-size:13px; }
+
+  .xpwrap{ margin-top:8px; }
+  .xphead{ display:flex; justify-content:space-between; font-size:11px; color:var(--muted); letter-spacing:1px; }
+  .xpbar{
+    margin-top:5px; height:6px; border-radius:99px;
+    background:rgba(120,180,200,0.12);
+    overflow:hidden;
+  }
+  .xpfill{
+    height:100%; width:0%;
+    border-radius:99px;
+    background:linear-gradient(90deg,#2f9e8b,#4fe3c1 60%,#ffd479);
+    box-shadow:0 0 10px rgba(79,227,193,0.5);
+    transition:width .35s ease;
+  }
+
+  /* ---------- 事件流 ---------- */
+  .log{
+    margin-top:12px;
+    max-height:38vh;
+    overflow-y:auto;
+    padding-right:4px;
+    scroll-behavior:smooth;
+  }
+  .ev{
+    display:flex; gap:8px;
+    padding:7px 0;
+    border-bottom:1px dashed rgba(120,180,200,0.1);
+    animation:fadeUp .3s ease both;
+  }
+  .ev .age{
+    flex:0 0 38px;
+    font-family:"Noto Serif SC",serif;
+    font-size:11px; color:var(--muted);
+    padding-top:2px;
+  }
+  .ev .txt{ font-size:12.5px; line-height:1.75; color:#cfdfeb; }
+  .ev.big .txt{ color:#fff3cf; }
+  .ev.bad .txt{ color:#ff9aad; }
+  .ev.good .txt{ color:#8ff0d6; }
+  .ev.you .txt{ color:#ffd479; font-family:"Noto Serif SC",serif; letter-spacing:.5px; }
+  @keyframes fadeUp{
+    from{ opacity:0; transform:translateY(6px); }
+    to{ opacity:1; transform:translateY(0); }
+  }
+
+  .actions{ display:flex; gap:8px; }
+  .actions .btn{ flex:1; }
+
+  /* ---------- 抉择弹层 ---------- */
+  .modal{
+    position:fixed; inset:0; z-index:20;
+    display:flex; align-items:center; justify-content:center;
+    padding:22px;
+    background:rgba(3,6,11,0.86);
+    -webkit-backdrop-filter:blur(6px);
+    backdrop-filter:blur(6px);
+    opacity:0; pointer-events:none;
+    transition:opacity .24s ease;
+  }
+  .modal.show{ opacity:1; pointer-events:auto; }
+  .mbox{
+    width:100%; max-width:430px;
+    border-radius:16px;
+    border:1px solid rgba(255,212,121,0.28);
+    background:linear-gradient(180deg,#0d1826,#070c15);
+    padding:18px 16px;
+    max-height:88vh; overflow-y:auto;
+    box-shadow:0 24px 60px rgba(0,0,0,0.6), 0 0 40px rgba(255,212,121,0.08);
+  }
+  .mbox .mq{
+    margin:0 0 12px;
+    font-size:12.5px; line-height:1.8; color:#b7c9d8;
+    text-align:center;
+  }
+  .mopts{ display:flex; flex-direction:column; gap:9px; }
+
+  .choiceStory{
+    max-height:38vh; overflow-y:auto;
+    padding:10px 12px; margin-bottom:6px;
+    text-align:left;
+    border-radius:10px;
+    border-left:2px solid rgba(79,227,193,0.35);
+    background:rgba(10,20,32,0.55);
+  }
+  .choiceStory p{ margin:0 0 8px; font-size:12.5px; line-height:1.9; color:#c2d3e0; }
+  .choiceStory p:last-child{ margin-bottom:0; }
+  .choiceStory i{
+    font-style:normal; font-size:11px; color:#5f7488;
+    margin-right:6px; letter-spacing:1px;
+  }
+  .mopt{
+    text-align:left;
+    padding:12px 14px;
+    border-radius:10px;
+    border:1px solid rgba(120,180,200,0.18);
+    background:rgba(20,34,48,0.7);
+    color:#dbe9f4;
+    font-family:inherit; font-size:13px; letter-spacing:.6px;
+    cursor:pointer;
+    transition:border-color .14s ease, background .14s ease;
+    line-height:1.6;
+  }
+  .mopt:hover{ border-color:rgba(79,227,193,0.5); background:rgba(28,50,60,0.8); }
+
+  /* ---------- 结算 ---------- */
+  .summary-title{
+    font-family:"Noto Serif SC",serif;
+    font-size:20px; letter-spacing:4px; text-align:center;
+    color:#fff3cf; margin:2px 0 4px;
+  }
+  .summary-sub{ text-align:center; font-size:11.5px; color:var(--muted); letter-spacing:1.5px; margin-bottom:12px; }
+  .srow{
+    display:flex; justify-content:space-between; align-items:baseline;
+    padding:7px 0; font-size:12.5px; color:var(--muted);
+    border-bottom:1px dashed rgba(120,180,200,0.12);
+  }
+  .srow b{ font-family:"Noto Serif SC",serif; font-size:15px; color:var(--jade); }
+  .srow b.gold{ color:var(--gold); }
+  .inherit{
+    margin:14px 0 2px; padding:10px 12px;
+    border-radius:10px; border:1px dashed rgba(255,212,121,0.28);
+    background:rgba(38,32,18,0.25);
+    font-size:11.5px; color:#cdbb92; line-height:1.7;
+  }
+
+  .hint{ margin:0; text-align:center; font-size:11px; line-height:1.8; color:var(--muted); letter-spacing:.8px; }
+
+  /* ---------- 天劫 ---------- */
+  .tribuBox{ text-align:center; }
+  .tribuTitle{
+    font-family:"Noto Serif SC",serif;
+    font-size:23px; letter-spacing:11px; font-weight:700;
+    color:#ffd479; margin:0 0 10px;
+    text-shadow:0 0 26px rgba(255,120,100,0.45);
+  }
+  .tribuDots{
+    font-size:15px; letter-spacing:7px; margin-bottom:10px;
+  }
+  .tribuDots span.on{ color:#ffd479; text-shadow:0 0 12px rgba(255,212,121,0.9); }
+  .tribuDots span.off{ color:#ff5c7a; opacity:.2; }
+  .tribuBox .mq{ min-height:44px; color:#c6a98c; }
+  .tribuInfo{
+    font-size:11.5px; color:#8fa3b6; letter-spacing:1px;
+    margin-bottom:12px;
+  }
+
+  /* ---------- 机缘转盘 ---------- */
+  .wheelBox{ text-align:center; }
+  .wheelWrap{
+    position:relative;
+    width:100%; max-width:300px;
+    aspect-ratio:1/1;
+    margin:10px auto 16px;
+  }
+  #wheelCanvas{
+    width:100%; height:100%; display:block;
+    transform-origin:50% 50%;
+    transition:transform 2.9s cubic-bezier(.15,.72,.22,1);
+  }
+  .wheelPin{
+    position:absolute; left:50%; top:2%;
+    transform:translateX(-50%);
+    width:0; height:0;
+    border-left:9px solid transparent;
+    border-right:9px solid transparent;
+    border-top:17px solid #ffd479;
+    filter:drop-shadow(0 0 9px rgba(255,212,121,0.85));
+    z-index:3;
+  }
+  .wheelResult{
+    min-height:22px;
+    font-size:13.5px; line-height:1.7;
+    font-family:"Noto Serif SC",serif;
+    color:#ffd479;
+    letter-spacing:1px;
+    margin-bottom:14px;
+    opacity:0;
+    transition:opacity .3s ease;
+  }
+  .wheelResult.show{ opacity:1; }
+
+  .wheelBox .btn{
+    background:linear-gradient(135deg,#4fe3c1,#ffd479);
+    color:#06121a;
+    font-weight:600;
+    letter-spacing:6px;
+  }
+
+  .ending{
+    margin:0 0 11px;
+    padding:10px 12px;
+    text-align:left;
+    border-left:2px solid var(--gold);
+    background:rgba(255,212,121,0.055);
+    border-radius:0 10px 10px 0;
+  }
+  .ek{
+    font-family:"Noto Serif SC",serif;
+    font-size:14px; letter-spacing:3px; color:var(--gold);
+    margin-bottom:6px;
+  }
+  .et{
+    font-size:12.5px; line-height:1.95; color:#c2d3e0;
+  }
+
+  .hintline{
+    margin:9px 2px 0;
+    font-size:11px; line-height:1.7; color:#5d7086; letter-spacing:1px; text-align:center;
+  }
+
+  .raceLine{
+    margin-top:7px;
+    font-size:11px; color:#7f94a8; letter-spacing:1px;
+  }
+
+  /* 转生轮盘 */
+  .originBox{ text-align:center; }
+  .originBox .mq{ font-size:12px; color:#8fa5b8; letter-spacing:3px; margin-bottom:8px; }
+  .originName{
+    font-family:"Noto Serif SC",serif;
+    font-size:22px; letter-spacing:5px; color:var(--gold);
+    min-height:32px; margin-top:6px;
+  }
+  .originDesc{ font-size:12px; color:#9fb3c6; min-height:34px; line-height:1.7; padding:0 10px; }
+  /* ============================================================
+     界面美化层
+  ============================================================ */
+  body{
+    background:
+      radial-gradient(1200px 700px at 50% -18%, #17304d 0%, rgba(23,48,77,0) 64%),
+      radial-gradient(900px 620px at 90% 112%, #241a44 0%, rgba(36,26,68,0) 58%),
+      radial-gradient(700px 500px at 0% 40%, rgba(20,58,54,0.55) 0%, rgba(20,58,54,0) 70%),
+      linear-gradient(180deg,#05070d,#04060b 60%,#06080f);
+  }
+  body::before{
+    content:'';
+    position:fixed; inset:0; z-index:-1;
+    background-image:
+      linear-gradient(rgba(120,180,200,0.035) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(120,180,200,0.035) 1px, transparent 1px);
+    background-size:56px 56px;
+    mask-image:radial-gradient(circle at 50% 22%, #000 0%, transparent 78%);
+    -webkit-mask-image:radial-gradient(circle at 50% 22%, #000 0%, transparent 78%);
+  }
+
+  .app{ gap:16px; }
+
+  .head h1{
+    background:linear-gradient(120deg,#fff8e2,#ffd479 42%,#8ff0d6 96%);
+    -webkit-background-clip:text; background-clip:text;
+    color:transparent;
+    text-shadow:none;
+    filter:drop-shadow(0 2px 18px rgba(255,212,121,0.18));
+  }
+  .seal{
+    animation:sealGlow 5.2s ease-in-out infinite;
+  }
+  @keyframes sealGlow{
+    0%,100%{ box-shadow:inset 0 0 20px rgba(79,227,193,0.14), 0 6px 16px rgba(0,0,0,0.5); }
+    50%{ box-shadow:inset 0 0 26px rgba(79,227,193,0.3), 0 8px 22px rgba(0,0,0,0.55), 0 0 18px rgba(79,227,193,0.16); }
+  }
+  .head .sub{ color:#8b9db2; }
+  .head::after{
+    content:'';
+    flex:1;
+    height:1px;
+    background:linear-gradient(90deg, rgba(255,212,121,0.34), rgba(255,212,121,0));
+    margin-left:4px;
+    align-self:flex-end;
+    margin-bottom:8px;
+  }
+
+  .panel{
+    position:relative;
+    border-radius:16px;
+    border:1px solid rgba(120,180,200,0.18);
+    background:
+      radial-gradient(120% 100% at 50% 0%, rgba(38,66,86,0.42) 0%, rgba(12,20,32,0.55) 62%),
+      linear-gradient(180deg, rgba(14,24,36,0.92), rgba(7,12,20,0.94));
+    box-shadow:
+      inset 0 1px 0 rgba(255,255,255,0.045),
+      inset 0 0 40px rgba(79,227,193,0.035),
+      0 14px 34px rgba(0,0,0,0.34);
+  }
+  .panel::before{
+    content:'';
+    position:absolute; left:18px; right:18px; top:0; height:1px;
+    background:linear-gradient(90deg, rgba(255,212,121,0), rgba(255,212,121,0.55) 30%, rgba(79,227,193,0.45) 72%, rgba(79,227,193,0));
+    pointer-events:none;
+  }
+  .panel::after{
+    content:'';
+    position:absolute; left:12px; right:12px; bottom:0; height:1px;
+    background:linear-gradient(90deg, rgba(120,180,200,0), rgba(120,180,200,0.22), rgba(120,180,200,0));
+    pointer-events:none;
+  }
+
+  .status .cell{
+    position:relative;
+    border-radius:12px;
+    background:linear-gradient(180deg, rgba(32,58,78,0.5), rgba(9,16,26,0.55));
+    box-shadow:inset 0 1px 0 rgba(255,255,255,0.04);
+    overflow:hidden;
+  }
+  .status .cell::before{
+    content:'';
+    position:absolute; left:0; top:8px; bottom:8px; width:2px;
+    background:linear-gradient(180deg, rgba(79,227,193,0.7), rgba(79,227,193,0));
+  }
+  .cell .v{ letter-spacing:0.5px; }
+
+  /* 法宝 / 道侣 两格 */
+  .status2{
+    display:grid; grid-template-columns:1fr 1fr; gap:8px; margin-top:8px;
+  }
+  .minicard{
+    display:flex; align-items:center; gap:7px;
+    padding:7px 10px;
+    border-radius:11px;
+    border:1px solid rgba(120,180,200,0.14);
+    background:linear-gradient(180deg, rgba(24,40,54,0.4), rgba(9,15,24,0.5));
+    min-width:0;
+    transition:border-color .25s ease, box-shadow .25s ease;
+  }
+  .minicard .mk{
+    flex:0 0 auto;
+    font-size:9.5px; letter-spacing:1.6px; color:#7f94a8;
+    padding:2px 6px; border-radius:5px;
+    border:1px solid rgba(120,180,200,0.2);
+  }
+  .minicard b{
+    flex:1; min-width:0;
+    font-family:"Noto Serif SC",serif;
+    font-size:11.5px; font-weight:600; letter-spacing:.6px;
+    color:#9fb3c6;
+    white-space:nowrap; overflow:hidden; text-overflow:ellipsis;
+  }
+  .minicard.on{
+    border-color:rgba(255,212,121,0.38);
+    background:linear-gradient(180deg, rgba(40,48,30,0.35), rgba(16,20,12,0.45));
+    box-shadow:0 0 16px rgba(255,212,121,0.1) inset;
+  }
+  .minicard.on b{ color:#ffd479; }
+  #mc-mate.on{
+    border-color:rgba(79,227,193,0.4);
+    background:linear-gradient(180deg, rgba(22,52,48,0.4), rgba(8,20,18,0.5));
+    box-shadow:0 0 16px rgba(79,227,193,0.12) inset;
+  }
+  #mc-mate.on b{ color:#8ff0d6; }
+
+  .xpbar{
+    height:7px; border-radius:99px;
+    background:rgba(120,180,200,0.1);
+    box-shadow:inset 0 1px 3px rgba(0,0,0,0.5);
+  }
+  .xpfill{ box-shadow:0 0 14px rgba(79,227,193,0.55); }
+
+  .raceLine{ letter-spacing:.6px; }
+
+  .log{ padding-left:2px; }
+  .ev{
+    border-bottom:1px dashed rgba(120,180,200,0.08);
+    padding-left:9px;
+    position:relative;
+  }
+  .ev::before{
+    content:'';
+    position:absolute; left:0; top:9px; bottom:9px; width:2px;
+    border-radius:2px;
+    background:rgba(120,180,200,0.22);
+  }
+  .ev.big::before{ background:linear-gradient(180deg,#ffd479,rgba(255,212,121,0.15)); }
+  .ev.bad::before{ background:linear-gradient(180deg,#ff9aad,rgba(255,154,173,0.15)); }
+  .ev.good::before{ background:linear-gradient(180deg,#8ff0d6,rgba(143,240,214,0.15)); }
+  .ev.you::before{ background:linear-gradient(180deg,#ffe6b0,rgba(255,212,121,0.2)); }
+
+  .log::-webkit-scrollbar{ width:5px; }
+  .log::-webkit-scrollbar-thumb{ background:rgba(120,180,200,0.25); border-radius:9px; }
+  .log::-webkit-scrollbar-track{ background:transparent; }
+
+  .actions .btn{ letter-spacing:5px; }
+
+  .btn{
+    background:linear-gradient(120deg,#96f4da,#4fe3c1 40%,#ffd479 78%,#96f4da);
+    background-size:220% 100%;
+    transition:transform .14s ease, box-shadow .2s ease, background-position .7s ease;
+  }
+  .btn:hover{
+    background-position:70% 0;
+    box-shadow:0 14px 34px rgba(79,227,193,0.4), 0 0 22px rgba(255,212,121,0.2);
+  }
+
+  .mbox{
+    position:relative;
+    border-radius:18px;
+    border:1px solid rgba(255,212,121,0.3);
+    background:
+      radial-gradient(120% 80% at 50% 0%, rgba(32,58,70,0.5), rgba(9,15,24,0) 70%),
+      linear-gradient(180deg,#0d1826,#060a12);
+    box-shadow:0 28px 70px rgba(0,0,0,0.7), 0 0 44px rgba(255,212,121,0.09), inset 0 1px 0 rgba(255,255,255,0.05);
+  }
+  .mbox::before{
+    content:'';
+    position:absolute; left:16px; right:16px; top:0; height:1px;
+    background:linear-gradient(90deg,rgba(255,212,121,0),rgba(255,212,121,0.7),rgba(79,227,193,0.5),rgba(79,227,193,0));
+  }
+
+  .mopt{
+    position:relative;
+    border-radius:11px;
+    background:linear-gradient(180deg, rgba(24,40,56,0.7), rgba(14,24,36,0.75));
+    overflow:hidden;
+  }
+  .mopt::before{
+    content:'';
+    position:absolute; left:0; top:0; bottom:0; width:2px;
+    background:rgba(79,227,193,0.35);
+    transition:background .2s ease;
+  }
+  .mopt:hover::before{ background:#ffd479; }
+
+  .choiceStory{
+    border-left:2px solid rgba(255,212,121,0.35);
+    background:linear-gradient(180deg, rgba(14,26,40,0.65), rgba(8,14,24,0.6));
+    box-shadow:inset 0 0 24px rgba(0,0,0,0.35);
+  }
+
+  .wheelWrap{ isolation:isolate; }
+  .wheelWrap::before{
+    content:'';
+    position:absolute; inset:-14px; z-index:-1;
+    border-radius:50%;
+    background:radial-gradient(circle, rgba(79,227,193,0.16) 0%, rgba(255,212,121,0.07) 46%, rgba(0,0,0,0) 68%);
+    pointer-events:none;
+  }
+  .wheelWrap::after{
+    content:'';
+    position:absolute; inset:-6px; z-index:-1;
+    border-radius:50%;
+    border:1px solid rgba(255,212,121,0.12);
+    pointer-events:none;
+  }
+
+  .ending{
+    border-left:2px solid rgba(255,212,121,0.85);
+    background:linear-gradient(90deg, rgba(255,212,121,0.1), rgba(255,212,121,0.02));
+    border-radius:0 12px 12px 0;
+    box-shadow:inset 0 0 30px rgba(255,212,121,0.06);
+  }
+  .summary-title{
+    background:linear-gradient(120deg,#fff8e2,#ffd479 50%,#8ff0d6);
+    -webkit-background-clip:text; background-clip:text; color:transparent;
+    filter:drop-shadow(0 0 18px rgba(255,212,121,0.4));
+  }
+
+  .hint{ position:relative; padding-top:14px; }
+  .hint::before{
+    content:'';
+    position:absolute; left:50%; top:0; transform:translateX(-50%);
+    width:120px; height:1px;
+    background:linear-gradient(90deg,rgba(255,212,121,0),rgba(255,212,121,0.4),rgba(255,212,121,0));
+  }
+</style>
+</head>
+<body>
+<div class="app">
+  <header class="head">
+    <div class="seal">仙</div>
+    <div>
+      <h1>修仙人生模拟器</h1>
+      <p class="sub">一命一世 · 抽天赋 · 走仙途</p>
+    </div>
+  </header>
+
+  <div id="view"></div>
+
+  <p class="hint">每一次轮回都是一次新的命数<br>活得久、境界高，未必就是最好的一世</p>
+</div>
+
+<!-- 抉择层 -->
+<div class="modal" id="modal">
+  <div class="mbox">
+    <p class="mq" id="mq"></p>
+    <div class="mopts" id="mopts"></div>
+  </div>
+</div>
+
+<!-- 天劫层 -->
+<div class="modal" id="tribu">
+  <div class="mbox tribuBox">
+    <div class="tribuTitle">天 劫</div>
+    <div class="tribuDots" id="tribuDots"></div>
+    <p class="mq" id="tribuMsg"></p>
+    <div class="tribuInfo" id="tribuInfo"></div>
+    <div class="mopts" id="tribuOpts"></div>
+  </div>
+</div>
+
+<!-- 转生轮盘层 -->
+<div class="modal" id="originModal">
+  <div class="mbox originBox">
+    <p class="mq">这一世，你未必是人</p>
+    <div class="wheelWrap">
+      <div class="wheelPin"></div>
+      <canvas id="originCanvas" width="320" height="320"></canvas>
+    </div>
+    <div class="originName" id="originName"></div>
+    <div class="originDesc" id="originDesc"></div>
+    <button class="btn" id="originSpin">转 生</button>
+    <button class="btn ghost" id="originOk" style="display:none;margin-top:10px">以此身入世</button>
+  </div>
+</div>
+
+<!-- 命轮层 -->
+<div class="modal" id="wheel">
+  <div class="mbox wheelBox">
+    <p class="mq" id="wheelMq">命轮一转，光阴五年</p>
+    <div class="wheelWrap">
+      <div class="wheelPin"></div>
+      <canvas id="wheelCanvas" width="320" height="320"></canvas>
+    </div>
+    <div class="wheelResult" id="wheelResult"></div>
+    <button class="btn" id="spinBtn">转 动 命 轮</button>
+    <button class="btn ghost" id="wheelClose" style="display:none;margin-top:10px">收 起 命 轮</button>
+  </div>
+</div>
+
+<script>
+(function(){
+   'use strict';
+
+  /* 存档键名（localStorage） */
+  var KEY = 'xiuxian_life_meta';
+
+  /* ============================================================
+     一、静态数据
+  ============================================================ */
+
+  var QUALITY = ['凡品','灵品','仙品','道品'];
+
+  var TALENTS = [
+    { n:'先天道体',  q:3, d:'修炼速度 +60%',                     fx:{ speed:1.6 } },
+    { n:'混沌灵胎',  q:3, d:'修炼速度 +35%，突破成功率 +12%',       fx:{ speed:1.35, brk:0.12 } },
+    { n:'天命所归',  q:3, d:'气运 +3，命悬一线时可免一死',          fx:{ luck:3, flag:'fate' } },
+    { n:'一梦千年',  q:3, d:'每过五十年，便有了一次顿悟',            fx:{ flag:'dream' } },
+    { n:'天妒之才',  q:3, d:'悟性 +4，寿元 -60',                   fx:{ wits:4, life:-60 } },
+    { n:'剑心通明',  q:2, d:'悟性 +2，突破成功率 +8%',              fx:{ wits:2, brk:0.08 } },
+    { n:'天煞孤星',  q:2, d:'修炼速度 +45%，气运 -3',               fx:{ speed:1.45, luck:-3 } },
+    { n:'大器晚成',  q:2, d:'六十岁之后，修炼速度翻倍',              fx:{ flag:'late' } },
+    { n:'赤子之心',  q:2, d:'心魔不侵，寿元 +20',                   fx:{ flag:'pure', life:20 } },
+    { n:'魔胎',      q:2, d:'修炼速度 +50%，但易生心魔',             fx:{ speed:1.5, brk:-0.05, flag:'demon' } },
+    { n:'锦鲤附体',  q:1, d:'气运 +4',                             fx:{ luck:4 } },
+    { n:'灵药世家',  q:1, d:'寿元 +40，体魄 +1',                    fx:{ life:40, body:1 } },
+    { n:'根骨清奇',  q:1, d:'禀赋 +3',                             fx:{ root:3 } },
+    { n:'过目不忘',  q:1, d:'悟性 +3',                             fx:{ wits:3 } },
+    { n:'铜皮铁骨',  q:1, d:'体魄 +3',                             fx:{ body:3 } },
+    { n:'短命相',    q:1, d:'寿元 -40，修炼速度 +80%',              fx:{ life:-40, speed:1.8 } },
+    { n:'祖上荫庇',  q:1, d:'寿元 +50，开局自带一件旧法宝',          fx:{ life:50, flag:'artifact' } },
+    { n:'丹心妙手',  q:1, d:'每年额外积攒 7 点修为',                 fx:{ flat:7 } },
+    { n:'贵人相助',  q:1, d:'可用点数 +2，气运 +1',                 fx:{ points:2, luck:1 } },
+    { n:'寒门孤儿',  q:0, d:'可用点数 +4，气运 -2',                 fx:{ points:4, luck:-2 } },
+    { n:'山野散人',  q:0, d:'终身不入门派，修炼速度 +20%',           fx:{ speed:1.2, flag:'nosect' } },
+    { n:'药罐子',    q:0, d:'修炼速度 -30%，寿元 +60',              fx:{ speed:0.7, life:60 } },
+    { n:'迟钝',      q:0, d:'悟性 -2，体魄 +2',                     fx:{ wits:-2, body:2 } },
+    { n:'凡骨',      q:0, d:'平平无奇的根骨，无任何加成',            fx:{} }
+  ];
+
+  var REALMS = ['凡人','炼气','筑基','金丹','元婴','化神','炼虚','合体','大乘','渡劫'];
+
+  /* ---------- 种族：这一世，你不一定是人 ---------- */
+  var RACES = [
+    { id:'human', n:'人族', w:30, col:'#16283a', d:'什么都普通，什么都能学',
+      fx:{}, line:'你出生了。青石镇的风里有草木和潮湿石头的味道。' },
+    { id:'dog',   n:'犬妖', w:9,  col:'#3a2a18', d:'体魄+2，寿元+80，被人看不起',
+      fx:{ body:2, life:80 }, line:'你出生了。这一世你是一条野狗，镇口的小孩踢过你一脚。你记得他的味道。' },
+    { id:'fox',   n:'狐妖', w:8,  col:'#3a1830', d:'悟性+2，气运+2，寿元-40',
+      fx:{ wits:2, luck:2, life:-40 }, line:'你出生时有一条尾巴，接生婆没敢说话。你娘把你抱走了。' },
+    { id:'demon', n:'魔族', w:8,  col:'#3a1420', d:'修炼速度+50%，气运-3，易生心魔',
+      fx:{ speed:1.5, luck:-3, flag:'demon' }, line:'你出生那晚，村里的狗全都没叫。它们趴在地上，头朝你家的方向。' },
+    { id:'ghost', n:'鬼族', w:8,  col:'#1b2030', d:'寿元+200，体魄-1，没有影子',
+      fx:{ life:200, body:-1 }, line:'你出生了。你没有影子。你自己不知道，别人也不说。' },
+    { id:'spirit',n:'器灵', w:7,  col:'#152a2e', d:'天生会用宝物，法宝效果翻倍',
+      fx:{ flag:'spiritborn' }, line:'你出生了。你不是人，你是一口钟里的东西，有一天那口钟裂了，你就出来了。' },
+    { id:'tree',  n:'草木族', w:7,  col:'#1a3020', d:'寿元+300，修炼速度-30%',
+      fx:{ life:300, speed:0.7 }, line:'你出生了。这一世你是一棵树，长在山道边。你听得见人说话，只是不能回答。' },
+    { id:'stone', n:'石胎', w:7,  col:'#25252c', d:'体魄+4，悟性-2，寿元+150',
+      fx:{ body:4, wits:-2, life:150 }, line:'你出生了。这一世你是一块石头。你不记得什么，可你总觉得该记得点什么。' },
+    { id:'dragon',n:'龙裔', w:6,  col:'#2c2a12', d:'全属性+1，突破+6%',
+      fx:{ root:1, wits:1, body:1, luck:1, brk:0.06 }, line:'你出生时天上有云在转。族里的老人说，我们家很久以前出过一个不算是人的东西。' },
+    { id:'alien', n:'天外客', w:4,  col:'#1a1a3a', d:'气运+5，悟性+2，不属于这方天地',
+      fx:{ luck:5, wits:2 }, line:'你出生了。你出生在别人家的床上，可你记得另一个地方的天，是紫的。' }
+  ];
+
+  function raceOf(id){
+    for (var i = 0; i < RACES.length; i++) if (RACES[i].id === id) return RACES[i];
+    return RACES[0];
+  }
+
+  /* ---------- 法宝：一件东西认了你 ---------- */
+  var ARTIFACTS = [
+    { n:'缺了口的铁剑', q:0, t:'剑', d:'修炼速度 +10%', fx:{ speed:0.10 } },
+    { n:'褪色的护身符', q:0, t:'符', d:'渡劫成功率 +6%', fx:{ tribu:0.06 } },
+    { n:'一只旧铃', q:0, t:'铃', d:'气运 +1', fx:{ luck:1 } },
+    { n:'别人不要的铜镜', q:0, t:'镜', d:'寿元 +40', fx:{ life:40 } },
+    { n:'竹节做的短笛', q:0, t:'笛', d:'悟性修行加快 8%', fx:{ speed:0.08 } },
+    { n:'半截断矛', q:1, t:'矛', d:'修炼速度 +18%，体魄 +1', fx:{ speed:0.18, body:1 } },
+    { n:'一盏不肯灭的灯', q:1, t:'灯', d:'寿元 +90', fx:{ life:90 } },
+    { n:'会自己走的罗盘', q:1, t:'罗盘', d:'气运 +2，奇遇更易遇上', fx:{ luck:2, fortune:0.10 } },
+    { n:'黑木念珠', q:1, t:'珠', d:'渡劫成功率 +10%', fx:{ tribu:0.10 } },
+    { n:'卷了边的纸伞', q:1, t:'伞', d:'天雷落你身上会轻一些，渡劫 +8%', fx:{ tribu:0.08, life:30 } },
+    { n:'三层的旧塔', q:2, t:'塔', d:'修炼速度 +25%，渡劫 +8%', fx:{ speed:0.25, tribu:0.08 } },
+    { n:'一只青葫芦', q:2, t:'葫芦', d:'寿元 +150', fx:{ life:150 } },
+    { n:'缠着红线的幡', q:2, t:'幡', d:'修炼速度 +30%', fx:{ speed:0.30 } },
+    { n:'小鼎，里面有火', q:2, t:'鼎', d:'每年额外积攒修为，修炼 +20%', fx:{ speed:0.20, flat:5 } },
+    { n:'照得出前世的镜', q:2, t:'镜', d:'悟性修行加快 20%，气运 +2', fx:{ speed:0.20, luck:2 } },
+    { n:'九节的骨鞭', q:2, t:'鞭', d:'体魄 +3，渡劫 +6%', fx:{ body:3, tribu:0.06 } },
+    { n:'一枚没字的印', q:3, t:'印', d:'修炼速度 +40%，渡劫 +12%', fx:{ speed:0.40, tribu:0.12 } },
+    { n:'装着半座山的图', q:3, t:'图', d:'气运 +4，寿元 +200', fx:{ luck:4, life:200 } },
+    { n:'不断下雪的沙漏', q:3, t:'沙漏', d:'寿元 +260', fx:{ life:260 } },
+    { n:'会说话的秤', q:3, t:'秤', d:'它替你算因果，修炼 +35%', fx:{ speed:0.35, luck:2 } },
+    { n:'一副残局棋盘', q:3, t:'棋', d:'悟性修行加快 35%，悟性 +2', fx:{ speed:0.35, wits:2 } },
+    { n:'一截从天上掉下的绳', q:4, t:'绳', d:'渡劫 +20%，气运 +3', fx:{ tribu:0.20, luck:3 } },
+    { n:'空白的经卷', q:4, t:'卷', d:'修炼速度 +60%，寿元 +240', fx:{ speed:0.60, life:240 } },
+    { n:'一口没有名字的钟', q:4, t:'钟', d:'修为暴涨，渡劫 +18%', fx:{ speed:0.45, tribu:0.18, flat:12 } },
+    { n:'别人的本命剑', q:4, t:'剑', d:'它在等人，修炼 +55%，气运 -1', fx:{ speed:0.55, luck:-1 } }
+  ];
+
+  function rollArtifact(){
+    var pool = [];
+    for (var i = 0; i < ARTIFACTS.length; i++){
+      var a = ARTIFACTS[i];
+      var w = [8, 6, 4, 2, 1][a.q] || 1;
+      for (var k = 0; k < w; k++) pool.push(a);
+    }
+    return pick(pool);
+  }
+
+  /* ---------- 功法：悟性决定你学不学得会 ---------- */
+  /* ---------- 功法：学会之后，你得守它的规矩 ---------- */
+  var QUIRKS = {
+    noLie:   { n:'不能说谎', d:'你说过的假话，会在夜里回来找你。' },
+    noSleep: { n:'不必睡了', d:'你再也没有真正睡过一觉，寿元在你身上走得比别人快。' },
+    knock:   { n:'每日敲一次钟', d:'哪天忘了敲，那天就不算活着。' },
+    ask:     { n:'见人先问一句', d:'问过之后，你才知道自己在跟什么说话。' },
+    noBack:  { n:'不可回头', d:'你走过的路，回头就会塌。' },
+    barefoot:{ n:'不穿鞋',   d:'脚底贴着地，你才知道这地方是不是真的。' }
+  };
+
+  var ARTS = [
+    { n:'《吐纳十三式》', d:'最笨的入门法，谁也学得会', speed:0.08, life:20 },
+    { n:'《锁心诀》',     d:'心不散，则气不散', speed:0.12, brk:0.04, q:'noLie' },
+    { n:'《四时引》',     d:'按四季换气，春生秋收', speed:0.10, life:60 },
+    { n:'《半页剑经》',   d:'只有半页，另外半页在别人手里', speed:0.14, brk:0.05 },
+    { n:'《不眠功》',     d:'你不睡，也不必睡', speed:0.16, life:-30, q:'noSleep' },
+    { n:'《借气法》',     d:'借别人的气用，用完要还', speed:0.20, life:-40, q:'knock' },
+    { n:'《化骨篇》',     d:'骨头化成水，水再成骨', speed:0.18, brk:0.06, body:1 },
+    { n:'《听风录》',     d:'风里有话说，你听得懂', speed:0.16, wits:1, q:'ask' },
+    { n:'《无名残卷》',   d:'没有名字，也没有练成过的人', speed:0.26, life:-80, q:'noBack' },
+    { n:'《一气化三清》', d:'化出的两个你，都想替你做主', speed:0.30, life:-120, brk:-0.04 },
+    { n:'《不动经》',     d:'坐着，什么也不做，也是一种法', speed:0.22, life:180, brk:0.08, q:'barefoot' },
+    { n:'《天书第十三页》', d:'只有一页，看完就忘，忘了还有用', speed:0.35, wits:2, life:-100, q:'noLie' }
+  ];
+
+  /* ---------- 年龄段必发事件：一生就这么几个坎，躲不掉 ---------- */
+  var AGE_EVENTS = [
+    { from:0, to:5,
+      t:'你三岁那年学会了自己打坐，家里人说你在发呆。只有你自己知道，你在跟屋梁上的东西说话——它说话很慢，一句要等一年。',
+      fx:{ wits:1 }, cls:'good' },
+    { from:6, to:12,
+      t:'开蒙那天先生问“何为道”，你举手说“道是门外那棵树”。话音刚落，窗外那棵树摇了三下。先生罚你去树下站三天，树给你讲了三夜的经。',
+      fx:{ wits:1, dxp:60 }, cls:'big' },
+    { from:10, to:14,
+      t:'你被一只会打鸣的公鸡选中了。它说你是“第七位候选”，还要给你看一份名单。第二天它被做成白切鸡，名单落在了汤里。',
+      fx:{ luck:1 }, cls:'' },
+    { from:14, to:18,
+      t:'十四岁，你溜进镇上的青楼。门口挂着牌子：“今夜只招一个不识字的人。”你识字，可你说你不识。进去之后才发现，里面坐的不是姑娘，是一个穿银衣的外星船长，她在等人签一份“借体养丹”的合同。',
+      fx:{ wits:1, life:-20 }, mate:true, cls:'big' },
+    { from:16, to:22,
+      t:'有人牵着你的手进了城西的“炼炉斋”，招牌下写着一行小字：借体养丹，三年归还。你是被当炉鼎的那一个。三年后你出来了，修为涨了一大截，寿元短了一小截，你至今分不清走出来的是不是原来那个你。',
+      fx:{ dxp:900, life:-35 }, cls:'bad' },
+    { from:18, to:24,
+      t:'一顶花轿把你抬走了。轿夫一路不说话，到了山上才开口：“新娘子不必是人。”你被嫁给了一座山。山很大，也很沉，成亲那天山下塌了半里。',
+      fx:{ body:2, life:120 }, mate:true, cls:'big' },
+    { from:22, to:30,
+      t:'你在渡口替人撑了一夜的船。最后一趟客人穿着很整齐的黑衣，他说：“你们这儿的天，是我们公司外包做的，做得不太好，抱歉。”下船时他给了你一张工单。',
+      fx:{ wits:1, luck:2 }, cls:'big' },
+    { from:26, to:32,
+      t:'集市上一头驴拦住你，开口说：“你前世欠我一斤草。”你跟着它走了三天，把草还了。它临走前教了你一门驴叫，说这声音能叫醒装睡的人。',
+      fx:{ dxp:400, body:1 }, cls:'' },
+    { from:31, to:40,
+      t:'朝廷封你做了镇妖县令。你上任才发现，整个县衙只有你一个活人，其余都是“暂住”的东西。它们很守规矩，还按时交税，税是纸钱。',
+      fx:{ luck:2, wits:1 }, cls:'big' },
+    { from:33, to:45,
+      t:'你跟一棵树吵了一架。你赢了。从那以后，你走过的地方草都往你这边弯，像一群不敢抬头的人。',
+      fx:{ body:1, luck:1 }, cls:'' },
+    { from:40, to:55,
+      t:'一道雷劈了你。你没死。那道雷在半空停了一下，说“打错了”，然后赔了你一样东西，扔下就走了。',
+      artifact:true, cls:'big' },
+    { from:46, to:70,
+      t:'你被拉去参加“修仙者相亲大会”。主持是只狐狸，开场白是：“在座各位没有一个是人，请放心。”灯亮起来的时候，你看见对面坐着你自己。',
+      fx:{ luck:1 }, mate:true, cls:'big' },
+    { from:52, to:80,
+      t:'海上遇到一艘船，船上站满了你的脸。他们齐齐看着你，说：“你才是多余的那个。”船开走后，你发现自己的名字少了一个字。',
+      fx:{ wits:2, life:-40 }, cls:'bad' },
+    { from:60, to:110,
+      t:'你收到一封挂号信，寄件地址写着“天上”。信封里是一张体检报告，各项指标都正常，只有“寿元”一栏被红笔圈了三圈。',
+      fx:{ life:-30, wits:1 }, cls:'bad' },
+    { from:73, to:160,
+      t:'你的影子辞职了。它站在墙上，跟你说了句“我出去一趟”，然后就没了。从此你没有影子，但你知道它在哪儿——它在替你走那些你不敢走的路。',
+      fx:{ luck:2, dxp:600 }, cls:'big' },
+    { from:85, to:220,
+      t:'你被邀请参加一场“千年一次的同学会”。到场的全是各种东西：一块会喝酒的石头、一只穿长衫的鹤、半个钟。只有一个自称你师兄的，长得像个人。',
+      fx:{ dxp:1200, wits:1 }, cls:'big' },
+    { from:120, to:400,
+      t:'你开始忘记自己的名字。忘到第三年，有个陌生人把名字还给了你，还多送了一个，说“这个更配你”。你收下了。',
+      fx:{ wits:1, luck:1 }, cls:'' },
+    { from:150, to:9999,
+      t:'天上的门卫开始跟你打招呼，问你“打算什么时候办手续”。你说不急。他说不急也行，就是位子一直给你空着，落灰了。',
+      fx:{ life:60 }, cls:'big' }
+  ];
+
+  /* ---------- 道侣：修仙界最不靠谱的一种关系 ---------- */
+  var MATES = [
+    { n:'不肯说名字的剑仙', t:'人 · 剑修', d:'她的剑比人先到，人到了才想起要讲道理',
+      fx:{ brk:0.05, speed:0.10 }, tag:'护道' },
+    { n:'鲛人阿泪', t:'鲛 · 泪成珠', d:'她哭一次，掉一颗珠子，珠子能换一年寿',
+      fx:{ life:120, luck:1 }, tag:'双修' },
+    { n:'白骨精', t:'精 · 白骨', d:'她只剩骨头，但骨头很白，白得像话本里的好人',
+      fx:{ wits:2 }, tag:'参悟' },
+    { n:'扫地老太太', t:'人 · 不明', d:'她扫了一辈子山门，谁也不知道她扫的是什么',
+      fx:{ brk:0.08, luck:2 }, tag:'护道' },
+    { n:'银衣女船长', t:'天外 · 不明', d:'她签过的合同比见过的活人还多',
+      fx:{ wits:2, luck:3 }, tag:'交易' },
+    { n:'九尾狐阿九', t:'狐 · 九尾', d:'她说她只骗过一个人，那个人现在跟她住在一起',
+      fx:{ luck:2, speed:0.12 }, tag:'双修' },
+    { n:'魔族三公主', t:'魔 · 血脉', d:'她家规矩很多，最重要的一条是“不许输”',
+      fx:{ speed:0.18, luck:-1 }, tag:'魔契' },
+    { n:'一口会说话的钟', t:'器 · 钟灵', d:'你敲她，她就响；不敲，她也响',
+      fx:{ tribu:0.10, wits:1 }, tag:'器契' },
+    { n:'纸人新娘', t:'纸 · 婚约', d:'她怕雨，怕火，不怕你',
+      fx:{ speed:0.15, life:-60 }, tag:'婚契' },
+    { n:'会拆家的猫', t:'妖 · 猫', d:'她把你洞府拆了三次，第三次拆出一间更好的',
+      fx:{ luck:2, life:40 }, tag:'寄居' },
+    { n:'龙王三公主', t:'龙 · 水府', d:'她带来的嫁妆是半条河，河里有东西在游',
+      fx:{ life:200, body:2 }, tag:'水契' },
+    { n:'镜子里那个人', t:'镜 · 你自己', d:'你们谁也不肯先出门',
+      fx:{ wits:2, speed:0.10 }, tag:'自照' },
+    { n:'前世的你', t:'不明 · 转生', d:'他记得你忘掉的事，你不记得他记得',
+      fx:{ dxpMul:0.18, wits:1 }, tag:'轮回' },
+    { n:'会走路的桃树', t:'草木 · 桃', d:'她走路很慢，开花很快',
+      fx:{ life:150 }, tag:'草木' },
+    { n:'山神（一整座山）', t:'山 · 神', d:'他不太会说话，表达方式是地动',
+      fx:{ body:3, life:100 }, tag:'山契' },
+    { n:'会下金蛋的鹅', t:'妖 · 鹅', d:'它下的蛋是真的金，也是真的蛋',
+      fx:{ luck:3 }, tag:'财契' },
+    { n:'借阳气的女鬼', t:'鬼 · 借体', d:'她说只借一点点，借了三十年',
+      fx:{ speed:0.22, life:-120 }, tag:'阴阳' },
+    { n:'剑冢里的一把剑', t:'器 · 剑灵', d:'她不认人，只认手',
+      fx:{ brk:0.09, speed:0.14 }, tag:'剑契' },
+    { n:'来收账的天上人', t:'天外 · 收账', d:'他说他是来收账的，账目上写着你的名字',
+      fx:{ luck:-2, wits:2 }, tag:'债契' },
+    { n:'一块会说话的玉', t:'器 · 玉网', d:'它同时跟很多人说话，你是其中一个',
+      fx:{ wits:3 }, tag:'...' },
+    { n:'卖豆腐的哑女', t:'人 · 哑', d:'她从不说话，豆腐却总切得刚好',
+      fx:{ life:80, luck:1 }, tag:'寻常' },
+    { n:'一只成精的算盘', t:'器 · 算', d:'它算得出你还能活几年，但从不告诉你',
+      fx:{ speed:0.16, wits:1 }, tag:'算契' },
+    { n:'你的尾巴', t:'本体 · 分身', d:'它有一天从你身上走下来，问能不能处一处',
+      fx:{ body:2, speed:0.12 }, tag:'同源' },
+    { n:'住在井里的那个', t:'不明 · 井', d:'你往井里看了一眼，它就把你记住了',
+      fx:{ wits:1, life:60 }, tag:'井契' }
+  ];
+
+  var MATE_LIFE = [
+    { t:'你们一起坐了三年，谁也没说话。第三年结束的时候，你的修为忽然厚了一层。', fx:{ dxpMul:0.35 }, cls:'good' },
+    { t:'她替你挡了一剑，剑断了，她笑着说“下次不许再惹这种人”。', fx:{ body:-1, dxpMul:0.2 }, cls:'big' },
+    { t:'你们为了“道到底是什么”吵了七天，最后谁也没赢，但你悟出了一句。', fx:{ wits:1 }, cls:'good' },
+    { t:'她把你的洞府重新布置了一遍，你回来时找不到自己的蒲团。', fx:{ luck:1 }, cls:'' },
+    { t:'你发现她半夜会站在门口，面朝外面，一动不动，像在替谁值班。', fx:{ brk:0.02 }, cls:'' },
+    { t:'她给了你一样东西，说是定情信物，你打开一看是一张账单。', fx:{ luck:-1, dxpMul:0.4 }, cls:'bad' },
+    { t:'你们有了个孩子。孩子三岁就会问你“我们是不是不该在一起”。', fx:{ dxpMul:0.5, life:-40 }, cls:'big' },
+    { t:'她教你一手，你学不会，她笑你没天赋，然后手把手教了你三年。', fx:{ speed:0.06 }, cls:'good' },
+    { t:'有人说她是冲着你的命来的。你不信。后来你想起来，她确实从没问过你叫什么。', fx:{ luck:-2 }, cls:'bad' },
+    { t:'她走了。留下半枚玉，说另一半在她那儿，让你别去找。', fx:{ mateless:true }, cls:'bad' }
+  ];
+
+  /* ---------- 各族的两条路：成了是什么，没成是什么 ---------- */
+  var RACE_END = {
+    human: { asc:null, fall:null },
+    dog: {
+      asc:[{ k:'野狗成神', t:'那条被镇口小孩踢过一脚的野狗，站到了天门底下。神界诸神看见它脖子上那个旧项圈，集体沉默了。它抖了抖毛，天就下了一场雨——这场雨后来被写进了神界的年鉴。' },
+           { k:'狗年', t:'你飞升了，但天上没有狗的位置。于是他们为你新设了一个：看守南天门，负责认人。你认得很准，比人准。' }],
+      fall:[{ k:'一条狗的晚年', t:'你没修成。你在镇口那把椅子上坐到最后，谁路过都摸一下你的头。你死后，镇上的孩子凑钱给你立了个小碑，只写了三个字：它不咬。' },
+            { k:'狗肉', t:'你修到一半被人认出来了。后来的事你不记得，别人也不提。镇上那家馆子的招牌菜，那年换了名字。' }]
+    },
+    tree: {
+      asc:[{ k:'格鲁特', t:'你飞升那天，把根拔了出来。天上那扇门对你来说太小，你就长，一直长，长到把门框撑开。走进去的时候，你只说了一句别人听不懂的话，人间那一片林子全都摇了三下——它们听懂了。' }],
+      fall:[{ k:'植物人', t:'你没有飞升，也没有死。你只是不动了。三百年后有人在你身下搭了个凉棚，五百年后有人在你身上刻了名字，八百年后你还站在原地，叶子每年都换新的。有人说你活着，有人说你只是长得很久。' },
+            { k:'一截木头', t:'你被人砍了。做成了桌椅、门框、还有一口棺材。棺材里躺的是别人。你在他身下，继续听他做梦。' }]
+    },
+    stone: {
+      asc:[{ k:'顽石点头', t:'你飞升那天，山被你带走了一半。剩下半个山头的修士跪在那里，说这块石头原来是活的。他们跪了很久，久到山上长出了新的石头来陪他们。' }],
+      fall:[{ k:'垫脚石', t:'你没有飞升。后来有人踩着你上山，上山的时候骂了一句“这石头真碍事”。你没说话，也说不了。' },
+            { k:'碑', t:'你留在原地，被人刻上了字，成了一块碑。碑上写的是别人的生平。你替他把这一世记了下来，比他自己记得还全。' }]
+    },
+    fox: {
+      asc:[{ k:'留下的尾巴', t:'飞升那天，你把九条尾巴留在了人间。它们排成一排坐在山道上，像九个不肯走的人。后来山道上开了家店，卖狐狸毛的围脖，生意一直不错。' }],
+      fall:[{ k:'狐皮围脖', t:'你没修成，被一个贵妇人看上了。她说这皮毛油亮，做围脖刚好。你被围在她脖子上过了一整个冬天，听了她所有的秘密。' },
+            { k:'一只老狐狸', t:'你在山里活到最后，尾巴掉光了，人形也懒得维持。后来有个书生进山，看见一只白毛老狐蹲在石头上看月亮，回去写了一篇志怪，你成了里面的主角。' }]
+    },
+    demon: {
+      asc:[{ k:'魔主临天', t:'天门开了，但你走的不是门，是门上面的那堵墙。你踩过去的时候，天没有拦你。你身后跟着的那些东西，站在门外，谁也没敢进来。' }],
+      fall:[{ k:'魔修的下场', t:'你死在一场围剿里。他们把你的骨头分了，说是战利品。三百年后有人拿你的骨头磨了一枚印，盖在降魔的符上。' },
+            { k:'心魔', t:'你没死，你只是变成了别人的心魔。那人每天打坐都能看见你，你每天都能看见他。你们相处得还不错。' }]
+    },
+    ghost: {
+      asc:[{ k:'鬼仙', t:'你飞升那天没有雷，只有一场大雾。雾散之后，天上多了一个不带影子的位置，人间少了一个总在夜里走路的人。' }],
+      fall:[{ k:'别人的影子', t:'你没修成，也越来越淡。最后你贴在某个活人的脚边，成了他的影子。他不知道，你也不打算告诉他。' },
+            { k:'借来的命', t:'你借的那具身体到期了。你还想再借一个，可排队的人很多，你排到一半就散了。' }]
+    },
+    spirit: {
+      asc:[{ k:'器成', t:'你不是修成的，你是被修成的。飞升那一刻，你终于成了那件东西一直想成为的样子。天上有人说：这件东西，做得不错。' }],
+      fall:[{ k:'废铁', t:'你身上的灵气散完了。有人把你扔进了废料堆，跟一堆断剑待在一起。你们都很旧，聊得来。' },
+            { k:'谁的本命', t:'你被一个年轻人捡走，滴了血，成了他的本命法宝。他对你很好，只是从来不知道你会想事。' }]
+    },
+    dragon: {
+      asc:[{ k:'归海', t:'你走的时候，天下的河都往回倒流了三日。它们是在送你。天上没有海，你自己造了一个。' }],
+      fall:[{ k:'龙须糖', t:'你死后，有人拔了你的须，裹上糖，在庙会上卖。孩子们很喜欢，说吃起来像云。' },
+            { k:'龙骨', t:'你倒在山谷里，骨头撑成了一座桥。后来的人从你身上走过去，都不晓得脚底下是什么。' }]
+    },
+    alien: {
+      asc:[{ k:'回天上那个位置', t:'你终于回去了。那个位置一直空着，落了很厚的灰。你坐下来，觉得那里其实也没多好，但还是坐下了——毕竟工位已经租了三千年。' }],
+      fall:[{ k:'标本', t:'你没回去。有人把你泡进了罐子里，标签写“疑似仙人，来源不明”。你在罐子里睁着眼，看着来来往往的人，觉得他们才是标本。' },
+            { k:'走错的天', t:'你死了，灵魂按着旧记忆往上走，走到一半发现那不是回家的方向。你在半路上坐了一会儿，然后决定不走了。' }]
+    }
+  };
+
+  function raceline(P){ return P.raceLine || ''; }
+
+
+  // 从第 i 境突破所需的修为
+  var NEED = [400, 1500, 5000, 16000, 45000, 120000, 420000, 1320000, 3800000];
+
+  // 命轮一转，光阴几何：修为越高，一转碾过的年头越长
+  var SPIN_YEARS = [5, 6, 8, 12, 17, 24, 33, 45, 60, 80];
+  function yearsPerSpin(){
+    var r = S.P ? Math.min(S.P.realm, 9) : 0;
+    return SPIN_YEARS[r] || 5;
+  }
+  // 属性软上限，超出部分化作修为
+  var ATTR_CAP = 20;
+
+  // 闭关际遇：每次闭关抽一个，决定这十年的走向
+  var SECLUSIONS = [
+    { t:'第三年时，识海忽然空了一瞬。再睁眼，山外的叶子黄了又绿。', fx:{ mul:1.3 }, cls:'good' },
+    { t:'洞中灵气枯竭。你靠存下的灵药撑到最后，出关时瘦得只剩一把骨头。', fx:{ body:-1, mul:0.8 }, cls:'bad' },
+    { t:'十年里你反复做同一个梦。梦里有人教你写字，写的都是你的名字。', fx:{ wits:1 }, cls:'good' },
+    { t:'有人在洞外敲门。你没有应。十年后出关，门外只有一堆风化的白骨。', fx:{ mul:0.9, luck:1 } },
+    { t:'第八年，心魔化作旧友的模样，与你对坐三日。你赢了，却一整天说不出话。', fx:{ mul:1.5, body:-1 }, cls:'good' },
+    { t:'你把十年都花在养一株草上。第九年它开了花，花开时你悟到一点东西。', fx:{ wits:1, mul:1.1 } },
+    { t:'山洞塌了半边。你在碎石里坐完剩下的年份，反而更静。', fx:{ body:-1, mul:1.45 } },
+    { t:'你没有突破，只是把同一式剑练了三十万次。出关时，剑还是那式剑。', fx:{ mul:1.6, life:-30 } },
+    { t:'有弟子每日在洞外放一碗饭。你从未开门。十年后，那碗饭还在。', fx:{ luck:1, body:-1 } },
+    { t:'你入定太深，差点没醒过来。醒来时，须发皆白。', fx:{ life:-40, mul:1.8 } }
+  ];
+
+  // 命轮：扇形宽度即概率，越窄越稀罕
+  var WHEEL = [
+    { n:'机缘', w:18, col:'#12282f', kind:'event' },
+    { n:'修行', w:16, col:'#0d1a2c', kind:'train' },
+    { n:'顿悟', w:10, col:'#251a31', kind:'epiphany' },
+    { n:'法宝', w:6,  col:'#2a2412', kind:'artifact' },
+    { n:'奇遇', w:7,  col:'#132a22', kind:'fortune' },
+    { n:'险境', w:8,  col:'#2e1c26', kind:'peril' },
+    { n:'抉择', w:8,  col:'#1a2618', kind:'choice' },
+    { n:'秘境', w:7,  col:'#101b26', kind:'secret' },
+    { n:'福泽', w:5,  col:'#1d2b25', kind:'boon' },
+    { n:'劫数', w:4,  col:'#33171f', kind:'doom' },
+    { n:'奔流', w:4,  col:'#1e2636', kind:'decade' },
+    { n:'传说', w:3,  col:'#3a2c10', kind:'legend' },
+    { n:'空过', w:2,  col:'#191921', kind:'void' }
+  ];
+
+  function wheelTotal(){
+    var t = 0;
+    for (var i = 0; i < WHEEL.length; i++) t += WHEEL[i].w;
+    return t;
+  }
+
+  // 保底：久不出传说，「传说」会略宽一点，但封顶，不至于泛滥
+  function wheelWeights(){
+    var arr = [], total = 0;
+    for (var i = 0; i < WHEEL.length; i++){
+      var w = WHEEL[i].w;
+      if (WHEEL[i].kind === 'legend') w += Math.min(S.pity || 0, 12) * 0.35;
+      arr.push(w); total += w;
+    }
+    return { arr: arr, total: total };
+  }
+
+  function wheelRoll(){
+    var ww = wheelWeights();
+    var r = Math.random() * ww.total, acc = 0;
+    for (var j = 0; j < ww.arr.length; j++){
+      acc += ww.arr[j];
+      if (r <= acc) return j;
+    }
+    return 0;
+  }
+
+  // 九道天雷的描写
+  var TRIB_TEXT = [
+    '第一道雷落下，紫白色的光把整座山照成了白天。',
+    '第二道雷贴着地面走，树木一排排地炸开。',
+    '第三道雷在半空拐了个弯，像是有人握着它。',
+    '第四道雷落下时，你听见了钟声。',
+    '第五道雷之后，你的耳朵开始流血。',
+    '第六道雷把你的影子劈成了两半。',
+    '第七道雷落下时，天黑了。',
+    '第八道雷无声无息，却让你的骨头都在响。',
+    '第九道雷……云层整个塌了下来。'
+  ];
+
+  var LEGACY_EVENTS = [
+    /* ---------- 幼年 0 - 11 ---------- */
+    { a:0, b:11, w:3, t:'你出生在青石镇一户采药人家，屋里常年飘着甘草与陈皮的苦香。' },
+    { a:0, b:11, w:2, t:'三岁那年你在后山走失，一位白发老人把你送回村口，临走摸了摸你的头顶，说了句“根骨有趣”。', fx:{ luck:1 } },
+    { a:0, b:11, w:2, t:'你自幼体弱，母亲煎了三年的药，才把你养得能跑能跳。', fx:{ body:1 } },
+    { a:2, b:11, w:2, t:'庙会上，算命先生捏着你的手掌看了很久，最后摇了摇头，没收钱就走了。' },
+    { a:3, b:11, w:2, t:'你把村里祠堂的旧书翻得起了毛边，虽然一个字也不认得。', fx:{ wits:1 } },
+    { a:2, b:11, w:2, t:'那年山匪过境，你家的屋子烧塌了半边，父亲把你压在身下，后背留了道疤。', fx:{ body:1 } },
+    { a:4, b:11, w:2, t:'陪你长大的老黄狗某天没有回家。你找了一整夜，只捡到它项圈上的一枚铜铃。' },
+    { a:5, b:11, w:2, t:'你偷跟着父亲进山采药，抬头看见云雾之上的山巅有光一闪。', fx:{ luck:1 } },
+    { a:4, b:11, w:1, once:true, t:'你在溪水里捞到一枚温润的白石，夜里它在掌心微微发烫。【法宝】', fx:{ dxp:40 } },
+    { a:5, b:11, w:2, t:'学堂的老先生说，你问的问题书上没有答案，罚你抄了一百遍《千字文》。', fx:{ wits:1 } },
+    { a:6, b:11, w:1, t:'你救了一只被夹子夹住的白狐。它没有跑，只是回头看了你很久。', fx:{ luck:1 } },
+
+    /* ---------- 少年 12 - 20 ---------- */
+    { a:12, b:20, w:3, t:'郡城来了仙门的人测灵根。轮到你时，掌心的光很淡，却久久不散。',
+      ch:{ q:'测灵根的结果出来了，你要如何自处？', o:[
+        { t:'叩谢仙师，随他入山门', r:'你成了青云宗最末等的外门弟子，挑水砍柴三年，才摸到第一本炼气口诀。', fx:{ dxp:90 }, set:{ sect:'青云宗' } },
+        { t:'自认根骨太差，留在凡俗', r:'你留在镇上守着药铺，但每个夜里都会爬上山头，看那道云间的光。', fx:{ wits:1, luck:1 } }
+      ]}},
+    { a:13, b:20, w:2, t:'宗门考核，你在同辈里排在最末。师兄把剩下的丹药倒进泥里，说：“别浪费。”', cond:function(P){ return !!P.sect; } },
+    { a:14, b:22, w:2, t:'你与同门师兄争一口灵泉，被打断两根肋骨。你记住了他笑起来的样子。', fx:{ body:-1, wits:1 } },
+    { a:14, b:22, w:1, t:'夜里你偷看内门弟子练剑，剑光像一道白色的雨。你在墙根站到了天亮。', fx:{ wits:2 } },
+    { a:15, b:24, w:1, once:true, t:'你在后山迷路，误入一处废弃洞府，石壁上有半篇残缺的功法。', fx:{ dxp:220 } },
+    { a:15, b:24, w:2, t:'师姐把她的旧剑给了你，说是自己用不上了，让你别死在第一次历练里。', cond:function(P){ return !!P.sect; }, fx:{ luck:1, dxp:60 } },
+    { a:16, b:24, w:2, t:'你被派去看守丹炉，三个月烧糊了十七炉，也被药气熏出一点门道。', fx:{ body:1 } },
+    { a:16, b:24, w:2, t:'山下镇子闹瘟疫，你随师门去施药，看见尸首一具具摆满了城墙根。', fx:{ luck:1 } },
+    { a:17, b:25, w:3, t:'有人问你想修什么。你说不出来。有人说为长生，你只是不想再被人踩在脚下。', fx:{ wits:1 } },
+    { a:18, b:26, w:2, t:'你在雷雨夜里打坐，忽然有一线灵光落进眉心，雨水在身周三寸处悬停。', fx:{ dxp:180, wits:1 } },
+
+    /* ---------- 青年 20 - 45 ---------- */
+    { a:20, b:45, w:3, t:'你第一次独自下山。凡俗的市井吵闹得厉害，你恍惚了一瞬，像从很远的梦里醒来。' },
+    { a:22, b:46, w:2, t:'坊市里有人兜售“上古丹药”，丹纹是用针尖刻上去的，你一眼就看出来了。',
+      ch:{ q:'摊主笑得殷勤，你要怎么做？', o:[
+        { t:'当众揭穿他', r:'摊主恼羞成怒，你被一群人围住。你打赢了，也结下了梁子。', fx:{ luck:-1, dxp:120 } },
+        { t:'买一枚，试药', r:'丹药是假的，你在客栈吐了三天血。但也从毒性里悟出一点药性。', fx:{ body:-1, wits:2 } },
+        { t:'摇头走开', r:'你走开后，听见身后有人用很轻的声音骂了一句。', fx:{ wits:1 } }
+      ]}},
+    { a:22, b:50, w:2, t:'荒山里，一个浑身是血的散修攥住你的袖口，气息一口比一口弱。',
+      ch:{ q:'你如何应对？', o:[
+        { t:'渡一缕真气救他', r:'他醒来后什么也没说，只把一枚旧玉牌塞进你手里，然后消失在雾里。', fx:{ luck:2, dxp:80 } },
+        { t:'掰开他的手，转身离开', r:'你走出很远，仍听见身后的咳嗽声。那一夜你没有睡好。', fx:{ wits:1 } }
+      ]}},
+    { a:23, b:50, w:2, once:true, t:'秘境开启，人群像潮水一样涌进去。你抢到一株三百年份的灵草，也看见有人被踩死在洞口。', fx:{ dxp:260 } },
+    { a:24, b:48, w:2, t:'山门大比，你一路杀进前十。你的名字第一次被人念出来，念得还有些迟疑。', fx:{ dxp:200, luck:1 } },
+    { a:25, b:50, w:1, t:'同门师妹与你并肩守夜。火光把她的侧脸照得很软，你忽然不敢说话。',
+      ch:{ q:'天亮之前，你想说点什么吗？', o:[
+        { t:'告诉她你的心意', r:'她说：“修仙之人，最忌牵挂。”可她转身时，耳尖是红的。', fx:{ luck:2, dxp:100 } },
+        { t:'装作什么都没发生', r:'你们各自回房。这一夜之后，你们再没有单独说过话。', fx:{ wits:1 } }
+      ]}},
+    { a:26, b:55, w:1, once:true, t:'你在古战场捡到一截断剑，剑身里锁着一点未散的杀意，握久了连指尖都在抖。', fx:{ dxp:320 } },
+    { a:26, b:55, w:2, t:'你被诬陷偷了丹药，长老当众打了你三十戒鞭。你趴在雪地里，忽然明白修为才是道理。', cond:function(P){ return !!P.sect; }, fx:{ body:-1, wits:1 } },
+    { a:27, b:60, w:1, t:'有人出高价要买你手里的功法。你拒绝了，当夜就被三个人堵在巷子里。',
+      ch:{ q:'他们要你留下东西。', o:[
+        { t:'把功法交出去', r:'他们拿了东西就走，还顺手打断了你一条腿。你在地上躺了很久。', fx:{ body:-1 } },
+        { t:'拔剑', r:'你杀了两个，第三个跑了。从此你的通缉画像贴满了三座城。', fx:{ dxp:260, luck:-1 } }
+      ]}},
+    { a:28, b:70, w:1, once:true, t:'你在旧书摊上花三文钱买到一册残卷，回家发现夹层里藏着一张地图。', fx:{ luck:1, dxp:60 } },
+    { a:30, b:80, w:1, once:true, t:'一只白鹤在你窗前停了整夜。天亮时它飞走了，留下一根洁白如雪的羽毛。', fx:{ luck:1 } },
+    { a:30, b:80, w:2, t:'你在溪边打坐，忽然觉得天地静了一瞬，连风都停下了。', fx:{ dxp:120 } },
+    { a:31, b:90, w:2, t:'一颗流星划过夜空，你许了个愿。许完才发觉，自己也不知道在许什么。' },
+    { a:32, b:90, w:2, t:'你路过故乡。青石镇已经改了名字，没有人认得你，药铺也换成了一家酒楼。' },
+    { a:33, b:95, w:1, t:'你梦见自己死了，醒来时枕头是湿的。你摸了摸自己的脉搏，跳得很稳。', fx:{ body:-1, wits:1 } },
+    { a:35, b:120, w:1, once:true, t:'你救了一只受伤的狐狸。它化成人形朝你拜了三拜，转身走进雾里，再没出现过。', fx:{ luck:2 } },
+    { a:36, b:120, w:2, t:'你与一名剑修在路上论道三日。你输了半招，却赢了一个朋友。', fx:{ wits:1, dxp:150 } },
+    { a:40, b:150, w:3, t:'你在一座荒庙里避雨。神像脸上落满了灰，你伸手替它擦了擦。' },
+
+    /* ---------- 修行 / 心魔（按境界） ---------- */
+    { a:18, b:400, w:3, rm:1, t:'你闭关三年，出关时洞口的青苔已长得齐膝，掌心的灵气凝成了一层薄膜。', fx:{ dxp:400 } },
+    { a:20, b:400, w:2, rm:1, t:'心魔化作你母亲的模样，在梦里问你为什么不回家。',
+      cond:function(P){ return !P.flags.pure; },
+      ch:{ q:'梦里的她朝你伸出手。', o:[
+        { t:'一剑斩碎这个幻影', r:'梦碎了。你在蒲团上咳出一口血，但道心更硬了一分。', fx:{ dxp:200, wits:1 } },
+        { t:'坐下来，和她说话', r:'你说了整整一夜。天亮时幻影散去，你修为大进，眼眶却是肿的。', fx:{ dxp:600, body:-1 } }
+      ]}},
+    { a:30, b:600, w:2, rm:2, t:'你冲击境界失败，一口血喷在蒲团上，经脉像被钝刀一寸寸刮过。', fx:{ body:-1, xpMul:-0.2 } },
+    { a:35, b:600, w:2, once:true, rm:3, t:'一位白发老者与你论道三日，临别时说：“你走的这条路，一千年前有人走过。”', fx:{ dxp:900, wits:1 } },
+    { a:40, b:600, w:2, rm:3, t:'你最疼爱的弟子跪在门外，求一颗续命丹。丹只有一颗，而你自己也快了。',
+      ch:{ q:'丹炉就在你手边。', o:[
+        { t:'把丹给他', r:'弟子活了下来，替你守了两百年的山门。你每次想起他，都觉得当年不亏。', fx:{ luck:3, life:-80 } },
+        { t:'收进袖中，紧闭洞府', r:'门外再没有声音。三日后你出关，只看见雪地里一个跪着的影子。', fx:{ dxp:800, luck:-2 } }
+      ]}},
+    { a:50, b:900, w:2, rm:4, t:'天边有魔气翻涌。你赶到时，一座城一夜之间空了，碗里的粥还是温的。', fx:{ luck:-1, dxp:300 } },
+    { a:60, b:900, w:2, once:true, rm:4, t:'魔道中人拦住你，掌心托着一枚血丹：“吞了它，可省你百年苦修。”',
+      ch:{ q:'血丹在掌心轻轻跳动，像一颗心。', o:[
+        { t:'吞下', r:'修为暴涨，血却从此变得发烫。你听见识海里有个声音在笑。', fx:{ dxp:1800, body:-2, luck:-3 }, set:{ dao:'魔道' } },
+        { t:'一掌拍碎', r:'血雾散开时，你看见对方的脸变成了一张很年轻的、在哭的脸。', fx:{ dxp:600, wits:1 } }
+      ]}},
+    { a:80, b:1200, w:3, once:true, rm:5, t:'旧友一个个坐化了。你替他们守了七日的灯，灯灭时，你谁也没送。' },
+    { a:100, b:1500, w:2, once:true, rm:6, t:'你另立道统，山门第一年只来了三个弟子。他们叫你“师祖”，声音又尊敬又害怕。' },
+    { a:150, b:2000, w:2, once:true, rm:7, t:'一场大雨里，你看见了自己的道。天地像一张摊开的纸，而你是纸上的一滴墨。', fx:{ dxp:3000 } },
+    { a:200, b:3000, w:3, once:true, rm:8, t:'九天之上雷云聚起，云层厚得看不见顶。诸天都在等你踏出那一步。', fx:{ dxp:2000 } },
+
+    { a:90, b:1500, w:2, rm:5, t:'你在一处秘境见到半局残棋，黑白子落了千年，还没有收官。你看了三日，忽然明白了一点什么。', fx:{ dxp:1200, wits:1 } },
+    { a:110, b:1800, w:2, once:true, rm:5, t:'你收下一个资质平庸的弟子。他很笨，剑法学了十年还是歪的，但每天都会来扫你的石阶。', fx:{ luck:1 } },
+    { a:140, b:2200, w:1, rm:6, t:'有妖族使者带着礼物登门，请你出手一次，代价是一滴心头血。',
+      ch:{ q:'你答应吗？', o:[
+        { t:'应下，取一滴心头血', r:'你闭关养了三十年才补回来，但那件事之后，你在妖族中有了名字。', fx:{ body:-2, dxp:5000, luck:2 } },
+        { t:'送客', r:'使者走后，山门外的槐树落了一地叶子。你觉得这可能是对的。', fx:{ wits:1 } }
+      ]}},
+    { a:160, b:2500, w:2, rm:7, t:'你走过的地方开始有凡人建庙。庙里供着你的像，脸捏得很不像，香火却很旺。' },
+    { a:180, b:2800, w:2, once:true, rm:8, t:'你回望这一生，才发现已经记不清父母的样子了。你坐在山巅，从天黑坐到天亮。', fx:{ wits:2 } },
+    { a:200, b:3000, w:2, once:true, rm:8, t:'天劫将至。你把洞府里的东西一件件送人，最后只剩下一把旧剑和一坛酒。' },
+
+    /* ---------- 通用随机 ---------- */
+    { a:15, b:999, w:2, t:'你昨夜梦见自己站在云上，脚下是缩小的山川与灯火。醒来时，指尖还残留着风的触感。', fx:{ wits:1 } },
+    { a:20, b:999, w:1, t:'坊市有人塞给你一本《修仙速成》，封面写着“三月金丹，七日飞升”，著者“无名散人”。你翻了五页，发现全是抄的。', fx:{ wits:1 } },
+    { a:20, b:999, w:2, t:'你养的灵植又死了，第三次。你决定还是养石头。', fx:{ luck:-1 } },
+    { a:25, b:999, w:1, t:'有人在你的洞府外放了一篮野果。你查了三天，也没查出是谁。', fx:{ luck:1 } },
+    { a:30, b:999, w:2, t:'你花了一整年，只为了让一株枯死的松树重新发芽。它活了的时候，你在树下坐了一整天。', fx:{ wits:1 } },
+    { a:40, b:999, w:1, t:'山下有孩童指着你说：“那个仙人，好像很孤单。”你听见了，没有回头。' },
+
+    /* ---------- 幼年补 ---------- */
+    { a:1, b:9, w:2, t:'你在祠堂前的石阶上学走路，摔了七次，第八次自己站起来走了三步。', fx:{ body:1 } },
+    { a:3, b:10, w:2, t:'镇上来了个说书人，讲的全是仙人的事。你听完回家，把木棍当剑比划了半夜。', fx:{ wits:1 } },
+    { a:4, b:11, w:2, t:'你偷吃了供桌上的果子，被母亲追着打了半条街。那果子其实已经烂了。' },
+    { a:5, b:11, w:1, t:'邻家女孩送了你一只草编的蚱蜢。你一直留到草都散了，才舍得扔。' },
+    { a:3, b:10, w:2, t:'你生了一场大病，郎中摇头。母亲抱着你在祠堂跪了一夜，第二天你退了烧。', fx:{ body:1 } },
+    { a:6, b:11, w:2, t:'你第一次看见死人。送葬的队伍很长，纸钱撒了一路，你跟在后面走了很远。' },
+    { a:5, b:11, w:1, once:true, t:'你在田埂上捡到一枚生锈的铜钱，擦干净后，上面刻着一个看不懂的字。', fx:{ luck:1 } },
+
+    /* ---------- 少年补 ---------- */
+    { a:13, b:24, w:2, once:true, t:'你在后山捡到一把断刀，刀柄上刻着“不悔”两个字。你把它藏在了床下。' },
+    { a:14, b:22, w:2, t:'师兄教你怎么偷溜下山，也教你怎么在长老面前哭。你学得很快。', fx:{ wits:1 } },
+    { a:15, b:26, w:1, once:true, t:'你在药园遇见一个不说话的老仆。他看你的眼神，像在看一个很久以前的人。' },
+    { a:14, b:24, w:2, t:'宗门分发灵米，你那份被换成了陈米。你去讨，被人推倒在泥里。', fx:{ body:-1 } },
+    { a:17, b:30, w:1, once:true, t:'你第一次杀人。那是个魔修，临死前说你“眼睛很干净”。你在溪边洗了很久的手。', fx:{ wits:1, luck:-1 } },
+    { a:17, b:28, w:2, t:'你在集市上花光了所有灵石，只为买一支给师姐的簪子。她收下了，却从没戴过。', fx:{ luck:1 } },
+    { a:18, b:30, w:2, t:'你和同门比试，赢了一场，输了一场。赢的那场你记得，输的那场你也记得。', fx:{ dxp:60 } },
+
+    /* ---------- 中年补 ---------- */
+    { a:30, b:200, w:1, t:'你在山道上遇到一个背着棺材的老人。他说，棺材里装的是他自己。' },
+    { a:30, b:200, w:2, once:true, t:'你救下一窝被修士斗法震塌的兔子，养了三个月，又放回了山里。', fx:{ luck:1 } },
+    { a:35, b:400, w:2, t:'有人在你的酒里下毒。你没有喝，也没有揭穿，只是把酒倒在了对方靴子上。', fx:{ wits:1 } },
+    { a:40, b:500, w:2, once:true, t:'你在洞府门口看见一封没有署名的信，纸上只有四个字：“山高水长”。' },
+    { a:45, b:600, w:1, t:'你在雪地里跟了一串脚印三天，最后发现那是自己昨天留下的。', fx:{ wits:1 } },
+    { a:50, b:800, w:2, once:true, t:'你收到一封旧友的遗书，信纸上有干涸的血，字迹到最后已经不成形了。' },
+    { a:55, b:900, w:1, once:true, t:'你在集市上见到一个与你长得一模一样的人。他朝你笑了笑，走进人群，再没出现。', fx:{ luck:-1 } },
+    { a:60, b:900, w:2, once:true, t:'你被请去一个凡人家族做客。他们把你当神仙供着，杀了唯一的一头牛。' },
+
+    /* ---------- 抉择补 ---------- */
+    { a:20, b:120, w:2, once:true, t:'坊市里有个卖身的少年，跪在雪里，眼神很像当年的你。',
+      ch:{ q:'你身上还有一袋灵石。', o:[
+        { t:'把他买下来，还他自由', r:'他磕了三个头，然后跑进雪里，再没见过。你的灵石空了，心里却松了一块。', fx:{ luck:2 } },
+        { t:'装作没看见，绕过去', r:'雪落在他肩上，一层又一层。你走了很远，还是回头看了一眼。', fx:{ wits:1 } }
+      ]}},
+    { a:30, b:300, w:2, once:true, t:'你参加了一场修士的婚礼。新娘是被抢来的，手腕上还有绳子勒出的血痕。',
+      ch:{ q:'喜乐响起来了。', o:[
+        { t:'掀了喜堂，带她走', r:'你得罪了一个不小的世家。新娘走了，你被追杀了三年。', fx:{ luck:2, dxp:300, body:-1 } },
+        { t:'低头喝完这杯酒', r:'酒很甜。你听见喜堂后面有人在哭，哭声一直没有停。', fx:{ luck:-2, dxp:120 } }
+      ]}},
+    { a:40, b:500, w:2, once:true, t:'一个魔修跪在你脚边，说他修魔是为了给死去的妹妹续命。',
+      ch:{ q:'你的剑还在滴血。', o:[
+        { t:'收剑，放他走', r:'他走了。三十年后，你听说有人用一城人的命炼成了一枚丹。', fx:{ wits:1 } },
+        { t:'一剑落下', r:'血溅在你袖口。你擦了很久，擦不干净。', fx:{ dxp:400, luck:-1 } }
+      ]}},
+    { a:60, b:600, w:2, once:true, t:'一座凡俗小城的城主跪在你面前，求你庇佑一城百姓。城门外，一个世家的旗子已经立起来了。',
+      ch:{ q:'应下，就要得罪那个世家。', o:[
+        { t:'答应他', r:'你护了这座城两百年。城里的人给你立了碑，碑上写着“仙人不食言”。', fx:{ luck:4, dxp:800 }, deed:'saveCity' },
+        { t:'摇头离开', r:'你走的时候，城主还跪着。三年后，那座城成了一片白地。', fx:{ dxp:1200, luck:-3 } }
+      ]}},
+
+    /* ---------- 境界补 ---------- */
+    { a:20, b:300, w:2, once:true, rm:1, t:'筑基那天，你把旧剑埋在了后山。你觉得它该歇歇了。', fx:{ wits:1 } },
+    { a:30, b:400, w:2, once:true, rm:2, t:'你的金丹凝成时，颜色比旁人的淡。长老说，淡的丹往往走得更远。', fx:{ dxp:400 } },
+    { a:40, b:500, w:2, once:true, rm:3, t:'元婴出窍的那一夜，你看见自己的身体坐在蒲团上，觉得很陌生。', fx:{ wits:1 } },
+    { a:50, b:700, w:2, rm:3, t:'一个魔修头目死在你剑下。他临死前说：“你也会变成我。”', fx:{ luck:-1 } },
+    { a:60, b:800, w:2, once:true, rm:4, t:'你开始记不清凡俗的事。母亲的样貌、镇子的路，都像隔了一层雾。', fx:{ wits:1 } },
+    { a:70, b:900, w:2, once:true, rm:4, t:'你化神之后第一次回到青石镇。药铺不在了，只剩一块烂掉的招牌。' },
+    { a:90, b:1200, w:2, once:true, rm:5, t:'有年轻修士跪在你洞府外的雪地里，求你收他为徒。你想起了自己跪过的那个雪夜。', fx:{ luck:1 } },
+    { a:120, b:1500, w:2, once:true, rm:6, t:'你在一处遗迹里看见石刻：“飞升者，无一回头。”你看了很久。' },
+    { a:150, b:2000, w:2, once:true, rm:7, t:'你的道统开始有人仿效。他们把你的话刻在石壁上，有几个字刻错了。' },
+    { a:200, b:2500, w:2, once:true, rm:8, t:'你遣散了身边的最后一批人。山门空了，你反而睡得踏实。' },
+
+    /* ---------- 通用补 ---------- */
+    { a:16, b:999, w:2, t:'你在山巅看了一场极好的日出，看完了才发现自己忘了打坐。' },
+    { a:20, b:999, w:1, t:'你把一枚灵石丢给了一个乞丐。他抬头说你“眉间有死气”，然后低头继续吃。', fx:{ luck:-1 } },
+    { a:25, b:999, w:1, t:'你养了一株会说话的草。它每天只重复一句：“要下雨了。”', fx:{ luck:1 } },
+    { a:30, b:999, w:1, once:true, t:'你在藏书阁翻到一本无字书。翻到最后一页，上面只有一个墨点。', fx:{ wits:1 } },
+    { a:40, b:999, w:2, t:'你在雨里走了一整夜。第二天醒来，发现自己的鞋是干的。', fx:{ wits:1 } },
+    { a:50, b:999, w:2, once:true, t:'你在一处荒废的山门里看见半块牌匾，上面的字被人刮掉了，只剩下一个“仙”。' },
+
+    /* ---------- 系统流 · 彩蛋 ---------- */
+    { a:4, b:30, w:2, once:true, t:[
+      '你梦见自己站在一个巨大的、发光的房间里，四面都是字。有个声音念你的名字，念错了一个字。',
+      '你在梦里见过一块没有边的光屏，上面写着“加载中”。你等了很久，它一直是“加载中”。' ] },
+    { a:8, b:80, w:2, once:true, t:[
+      '脑海中响起一个没有起伏的声音：“叮。宿主完成日常修行，奖励【灵石】×3。”你四下张望，什么也没有。',
+      '你试着在心里问：“系统？”没有人回答。可你总觉得某处有个东西，轻轻“嗯”了一声。' ], fx:{ luck:1 } },
+    { a:12, b:60, w:1, once:true, t:'你的眼前忽然浮起一块半透明的板子：【姓名：你】【境界：……】【评价：还行】。你伸手去碰，它散了。', fx:{ wits:1 } },
+    { a:15, b:120, w:1, once:true, t:[
+      '有天夜里，你听见极远处有人在说话，像在念一段旁白：“……而他并不知道，这一夜之后，一切都将不同。”',
+      '你偶尔会觉得，自己的一生正被某个人看着。那人不怀好意，也不算恶意，只是好奇。' ] },
+    { a:20, b:200, w:1, once:true, t:'你在识海里看见一行极小的字：“本世界线已存档。”第二天，那行字变成了“读取失败”。', fx:{ luck:-1 } },
+    { a:30, b:300, w:1, once:true, t:'你梦见一个叫“地球”的地方。那里的人用一种发光的板子看别人的一生，看得津津有味。醒来你觉得荒谬。', fx:{ wits:1 } },
+    { a:40, b:400, w:1, once:true, t:'你在一处遗迹里读到一个故事：有个人被丢进陌生的世界，靠一块面板活了一辈子。故事结尾只有两个字：“弃坑”。', fx:{ dxp:200 } },
+
+    /* ---------- 抽象 · 荒诞 ---------- */
+    { a:6, b:18, w:2, once:true, t:'你在河边捡到一枚铜钱，正反面都是“字”。你把它戴在脖子上，那年开始，你的运气有点怪。', fx:{ luck:2 } },
+    { a:10, b:40, w:2, t:[
+      '你养的一只鸡每天早上打鸣。有一天它忽然叫了你的名字。你把它炖了，汤很香。',
+      '你在院里种了棵树。第二年它长出一朵花，花开时朝你转了个脸。你没敢再看第二眼。' ] },
+    { a:12, b:60, w:2, once:true, t:[
+      '你在集市上买了一个泥人。第二天它少了一条腿，第三天少了一条胳膊。你没敢再买第二个。',
+      '有个瞎子拉住你的袖子，说你身上“有股不属于这里的味道”。你想了一路。' ] },
+    { a:16, b:80, w:2, t:[
+      '你在一场雨里听见有人叫卖“后悔药”。你回头，雨里什么都没有。',
+      '你在山道上遇见一个与自己一模一样的人。两人对视三秒，他先让开了路。' ] },
+    { a:18, b:90, w:2, once:true, t:'你捡到一本没有封面的书。前九十九页都是空白，第一百页写着：“你已经看完了。”', fx:{ wits:1 } },
+    { a:20, b:120, w:1, once:true, t:'你在夜里听见自己打呼噜。你醒着。' },
+    { a:25, b:200, w:2, t:[
+      '你开始做梦，梦里你是另一个人，有另一段人生。醒来时你分不清哪一段是真的。',
+      '你连续七夜做同一个梦，梦见自己在打坐。第八夜你决定不睡，结果打坐时睡着了。' ] },
+    { a:30, b:300, w:2, once:true, t:[
+      '你随手救了一只蚂蚁。三天后，洞府门口出现一队搬着米粒的蚂蚁，整齐得像朝贡。',
+      '你在洞府门口发现一小堆野果，摆得很整齐。你不知道是谁送的，也没敢吃。' ] },
+    { a:35, b:400, w:1, once:true, t:'你在石壁上刻字消遣，刻到一半发现那行字本就是前人刻好的，你只是把它描深了。', fx:{ wits:1 } },
+
+    /* ---------- 晚年 ---------- */
+    { a:120, b:999, w:2, t:[
+      '你已经很久没有数过自己多少岁了。山下的村子换了几代人，没有人再认得你。',
+      '你的名字在凡间渐渐成了一个传闻。传闻里你有一百只手，还有三只眼。' ] },
+    { a:150, b:999, w:2, t:[
+      '你开始把每年的事刻在石壁上。刻到几百行时，你忘了自己为什么开始刻。',
+      '你把从前的剑挖出来擦了一遍，又埋回去。埋的时候，你埋得很深。' ] },
+    { a:200, b:999, w:2, t:[
+      '有个小姑娘跑上山，问：“仙人也会死吗？”你想了很久，说：“会。”她哭了，你没有安慰她。',
+      '山下的镇子改名叫“望仙镇”。你知道他们望的不是你，是他们自己想活成的样子。' ] },
+    { a:250, b:999, w:1, once:true, t:'你把这一生认识的人念了一遍。念到最后，有三个名字你想不起来了，但你记得他们的脸。', fx:{ wits:1 } },
+    { a:300, b:999, w:2, t:[
+      '你在山巅坐了很久，忽然发现自己在等一件事。至于等什么，你忘了。',
+      '你开始怕死。这很可笑——你活了这么久，见过那么多人死。' ] },
+    { a:400, b:999, w:2, t:[
+      '有天你在镜子里看见自己，愣了一下：这张脸，你已经不太认得了。',
+      '你终于明白，所谓长生，就是一件一件地送走所有认识的人，最后剩自己一个。' ] },
+
+    /* ---------- 回响 · 多年之后 ---------- */
+    { a:8, b:40, w:2, once:true, t:'你在雪地里给一个冻僵的货郎指了路。他记住了你的样子。',
+      echo:{ after:60, t:'六十年后，有个白发老人带着孙子来山下烧纸，说当年有个少年替他指了路，救了他一条命。', fx:{ luck:2 } } },
+    { a:12, b:60, w:2, once:true, t:'你把半块干粮给了路边一条快饿死的狗。它舔了舔你的手，跑了。',
+      echo:{ after:40, t:'四十年后，你在山中遇见一头极老的白狼。它看了你很久，转身走了，没有攻击你。', fx:{ body:1 } } },
+    { a:20, b:120, w:2, once:true, t:'你在崖边拉住一个失足的孩子。他吓得说不出话，只是抓着你的衣角不放。',
+      echo:{ after:90, t:'九十年后，一个白发老人跪在你洞外，说他小时候被你救过一次，想把孙子送上山。', fx:{ luck:2, dxp:200 } } },
+    { a:25, b:200, w:2, once:true, t:'你在一个快要饿死的人碗里放了一块灵石。你不知道他会不会用。',
+      echo:{ after:50, t:'五十年后，有个富商捧着那块灵石找上门，说他靠它起家，想还你一份人情。', fx:{ luck:2, dxp:300 } } },
+    { a:30, b:300, w:1, once:true, t:'你在一场大雨里埋了一个无名的死者，还替他立了一块没有字的碑。',
+      echo:{ after:70, t:'七十年后，那块无字碑前开始有人上香。有人说很灵。你听了，笑了一下。', fx:{ luck:1 } } },
+    { a:40, b:400, w:1, once:true, t:'你顺手救下一株被雷劈焦的老树，替它接上了一根枝。',
+      echo:{ after:80, t:'八十年后，那棵树长得比山还高，树下聚了一群修士，都说这是福地。你在树上坐着，没人认得你。', fx:{ dxp:600 } } },
+    { a:50, b:400, w:1, once:true, t:'你在酒馆里听一个醉汉胡说八道了一整夜。临走时他拉住你，说了句：“你以后要记得我。”',
+      echo:{ after:120, t:'一百二十年后，你在旧书里看见了那个醉汉的名字。他成了某本话本的主角，书里说他曾遇见过一位仙人。', fx:{ luck:1 } } },
+    { a:45, b:200, w:2, once:true, t:'你在一座无名坟前放了一壶酒。坟主生前说过，死后想有人陪他喝一杯。',
+      echo:{ after:35, t:'三十五年后，你在同一座坟前又放了一壶。坟头的草已经很高，酒还是热的。', fx:{ luck:1 } } },
+    { a:70, b:300, w:1, once:true, t:'你把一枚旧玉送给山下的一个孩子，随口说：“长大了来山上找我。”',
+      echo:{ after:40, t:'四十年后，一个中年修士跪在你洞外，手里攥着那枚旧玉。他说，他来晚了。', fx:{ luck:2, dxp:200 } } },
+    { a:100, b:600, w:1, once:true, t:'你把一段剑法刻在石壁上，没有留名字。',
+      echo:{ after:60, t:'六十年后，石壁前跪满了人。他们在拜一个不知道是谁的人。你路过，没有停。', fx:{ dxp:500 } } },
+
+    /* ---------- 抉择 ---------- */
+    { a:25, b:150, w:2, once:true, t:'有人在你面前跪了一整夜，求你收他为徒。他的资质很差，差到旁人都不愿意看他第二眼。',
+      ch:{ q:'天快亮了。', o:[
+        { t:'收下他', r:'他学得很慢，慢到你想放弃。但他每天都是第一个到，最后一个走。', fx:{ luck:2 }, deed:'teach' },
+        { t:'让他回去', r:'他磕了三个头，走了。多年后你听说他死在一场斗法里，用的是你随手教的一招。', fx:{ dxp:300 } }
+      ] } },
+    { a:60, b:400, w:2, once:true, t:'一个曾经的仇人跪在你面前。他已经老得握不住剑，只求一个痛快。',
+      ch:{ q:'他抬起头看你。', o:[
+        { t:'给他一个痛快', r:'剑很快。你替他合上眼，忽然发现自己一点也不快意。', fx:{ wits:1 }, deed:'killOld' },
+        { t:'放他走', r:'他走了几步，回头说：“你比我强。”这句话你记了很久。', fx:{ luck:2 }, deed:'spareOld' }
+      ] } },
+    { a:80, b:600, w:1, once:true, t:'你在一处山谷里发现一个与你年岁相仿的修士，他已经坐化了三百年，脸上还带着笑。',
+      ch:{ q:'他的膝上放着一卷手记。', o:[
+        { t:'取来看', r:'手记上只有一句：“我这一生，没做过一件后悔的事。”你想了很久自己有没有。', fx:{ wits:2 }, deed:'readNote' },
+        { t:'替他埋了', r:'你挖了个坑，把他连同那卷手记一起埋了。埋完你在坟前坐了一夜，什么也没想。', fx:{ luck:2 }, deed:'buryMonk' }
+      ] } },
+    { a:100, b:700, w:1, once:true, t:'有个年轻人找到你，说他来自很远的后世，专程回来告诉你一句话。',
+      ch:{ q:'他说完就走了，留下一句没说完的话。', o:[
+        { t:'追上去问清楚', r:'你追了十里，那人像从没存在过。你只记得他说：“别去……”后面的话你没有听清。', fx:{ wits:1 }, deed:'chaseFuture' },
+        { t:'站在原地，不再追', r:'你站了很久。有些话，听不清也是一种答案。', fx:{ dxp:500 }, deed:'letGo' }
+      ] } },
+
+    /* ---------- 荒诞 · 打脸 · 震惊体 ---------- */
+    { a:8, b:300, w:2, t:'你在山上捡到一本《绝世功法》。第一页写着“孤本，阅后请焚毁”，第二页写着“算了，别焚了”。' },
+    { a:10, b:999, w:2, t:'一个过路修士看了你一眼，说：“你身上有股味。”你问什么味，他说：“主角味。”' },
+    { a:12, b:120, w:2, t:'你在集市上卖符，一天卖出三张。三个人后来都来退货，说符不灵。你才发现自己画的是“再见”两个古字。', fx:{ luck:-1 } },
+    { a:12, b:200, w:2, t:'你打死了一只野狗。三天后，它的位置被另一只野狗占了。你忽然明白了点什么，又说不出来。' },
+    { a:15, b:200, w:2, t:'你在酒馆听人说，如今修仙界最火的是“苟道流”。你决定也苟一苟。第二天你就出山了。' },
+    { a:6, b:40, w:2, t:'有个小孩指着你喊：“就是他，昨天偷吃我家鸡！”你没有辩解，因为确实是你。', fx:{ luck:-1 } },
+    { a:16, b:80, w:1, t:'有个女修追了你三座山，说要嫁给你。你跑得更快。后来才知道她认错了人。' },
+    { a:20, b:400, w:2, t:'你被人写进了话本，书名叫《那狗日的仙尊》。你翻了三页，觉得文笔不错。', fx:{ luck:1 } },
+    { a:25, b:500, w:2, t:'你在一处山洞里看见自己的名字刻在墙上，字迹很旧。你摸了摸，笔迹是你的。', fx:{ wits:1 } },
+    { a:10, b:999, w:2, t:'你在雪地里坐了一整夜，第二天居然没死。有人问你怎么做到的，你也想知道。', fx:{ body:2 } },
+    { a:14, b:200, w:1, t:'有个小宗门请你当护山大阵的阵眼。你问待遇，他说管饭。你答应了。', fx:{ dxp:150 } },
+    { a:30, b:999, w:2, t:'你写了本《修道心得》，卖了三百本。有读者来信说：“全是废话。”你回信说：“谢谢。”', fx:{ wits:1 } },
+    { a:60, b:999, w:2, t:'你被雷劈了三次没死。第四次劈下来，你举起了剑。剑碎了，人没事。围观的人只说了一个字：“？”', fx:{ body:2, dxp:300 } },
+    { a:18, b:200, w:2, t:'拍卖会上你举了一次牌，全场忽然安静。你以为自己拍到了什么了不得的东西，其实那件东西流拍了。' },
+    { a:20, b:999, w:2, t:'你走路时总有人回头看。你以为是自己气度不凡，后来发现是背上挂了一片菜叶。' },
+    { a:22, b:200, w:1, t:'你决定从此闭门读书。第三天你读完了所有书——书架上只有三本，而且都是菜谱。', fx:{ wits:1 } },
+    { a:25, b:300, w:1, t:'你在江边钓上来一条会说话的鱼。它求你放了它，你放了。第二天它带了群鱼来谢你，全是死鱼。' },
+    { a:28, b:300, w:2, t:'你师父说，修仙最重要的是一颗心。你问什么心，他说：“随便什么心，你有就行。”', fx:{ dxp:120 } },
+    { a:30, b:400, w:1, t:'你去参加宗门大比，抽签抽到轮空，直接进前三。后来才知道，一共只有三个人参赛。', fx:{ luck:2 } },
+    { a:32, b:600, w:1, t:'你在山上种了一片灵田。种下去的是灵石，长出来的是野草。你想了想，决定改种野草。' },
+    { a:18, b:999, w:2, rolls:[
+      { t:'有个算命的拉住你，说三日内有血光之灾。你三天没出门。第四天出门，摔了一跤。', fx:{ body:-1, luck:1 } },
+      { t:'有个算命的拉住你，说三日内有血光之灾。你一脚踢翻他的摊子。当晚你就见了血——他流的。', fx:{ luck:-2, body:-1 } }
+    ] },
+    { a:20, b:999, w:1, t:'你捡到一枚蛋，孵出一只鸡。这只鸡后来自己学会了引气入体，比你早三年突破。它在你面前踱步的时候，你抬不起头。', fx:{ dxp:200 } },
+    { a:35, b:999, w:2, t:'你在拍卖会上花光积蓄买下“上古神器”，回家一看是把菜刀。很好用。你用它削了三十年的灵果。', fx:{ dxp:260 } },
+    { a:40, b:999, w:2, t:'有修士上门挑战，说与你分个高下。你问分什么，他说：“你跪下。”你跪了。他反而哭了。' },
+    { a:60, b:999, w:2, t:'你在集市上撞见当年嘲笑你修行慢的人。他落魄了，还认得你，低头走了。你没打算说什么，可你在原地站了很久。', fx:{ wits:1 } },
+
+    /* ---------- 荒诞 · 秘境 ---------- */
+    { a:20, b:999, w:2, t:'你走进一座洞府，里面空空荡荡，只有一张字条：“来晚了。”' },
+    { a:22, b:999, w:1, t:'你在秘境里迷路七天，出来只过了一炷香。你在里面吃掉了所有干粮。', fx:{ luck:-1 } },
+    { a:25, b:999, w:2, t:'你在秘境深处看见一座山，山上刻着三个字：“别进来。”你已经进来了。' },
+    { a:28, b:999, w:1, t:'你在秘境里捡到一把钥匙，找了三十年也没找到锁。后来你才明白，它就是锁。', fx:{ wits:2 } },
+    { a:30, b:999, w:2, t:'你在秘境里和一头守灵兽聊了半年。临走它送你一根骨头，说：“拿着，能唬人。”', fx:{ talismans:1 } },
+    { a:35, b:999, w:1, t:'你在秘境里捡到一面镜子，照出来的不是你。你把它翻过去，背面贴着字条：“别照太久。”', fx:{ wits:1 } },
+    { a:40, b:999, w:2, rolls:[
+      { t:'你推开秘境最深处的门，里面摆着一桌还热的席面，没有人。你坐下吃了一半，忽然不敢再吃。', fx:{ body:2 } },
+      { t:'你推开秘境最深处的门，里面摆着一桌席面，已经凉了三百年。桌边坐着一个人，也凉了三百年。', fx:{ wits:1, body:-1 } }
+    ] },
+    { a:45, b:999, w:1, t:'秘境中央有一口井。你往下看，井里也有个人在往上看你。你们同时挥手，同时僵住。', fx:{ wits:1 } },
+    { a:50, b:999, w:2, t:'你在一座空城里转了三天，所有屋子都住过人，所有桌子都摆着两副碗筷。' },
+    { a:55, b:999, w:1, t:'你得到一张残缺的地图，标记指向“此处”。你到了那里，地上确实写着“此处”。', fx:{ luck:1 } },
+
+    /* ---------- 荒诞 · 人间 ---------- */
+    { a:10, b:300, w:2, t:'你救了个落水的孩子，他家人非要谢你，塞给你一只活鸡。鸡在你怀里一路啄你。', fx:{ luck:1, body:-1 } },
+    { a:12, b:400, w:1, t:'你在饭馆吃饭，隔壁桌说你像个高人。你把袖子拢了拢，其实你只是冷。' },
+    { a:15, b:999, w:2, t:'有个孩子天天在门口等你，说长大要跟你走。他长大了，早忘了这件事。你还记得。', fx:{ luck:1 } },
+    { a:20, b:999, w:2, t:'你被人当成骗子赶出镇子。三个月后那镇子闹妖，他们又请人来找你，你已经走了。' },
+    { a:25, b:999, w:1, t:'一个老农请你给他的地看风水。你看不懂，就指了个方向。第二年他家真发了。他给你送了十年米。', fx:{ luck:2 } },
+    { a:30, b:999, w:2, t:'你在一场葬礼上被认成了死者的远亲，跟着哭了半场。出了门，你不知道自己为什么哭。' },
+    { a:35, b:999, w:1, t:'有个书生一定要拜你为师。你收了他，教他写字。他后来中了状元，回来给你磕头，第一句是：“字帖呢？”', fx:{ luck:2 } },
+    { a:40, b:999, w:2, t:'你和一条狗对坐了一下午。它先走的。你觉得自己输了一点什么。' },
+    { a:45, b:999, w:1, t:'有人给你送来一坛酒，说是陈了六十年。你喝了，很淡。送来的人自己喝了半坛，脸已经红了。' },
+    { a:50, b:999, w:2, t:'你在庙里听见有人给“仙尊”上香。你顺着看过去，那塑像有点眼熟，可脸刻得很不像你。' },
+
+    /* ---------- 异身：狗 ---------- */
+    { a:2, b:999, w:3, cond:function(P){ return P.origin === 'dog'; },
+      t:'你被镇上的孩子追了半条街。你跑赢了，但没觉得自己赢。', fx:{ body:1 } },
+    { a:8, b:999, w:3, cond:function(P){ return P.origin === 'dog'; },
+      t:'一个老道士蹲下来摸了摸你的头，说：“这条狗有慧根。”你想点头，只能摇尾巴。', fx:{ luck:2 } },
+    { a:15, b:999, w:3, cond:function(P){ return P.origin === 'dog'; },
+      t:'你叼回了一只修士掉的储物袋。他感动得哭了，收你当“灵犬”。你是门里第一个四条腿的弟子。', fx:{ dxp:300 } },
+    { a:30, b:999, w:3, cond:function(P){ return P.origin === 'dog'; },
+      t:'你在山门前蹲了三十年。新来的弟子叫你“门口那条”。你不反驳，只是每次都比前一天蹲得更直。' },
+    { a:50, b:999, w:3, cond:function(P){ return P.origin === 'dog'; },
+      t:'有天你忽然会说话了。第一句话是：“别叫我狗。”门里安静了很久，然后有人小声说：“那叫什么？”', fx:{ wits:1 } },
+    { a:70, b:999, w:3, cond:function(P){ return P.origin === 'dog'; },
+      t:'你以狗身渡劫的那天，围观的人挤了三座山。第一道雷落下来，有人喊：“它真接住了？！”', fx:{ body:2 } },
+    { a:100, b:999, w:2, cond:function(P){ return P.origin === 'dog'; },
+      t:'有画师专程来画你。画完他盯着画看了半天，说：“不像。”你说：“那是我以前的样子。”', fx:{ luck:1 } },
+
+    /* ---------- 异身：树 ---------- */
+    { a:2, b:999, w:3, cond:function(P){ return P.origin === 'tree'; },
+      t:'有人在你身上刻字。刻到一半他停了，说：“这树怎么在抖。”你没抖，是风。', fx:{ body:-1 } },
+    { a:30, b:999, w:3, cond:function(P){ return P.origin === 'tree'; },
+      t:'三百年里你长高了两丈。路过的人都说这树有灵。你确实有。', fx:{ dxp:300 } },
+    { a:60, b:999, w:2, cond:function(P){ return P.origin === 'tree'; },
+      t:'一对男女在你树下发誓，说生生世世。两百年后，只有一个人回来，一个人在你树根边坐了很久。', fx:{ wits:1 } },
+
+    /* ---------- 异身：石 ---------- */
+    { a:2, b:999, w:3, cond:function(P){ return P.origin === 'stone'; },
+      t:'有人在你身上磨剑，磨了三十年。你被磨掉一层，竟然觉得轻松。', fx:{ dxp:200 } },
+    { a:40, b:999, w:2, cond:function(P){ return P.origin === 'stone'; },
+      t:'一只狐狸总趴在你身上晒太阳。你没法赶它走。你后来习惯了它的重量。', fx:{ luck:1 } },
+
+    /* ---------- 异身：残魂 ---------- */
+    { a:2, b:999, w:3, cond:function(P){ return P.origin === 'ghost'; },
+      t:'你附身的这具身体有一个娘，天天抱着你哭。你不知道该不该应一声。', fx:{ luck:-1 } },
+    { a:20, b:999, w:2, cond:function(P){ return P.origin === 'ghost'; },
+      t:'你在镜子里看见原主的脸，那张脸也在看你。你们谁都没有先移开。', fx:{ wits:1 } },
+
+    /* ---------- 修仙界见闻 ---------- */
+    { a:10, b:999, w:2, t:'你听说北边有个宗门把入门费涨了三倍，理由是“灵气通胀，成本上涨”。' },
+    { a:12, b:999, w:2, t:'近来修仙界流行一种说法：境界不重要，心态最重要。说这话的人，大多没什么境界。' },
+    { a:20, b:999, w:2, t:'有个元婴老祖在集市上摆摊卖凉茶，一天卖八文。你问他为什么，他说：“图个热闹。”', fx:{ luck:1 } },
+    { a:25, b:999, w:2, t:'你听说有人为了突破，把自己钉在崖上吹了三年风。他后来确实突破了，也落下了一身的病。', fx:{ body:-1, dxp:200 } },
+    { a:30, b:999, w:2, rolls:[
+      { t:'西边那座山塌了。塌的时候没人去，塌完之后去了很多人，说是找机缘。你去了，捡到一块石头。', fx:{ luck:1 } },
+      { t:'西边那座山塌了。你去晚了，只看见一群人在为一截断木打架。你退了回来。' }
+    ] },
+    { a:35, b:999, w:2, t:'有人在卖“速成金丹”，吃一颗境界涨一级。买的人后来都死了。卖家换了张脸，还在卖。', fx:{ luck:-1 } },
+    { a:40, b:999, w:1, t:'今年修仙界最大的事，是有人把“天劫”写进了律法，规定不准私渡。第一个违反这条的人，当场就渡了。' },
+    { a:45, b:999, w:2, t:'有个正道宗门贴出告示：“本门不收心术不正者。”落款下面有人用小字写：“也不收没钱的。”' },
+    { a:60, b:999, w:2, t:'你听说南方出了个奇才，九岁筑基。你打听了一下，那孩子已经死了六十年了，消息才传到这里。' },
+    { a:80, b:999, w:1, t:'你在一张旧报纸上看见自己的名字，被写在“近百年十大未解之谜”的第七位。' },
+
+    /* ---------- 打脸 · 围观 ---------- */
+    { a:12, b:999, w:2, t:'你在街上被人指着说：“这不就是那个废物吗。”你回头看他，他忽然跪下了。' },
+    { a:18, b:999, w:2, t:'有个少年拦住你，说要与你比试。你让了三招，第四招他自己摔了。他哭着要拜师。' },
+    { a:25, b:999, w:2, t:'你和人论道三天三夜，谁也没说服谁。倒是围观的几个人后来都突破了。', fx:{ luck:2 } },
+    { a:30, b:999, w:2, rolls:[
+      { t:'你随手一剑，劈开了对面修士的护体灵光。他愣在原地，说：“你这是什么境界？”你说：“不知道。”', fx:{ dxp:400 } },
+      { t:'你随手一剑，剑没出鞘。对面修士愣了很久，忽然行礼，说：“受教了。”他走后，你发现剑柄断了。', fx:{ wits:1, dxp:300 } }
+    ] },
+    { a:40, b:999, w:1, t:'有宗门请你去做客卿，说了三条好处。你听完只问了第四条，他们就没再提了。' },
+    { a:50, b:999, w:2, t:'你在一场宴会上被安排在最末席。开席时主人来敬酒，第一杯就给了你，全场安静。', fx:{ luck:2 } },
+
+    /* ---------- 岁月 ---------- */
+    { a:100, b:999, w:2, t:'你在一座山顶上看见一块碑，碑上刻满了人名。你往下看，最后一个是你。你在那儿站了很久。', fx:{ wits:1 } },
+    { a:120, b:999, w:2, t:'你在旧货摊上买到一本笔记，第一页写：“此书赠有缘人。”后面全是空白。你把它收好，一直没写。' },
+    { a:160, b:999, w:2, t:'山下修了条路，通到了你洞府门口。从此每年都有人上来，有的是拜你，有的是来扔东西。' },
+    { a:220, b:999, w:2, t:'你忽然想去看看自己出生的那个镇子。到了才发现，镇子早没了，只剩一片庄稼地。', fx:{ wits:1 } },
+    { a:300, b:999, w:2, rolls:[
+      { t:'有个年轻人上来问你：修到这个地步，值得吗？你想了很久，说：“不知道。”他点点头，走了。', fx:{ wits:1 } },
+      { t:'有个年轻人上来问你：修到这个地步，值得吗？你说：“你说呢。”他愣了一下，然后笑了，说：“我懂了。”', fx:{ luck:2 } }
+    ] },
+    { a:400, b:999, w:2, t:'你开始记不清事情。你把重要的写在石壁上，第二天发现字被人擦掉了一半——是夜里你自己擦的。' },
+    { a:500, b:999, w:1, once:true, t:'你在一个晴天里忽然坐了下来。你坐了七天，什么也没想，也什么都没做。第八天你站起来，觉得轻了。', fx:{ dxp:800 } },
+
+    /* ---------- 回响 · 再补 ---------- */
+    { a:20, b:200, w:2, t:'你帮一个跛脚的老木匠推了半日车。他非要送你一把刻刀，说：“你以后用得着。”',
+      echo:{ after:45, t:'四十五年后，你在一个陌生人的墓前看见一把同式的刻刀。守墓的人说，他师父念叨过一位少年。', fx:{ luck:1 } } },
+    { a:40, b:300, w:1, t:'你在雪夜里让一个赶考的书生进了你的洞府避寒，还给他煮了碗汤。',
+      echo:{ after:55, t:'五十五年后，一队人马抬着匾额上山，说当年的书生做了官，要谢一位仙人。匾额上写错了你的姓。', fx:{ luck:2 } } },
+    { a:80, b:600, w:1, t:'你把门下最不成器的那个弟子赶下了山，还塞给他一袋干粮。',
+      echo:{ after:70, t:'七十年后，山下来了个中年人，带着一群孩子。他说他是当年那个被赶走的，如今开了个小学堂。', fx:{ luck:2 }, deed:'teach' } },
+
+    /* ---------- 抉择 · 再补 ---------- */
+    { a:30, b:600, w:2, t:'你在山道上遇见一个浑身是血的人，他说后面有人追他，求你救他一命。',
+      ch:{ q:'远处已经传来马蹄声。', o:[
+        { t:'把他藏起来', r:'你把他埋在柴堆下，追兵来了又走。他后来成了你一生最麻烦的债。', fx:{ luck:1, dxp:400 }, deed:'saveStranger' },
+        { t:'让开，不掺和', r:'你侧身让路。马蹄声过去很久，你还站在原地。', fx:{ wits:1 } }
+      ] } },
+    { a:50, b:900, w:1, t:'有一个声音在你识海里问：“你要不要换一个更快的活法？”代价是，你以后再也想不起自己是谁。',
+      ch:{ q:'它等着你回答。', o:[
+        { t:'换', r:'你的修为涨得飞快。只是有几次照镜子，你都想不起来镜子里的人叫什么。', fx:{ dxp:2500, wits:-3 } },
+        { t:'不换', r:'你说：“我想记得。”那声音笑了一下，就散了。', fx:{ wits:2, luck:1 } }
+      ] } },
+  ];
+
+  /* ============================================================
+     一·B、命轮事件池：离奇、玄幻、超脱
+  ============================================================ */
+
+  var EVENTS = [
+    /* ---------- 降生 · 异象 ---------- */
+    { a:0, b:3, w:3, t:'你出生的那一夜，屋外的雨是从下往上落的。稳婆说这孩子不该生在人间。', fx:{ luck:1 } },
+    { a:0, b:4, w:3, t:'你落地时不哭，睁着眼看屋顶。屋顶上有一只眼，也在看你。' },
+    { a:1, b:5, w:3, t:'你三岁前从不说话。某天忽然开口，说了一句谁也听不懂的话，说完就再也不提。', fx:{ wits:2 } },
+    { a:1, b:6, w:2, t:'有一只通体雪白的狐狸每天蹲在你家门口。你走近，它就退一尺；你退，它就进一尺。' },
+    { a:2, b:8, w:2, t:'你在院子里挖出一个陶罐，罐里没有东西，只有一张纸条：“别埋了，我出来了。”', fx:{ luck:-1 } },
+    { a:3, b:9, w:3, t:'你梦见自己站在一片没有边的地方，脚下是星。有个声音说：“你来得早了。”', fx:{ dxp:60 } },
+    { a:4, b:10, w:2, t:'你家里的老井在夜里会说人话。它说的都是你明天要做的事，一件不差。', fx:{ wits:1 } },
+    { a:5, b:11, w:2, t:'你跟着一只青鸟走进山林，走了三天三夜，出来时只过了半日。你身上多了一枚不知来历的印。', fx:{ luck:2 } },
+    { a:6, b:11, w:2, t:'村里来了个算命瞎子，摸遍所有孩子的手，唯独跳过了你。有人问为什么，他说：“她命不在册上。”' },
+    { a:6, b:12, w:1, once:true, t:'你救了一只被雷劈焦的蟾蜍。它跳走前回头，用人的声音说：“记住了。”', fx:{ luck:2 } },
+
+    /* ---------- 入道 · 仙缘 ---------- */
+    { a:12, b:20, w:3, t:'仙门测灵根那日，你掌心的光很淡，却在众人散去后仍亮着。山门里的人围过来，谁也没说话。',
+      ch:{ q:'执事问你：这光，你自己知道是怎么回事吗？', o:[
+        { t:'说不知道', r:'执事沉默良久，收你入门，只给了一本最旧的口诀。', fx:{ dxp:120 }, set:{ sect:'青云宗' } },
+        { t:'说要自己找答案', r:'他放你走了。你在山下坐了三年，才明白那句问话是个门槛。', fx:{ wits:2, luck:1 } }
+      ] } },
+    { a:13, b:22, w:2, t:'你误入一座没有门派的道观。观里只有一张蒲团，蒲团上有个人形的凹痕，还温着。', fx:{ dxp:180 } },
+    { a:14, b:24, w:2, t:'你在河里捞起一柄剑。剑身上刻着你的名字，刻痕比你出生还早六十年。', fx:{ dxp:200, luck:1 } },
+    { a:15, b:26, w:2, t:'一位白衣人对你说：“三日后有雨，别出门。”三日后你出了门，雨没下。你回来时，那人还站在原地。', fx:{ luck:-1 } },
+    { a:16, b:28, w:2, t:'你在一处断崖上看见自己的坟。碑是新的，土是新的，坟里没有人。', fx:{ wits:2 } },
+    { a:17, b:30, w:2, t:'有天你忽然听懂了风说的话。它一直在讲同一件事，讲了很多年，讲到今天才讲完。', fx:{ wits:2 } },
+    { a:18, b:32, w:2, t:'你杀了第一只妖。它倒下时变成一片叶子，叶子上有半行字，是半篇功法的开头。', fx:{ dxp:260 } },
+    { a:19, b:34, w:1, once:true, t:'你在夜里被抬上了山。抬你的人没有脸。把你放下，他们就散了。天亮时你身边多了一只匣。', fx:{ talismans:1 } },
+    { a:20, b:36, w:2, t:'有个人自称是你前世的师父，说等了你九十年。你问他前世叫什么，他说：“你不必知道，知道了就走不动了。”', fx:{ dxp:300 } },
+    { a:21, b:40, w:2, t:'你掌心那点光，在某天开始往皮肉里渗。你不疼，只是从此看人，能看见他们身上还剩多少年。', fx:{ wits:2, body:-1 } },
+
+    /* ---------- 修行 · 法则 ---------- */
+    { a:25, b:120, w:3, t:'你在一处山谷里发现，那里的时间是横着流的。你把左手伸进去，抽出来时，那只手老了三十年。', fx:{ wits:1, body:-1 } },
+    { a:26, b:150, w:2, t:'你在打坐时数自己的呼吸，数到第九千次，忽然发现：呼吸的不是你，是别的东西在用你。', fx:{ wits:2 } },
+    { a:28, b:180, w:3, t:'天上有两颗星换了位置。第二天，你发现自己的左手变成了右手，你不觉得别扭。' },
+    { a:30, b:200, w:2, t:'你在一座空城里走了一夜。第二天城没了，你的鞋底沾着的土，是几百年前的土。', fx:{ dxp:400 } },
+    { a:32, b:220, w:2, t:'有个东西一直在你身后三步处。你走它也走，你停它也停。你回头，那里只有你自己的影子。' },
+    { a:34, b:240, w:2, t:'你炼出一炉丹，丹开炉时是一句话：“服我者，不为仙。”你没吃，把它埋了。', fx:{ dxp:300 } },
+    { a:36, b:260, w:2, t:'你在一面石壁上看见自己的一生，从生到死。看到最后一行时，石壁改了，改成“此处可改”。', fx:{ wits:2 } },
+    { a:38, b:280, w:2, t:'你遇见一个倒着走路的人。他说：“前面是后面。”你跟他走了一段，回到了自己出生那天，只看见一片雨。' },
+    { a:40, b:300, w:2, t:'你在深山里听见有人在念一份名册，念到你的名字时顿了一下，跳过去了。第二天你的名字出现在石上。', fx:{ luck:-2, wits:2 } },
+    { a:45, b:320, w:2, t:'你救了一个快死的人。他死后站起来，向你鞠了一躬，说：“谢了。”然后往东走了。' },
+    { a:50, b:340, w:2, t:'你收了个徒弟。他第一天就把你教的东西全学会了，第二天说：“师父，你还没我懂。”你没生气。', fx:{ dxp:500 } },
+    { a:55, b:360, w:2, t:'有神在你梦里判了你一桩罪。判完他翻了翻，说：“判错了，撤不回来，你将就着受。”你受了。', fx:{ luck:-2, body:-1 } },
+    { a:60, b:380, w:2, t:'你在一场雨里站了一夜。雨停时，你已经不记得自己是谁，但记得路怎么走。', fx:{ wits:1, luck:1 } },
+    { a:65, b:400, w:2, t:'你把自己的影子借给了一个人三天。他还回来时，影子比你多了一段。' },
+    { a:70, b:420, w:2, t:'你在一口井里看见另一片天。那片天的太阳是黑的，还有一个和你一样的人，正低头看你。' },
+    { a:75, b:440, w:1, once:true, t:'你走进一片雾。雾里站着很多人，都背对着你。你拍了拍其中一个，他转过身——是你自己。', fx:{ wits:3, body:-1 } },
+    { a:80, b:460, w:2, t:'山上塌了一块天。塌下来的地方露出灰白色的底，像没画完的画。有人爬上去，就没再下来。' },
+    { a:85, b:480, w:2, t:'你杀了一个不该杀的人。他没有倒，只是慢慢变淡，最后一句话说：“我等这一刻很久了。”' },
+    { a:90, b:500, w:2, t:'你在一处荒庙里睡了一夜。醒来时庙里多了一尊像，是你。像上落满了灰，像是有几百年了。', fx:{ luck:1 } },
+    { a:100, b:520, w:2, t:'你的剑在某天自己出鞘，往南飞了。三天后它回来，插在你面前，剑身上多了一道别人的血。' },
+    { a:110, b:540, w:2, t:'你在一段路上走了七天，每一天的风景都退回去一点。第七天，你看见自己昨天走过的脚印，是往后的。' },
+    { a:120, b:560, w:2, t:'天上的云变成了一张脸。它看了你一会儿，什么也没说，被风扯散了。' },
+    { a:130, b:600, w:2, t:'你收下一块会说话的石头。它只重复一句话：“你还有多久。”你问了它很多次，它都这么说。', fx:{ wits:1 } },
+
+    /* ---------- 晚年 · 超脱 ---------- */
+    { a:150, b:999, w:2, t:'你开始觉得，山不是山，是你自己长出来的一块骨头。' },
+    { a:180, b:999, w:2, t:'有个人上山拜你，拜了三天。你问他求什么，他说：“求你不要再活了。”你笑了。' },
+    { a:200, b:999, w:2, t:'某天你抬手，山上的雪停了。你放下手，雪也没再下。那一年山下的人说，天漏了个洞。', fx:{ dxp:600 } },
+    { a:220, b:999, w:2, t:'你在一片荒野里看见一具骨骸，坐得很正。你坐下陪它，坐了七天。第八天它倒了，你没倒。' },
+    { a:250, b:999, w:2, t:'你的影子现在比你走得更快。有时候它先到地方，回过头等你。' },
+    { a:300, b:999, w:2, t:'你把这一生讲过的话，一句句在心里过了一遍。有一句你记不起是谁说的，可你确定是自己。' },
+    { a:350, b:999, w:2, t:'你觉得天有点薄。伸手一划，指头出去了半寸，外面是黑的，什么也没有。', fx:{ wits:2 } },
+    { a:400, b:999, w:2, t:'山下的人开始给你烧纸。你还活着，可他们烧得很认真。你去看了，纸灰是热的。' },
+    { a:500, b:999, w:2, t:'你在一面镜子里看见自己的骨头。骨头很亮，像被人擦过很多年。' },
+    { a:600, b:999, w:2, t:'你已经分不清自己在打坐，还是自己就是那口钟。有人来敲你，你就响一声。' },
+
+    /* ---------- 秘境（窄格专属） ---------- */
+    { a:20, b:999, w:2, kind:'secret', t:'你踏进一座洞府。门在你身后消失，里面的光是从墙上长出来的，像苔。地上摆着一副碗筷，还热着。', fx:{ dxp:800, wits:1 } },
+    { a:25, b:999, w:2, kind:'secret', t:'秘境里有一口钟，无人自鸣。你听了七天，第八天你听懂了：它在数数，数到你的年纪停了一次。', fx:{ dxp:900 } },
+    { a:30, b:999, w:2, kind:'secret', t:'你走到秘境最深处，看见一扇门，门上写着“出口”。推开，里面是另一座秘境，门上也写着“出口”。你推了九次。', fx:{ wits:2, dxp:600 } },
+    { a:35, b:999, w:2, kind:'secret', t:'秘境里下着雪，雪落在地上是字。你读了三天，读出一篇功法；第四天雪变了，变成一篇讣告，写着你的名字。', fx:{ dxp:1200, luck:-1 } },
+    { a:40, b:999, w:2, kind:'secret', t:'你在秘境中遇见一个少年，与你长得一模一样，只是年轻。他说：“我等到了。”然后把手里的东西给了你。', fx:{ dxp:1000, talismans:1 } },
+    { a:45, b:999, w:2, kind:'secret', t:'秘境里有一口井，井底是星。你伸手去够，够到一颗，握在手里，它就变成了你的眼珠。' },
+    { a:50, b:999, w:2, kind:'secret', t:'你在一座空殿里坐下，殿中四面都是你的像。像在动，你没有动。走的时候，少了一尊。', fx:{ wits:2 } },
+    { a:55, b:999, w:2, kind:'secret', t:'秘境中央悬着一根线。你顺着线往上爬，爬到尽头，摸到一只手掌。手掌合上，把你放回原处。', fx:{ body:2, dxp:500 } },
+    { a:60, b:999, w:2, kind:'secret', t:'你在秘境里遇到一个正在写字的老人。他写的是你正在做的事。你停了，他的笔也停了。', fx:{ wits:3 } },
+    { a:70, b:999, w:2, kind:'secret', t:'秘境的守门人问你要一样东西。你给了影子，他摇头；你给了名字，他点头。出来时，你叫不出自己的名字。', fx:{ dxp:1500, wits:-1 } },
+
+    /* ---------- 传说（极窄格专属） ---------- */
+    { a:30, b:999, w:1, kind:'legend', t:'天上裂开一道缝，缝里垂下一只手，在你头顶停了很久，最后摸了摸你的头，收回去了。你此后每次抬头，那道缝都在。', fx:{ luck:4, dxp:2000 } },
+    { a:40, b:999, w:1, kind:'legend', t:'一位自称司命的神在你灶前坐了一夜。天亮时他留下半枚印，说：“你的寿数我给错了，这个补你。”', fx:{ life:600 } },
+    { a:50, b:999, w:1, kind:'legend', t:'你在山巅遇见了自己的死。它坐在那里，说：“还早。”你与它并肩坐了一整年，那一年的修为，抵得上百年。', fx:{ dxp:3000 } },
+    { a:60, b:999, w:1, kind:'legend', t:'整座山忽然跪伏下去，像被谁按住。你听见天地之间有一条线绷紧的声音。线断在你身上的时候，你成了这条线。', fx:{ dxp:4000, wits:3 } },
+    { a:80, b:999, w:1, kind:'legend', t:'你被写进了一本很旧的册子。写你的那一页只有一行：“此人不必记。”你的名字从所有地方消失了，除了你自己的记忆。', fx:{ luck:3, dxp:2500 } },
+    { a:100, b:999, w:1, kind:'legend', t:'万年前的某位存在，隔着时间看了你一眼。那一瞬间你老了三百年，也懂了三百年。', fx:{ dxp:5000, body:-3 } },
+    { a:150, b:999, w:1, kind:'legend', t:'你在这世上留下的痕迹，开始自己长起来：你走过的路成了河，你坐过的石头成了山，你叹过的气成了风。', fx:{ luck:4, dxp:3000 } },
+    { a:200, b:999, w:1, kind:'legend', t:'天门在你头顶开了一线，又合上了。它没有等你，只是先看了一眼。', fx:{ dxp:6000, luck:2 } },
+
+    /* ---------- 抉择 ---------- */
+    { a:16, b:400, w:2, t:'你在路边救起一个重伤的人。他睁眼第一句是：“你不该救我。”第二句是：“现在你也得死了。”',
+      ch:{ q:'他说，追他的人半个时辰就到。', o:[
+        { t:'留下，替他挡', r:'来的是三个人，你没打赢，但把他送走了。你身上的伤从此没好全。', fx:{ body:-2, luck:2 }, deed:'saveStranger' },
+        { t:'放下他，自己走', r:'你走了。半个时辰后你听见身后有声音，没回头。', fx:{ wits:1 } }
+      ] } },
+    { a:20, b:500, w:2, t:'一个孩子跪在雨里，求你杀了他。他说他已经活了四百年，只是长不大。',
+      ch:{ q:'他的眼睛确实很老。', o:[
+        { t:'动手', r:'剑落下时他笑了。尸体在雨里缩成很小的一团，像个真的孩子。', fx:{ wits:2, luck:-1 }, deed:'killChild' },
+        { t:'问他要不要活着', r:'他哭了很久，最后说：“那就再活四百年。”你替他找了户人家。', fx:{ luck:3 }, deed:'spareChild' }
+      ] } },
+    { a:30, b:600, w:2, t:'你在一座空殿里见到一位坐化的老者。他的眉心还有一点光，看见你，光动了动。',
+      ch:{ q:'他似乎还有话没说完。', o:[
+        { t:'把自己的气渡给他', r:'他活了半刻，只说了两个字：“别去。”然后又坐化了。你把这两个字记了一辈子。', fx:{ wits:2, body:-1 }, deed:'readNote' },
+        { t:'替他合上眼', r:'你合上他的眼。殿里最后一盏灯灭了。', fx:{ luck:2 }, deed:'buryMonk' }
+      ] } },
+    { a:40, b:900, w:1, t:'有个声音在你识海里问：“换一个更快的活法吗？代价是，你以后想不起自己是谁。”',
+      ch:{ q:'它在等。', o:[
+        { t:'换', r:'你的修为涨得飞快。只是照镜子时，你叫不出镜中人的名字。', fx:{ dxp:2500, wits:-3 } },
+        { t:'不换', r:'你说：“我想记得。”那声音笑了一下，散了。', fx:{ wits:2, luck:1 } }
+      ] } },
+    { a:60, b:999, w:1, t:'有天你遇见一个人，他与你同名同姓，同一天生，同一个师父。他说：“这世上只能有一个。”',
+      ch:{ q:'他拔了剑。', o:[
+        { t:'拔剑', r:'剑光过后，你还站着。他倒下时说：“原来说的是我。”', fx:{ dxp:1200, luck:-1 } },
+        { t:'收剑，转身走', r:'你走了。他在身后站了很久，没有再追。', fx:{ wits:2 } }
+      ] } },
+
+    /* ---------- 回响 ---------- */
+    { a:20, b:200, w:2, t:'你在一场雪里给一个快要冻死的人让了半间庙。他说会记你一辈子。',
+      echo:{ after:60, t:'六十年后，你在一座陌生的城里看见一间庙，庙里供着一尊像，像你，也像他。', fx:{ luck:2 } } },
+    { a:30, b:300, w:2, t:'你埋了一具无名的尸骨，替它把眼睛合上。',
+      echo:{ after:70, t:'七十年后，你在崖上遇见一个人，他说：“我找了很久，才找到替我合眼的人。”说完就不见了。', fx:{ luck:2, dxp:400 } } },
+    { a:40, b:400, w:2, t:'你把一段剑法刻在石上，没留名字。',
+      echo:{ after:60, t:'六十年后，石壁下跪满了人。他们在拜一个不知道是谁的人。你路过，没停。', fx:{ dxp:800 } } },
+    { a:50, b:500, w:2, t:'你救了一株被雷劈焦的老树，替它接上一根枝。',
+      echo:{ after:80, t:'八十年后，那棵树长得比山还高。树下聚了一群修士，说这是福地。你在树上坐着，没人认得你。', fx:{ dxp:900 } } },
+    { a:60, b:600, w:1, t:'你把自己的旧剑送给了一个少年，说：“用不上就还我。”',
+      echo:{ after:50, t:'五十年后，一把旧剑被人插在你的洞府门口。剑上有血，剑柄上刻着一行新字：“用上了。”', fx:{ wits:1, luck:1 } } },
+    { a:80, b:800, w:1, t:'你在山下留了半句诗，没有写完。',
+      echo:{ after:100, t:'一百年后，那半句诗被人补全了。补得很好，比你想的好。你在石上看了很久。', fx:{ luck:1 } } },
+
+    /* ---------- 天马行空 · 不讲道理 ---------- */
+    { a:3, b:999, w:2, t:'天上有人在锯木头，锯末落下来，成了这一场雪。' },
+    { a:10, b:999, w:2, t:'你数自己的手指，十根。第二天变成十一根。你没有告诉任何人。' },
+    { a:12, b:999, w:2, t:'你在山路上遇见一个背着自己走路的人。他说：“他累了，我替他一程。”' },
+    { a:14, b:999, w:2, t:'有人在你识海里下了一盘棋。下到一半你才发现，你不是下棋的人，你是那颗子。', fx:{ wits:1 } },
+    { a:16, b:999, w:2, t:'一个小孩问你：“你是不是要走？”你说不走。他说：“那你已经在走了。”' },
+    { a:18, b:999, w:2, t:'天上掉下一只碗，碗里是热的。你没敢吃。第二天碗不见了，桌上留了一点汤。', fx:{ luck:1 } },
+    { a:20, b:999, w:2, t:'你在雨里听见有人念经，念的是你的生辰。' },
+    { a:22, b:999, w:2, t:'山门后有一间屋子，里面坐着几十个你。他们都在等一个不存在的师父，看见你进来，一起抬头。', fx:{ wits:1 } },
+    { a:24, b:999, w:2, t:'你回首来路，路不见了。后面是很干净的白，白得像还没画。' },
+    { a:26, b:999, w:2, t:'你梦见自己是别人梦里的一个人。醒来时，你不知道该替谁难过。' },
+    { a:28, b:999, w:2, t:'有个老头在你门口摆摊，卖“来世”，一文钱一个。你买了一个，他找给你半文。' },
+    { a:30, b:999, w:2, t:'你养的鸡会说话了，第一句是“别修了”。第二句它不肯说。', fx:{ luck:-1, wits:1 } },
+    { a:32, b:999, w:2, t:'你走进一片没有影子的人群。他们停下来，都在找你。你不知道该说什么。' },
+    { a:35, b:999, w:2, t:'你的剑在你睡觉时自己练功，练得比你好。你醒来时它装睡。', fx:{ dxp:200 } },
+    { a:38, b:999, w:2, t:'夜里有数数的声音，从一数到你的年纪，然后停了。第二天它没再响。' },
+    { a:40, b:999, w:2, t:'有人把一样东西塞进你怀里，说“别打开”，然后走远了。你没打开。它一直在你怀里，有点热。' },
+    { a:45, b:999, w:2, t:'天上有两只手在掰一块饼。掰完，饼掉下来，是你的那一半。', fx:{ luck:2 } },
+    { a:50, b:999, w:2, t:'你在一面墙上写下自己的名字。第二天，墙上多了一个名字，笔迹和你一模一样。' },
+    { a:60, b:999, w:2, t:'你走过一条街，街上的所有人都同时看了你一眼，然后继续做自己的事。' },
+    { a:70, b:999, w:2, t:'有个人在你门口坐了三十年，等的不是人，是一句话。你走的时候说了那句话。他走了。' },
+    { a:80, b:999, w:2, t:'你发现自己在别人的故事里，是那个“从前有个老道”的老道。', fx:{ luck:1 } },
+    { a:100, b:999, w:2, t:'天上有片云跟你走了一整年。你停，它也停。你抬头，它让开一点，好让你看见后面的东西。' },
+    { a:140, b:999, w:2, t:'你听见自己身体里有一扇门被打开，又关上。你不知道那是什么门。' },
+
+    /* ---------- 法宝与功法 ---------- */
+    { a:15, b:999, w:2, t:'你捡到的东西开始说话了。它说的第一句是：“你比我上一个主人差一点。”', fx:{ dxp:120 } },
+    { a:25, b:999, w:2, t:'你的法宝自己认了别人做主人，那个人还不知道。你看着它在别人手里亮起来，像一件好事。' },
+    { a:35, b:999, w:2, t:'你练的功法练到一半，忽然发现它教的不是修炼，是怎么变成别的东西。', fx:{ wits:2 } },
+    { a:45, b:999, w:2, t:'你的法宝在夜里飞出去了一次。回来时，剑刃上多了一道不属于这方天地的伤。', fx:{ dxp:300 } },
+    { a:55, b:999, w:2, t:'一本功法在你读第七遍时自己合上，扉页多了一行字：“你已经学会了，只是还不肯承认。”', fx:{ wits:1 } },
+    { a:65, b:999, w:2, t:'有人来偷你的法宝，偷走了一件假的。你才发现假的比真的好用。' },
+    { a:90, b:999, w:2, t:'你的法宝排成了一列，站在门口等你说点什么。你没说。它们自己散了。' },
+
+    /* ---------- 种族专属：犬妖 ---------- */
+    { a:1, b:999, w:3, cond:function(P){ return P.race === 'dog'; }, t:'天冷了，你的尾巴会自己蜷起来，盖住鼻子。你不喜欢这样，但舒服。' },
+    { a:10, b:999, w:3, cond:function(P){ return P.race === 'dog'; }, t:'镇上所有的狗夜里都来你门口坐成一排。它们不说话，只是坐着，等你抬头。', fx:{ luck:2 } },
+    { a:20, b:999, w:3, cond:function(P){ return P.race === 'dog'; }, t:'有个小孩指着你说：“那是我家的狗。”他娘把他抱走了。你没咬他。', fx:{ luck:1 } },
+    { a:40, b:999, w:2, cond:function(P){ return P.race === 'dog'; }, t:'你被打断了一条腿。三年后它自己长好了，只是从此你走路有点像人。', fx:{ body:2 } },
+
+    /* ---------- 种族专属：狐妖 ---------- */
+    { a:5, b:999, w:3, cond:function(P){ return P.race === 'fox'; }, t:'镜子里的你多了一条尾巴。你数了三遍，镜子里的你也在数你。', fx:{ wits:1 } },
+    { a:20, b:999, w:3, cond:function(P){ return P.race === 'fox'; }, t:'有个人来找你，说他等了你三百年，让你化形。你说你还没想好要变成谁。他哭了。', fx:{ luck:2 } },
+    { a:50, b:999, w:2, cond:function(P){ return P.race === 'fox'; }, t:'你的影子学会了自己走路。它每天先到地方，回头看你。' },
+
+    /* ---------- 种族专属：魔族 ---------- */
+    { a:5, b:999, w:3, cond:function(P){ return P.race === 'demon'; }, t:'你心里的声音开始跟你顶嘴。它比你更清楚你想要什么。', fx:{ dxp:200 } },
+    { a:20, b:999, w:3, cond:function(P){ return P.race === 'demon'; }, t:'你的一滴血落在地上，开出一朵花。花说了一句你听不懂的话，然后谢了。' },
+    { a:40, b:999, w:3, cond:function(P){ return P.race === 'demon'; }, t:'有个人跪在你面前，叫你“殿下”。你说你只是路过。他说他等了三千年，不差这一次。', fx:{ luck:3 } },
+
+    /* ---------- 种族专属：鬼族 ---------- */
+    { a:3, b:999, w:3, cond:function(P){ return P.race === 'ghost'; }, t:'白天你也能看见人。人看不见你。你们擦肩而过，他们觉得有点冷。' },
+    { a:20, b:999, w:3, cond:function(P){ return P.race === 'ghost'; }, t:'有人问你：“你是不是死了？”你说不知道。他说：“那你就是死了，只是还没人通知你。”', fx:{ wits:1 } },
+    { a:50, b:999, w:2, cond:function(P){ return P.race === 'ghost'; }, t:'你在一座坟前看见自己的名字。碑是新的。你摸了摸碑，碑是热的。', fx:{ life:200 } },
+
+    /* ---------- 种族专属：器灵 ---------- */
+    { a:3, b:999, w:3, cond:function(P){ return P.race === 'spirit'; }, t:'你听见自己被敲响的声音。敲你的人不知道你听得见。' },
+    { a:20, b:999, w:3, cond:function(P){ return P.race === 'spirit'; }, t:'有个人想把你带走。他把你抱在怀里，说：“我们回家。”你想起第一次被人擦拭的那天。', fx:{ luck:2 } },
+    { a:60, b:999, w:2, cond:function(P){ return P.race === 'spirit'; }, t:'你醒在那口钟里，钟已经裂了。你从裂缝里出来，第一次知道自己有影子。', fx:{ dxp:300 } },
+
+    /* ---------- 种族专属：草木 / 石胎 ---------- */
+    { a:3, b:999, w:3, cond:function(P){ return P.race === 'tree'; }, t:'你的根往下走，走到了一扇门。门后面有人也在往下走。', fx:{ life:120 } },
+    { a:30, b:999, w:2, cond:function(P){ return P.race === 'tree'; }, t:'有人在你树下埋了一样东西。你没看清，只觉得根有点甜。', fx:{ body:1 } },
+    { a:3, b:999, w:3, cond:function(P){ return P.race === 'stone'; }, t:'有个人天天来摸你。摸了很多年。有一天他死了，你还在这儿。', fx:{ life:100 } },
+    { a:20, b:999, w:2, cond:function(P){ return P.race === 'stone'; }, t:'有人在你身上刻字。刻完了才发现刻的是他自己的一生。他坐在你旁边没再起来。' },
+
+    /* ---------- 种族专属：龙裔 / 天外客 ---------- */
+    { a:5, b:999, w:3, cond:function(P){ return P.race === 'dragon'; }, t:'下了一场不该下的雨。雨后河改了道，绕着你家门走。', fx:{ luck:2 } },
+    { a:30, b:999, w:2, cond:function(P){ return P.race === 'dragon'; }, t:'你的一滴血落进河里。整条河停了三息，然后往下游走的时候，声音不一样了。', fx:{ dxp:400 } },
+    { a:5, b:999, w:3, cond:function(P){ return P.race === 'alien'; }, t:'你记起另一个地方的天，是紫的。那里的太阳有两个，一个不说话。', fx:{ wits:1 } },
+    { a:20, b:999, w:3, cond:function(P){ return P.race === 'alien'; }, t:'有个人认出了你。他喊了一个不是你的名字。你没有纠正他，因为他喊得很认真。', fx:{ luck:2 } },
+    { a:50, b:999, w:2, cond:function(P){ return P.race === 'alien'; }, t:'天上有个位置一直空着，朝你这边偏。你知道那是你的，你不急着回去。', fx:{ dxp:600 } },
+  ];
+
+  /* ============================================================
+     二、工具与存档
+  ============================================================ */
+
+  function loadMeta(){
+    try{
+      var raw = localStorage.getItem(KEY);
+      if (!raw) return { runs:0, bestRealm:0, inherit:null, seen:[], mateSeen:[] };
+      var m = JSON.parse(raw);
+      return {
+        runs: m.runs || 0,
+        bestRealm: m.bestRealm || 0,
+        inherit: m.inherit || null,
+        seen: m.seen || [],
+        mateSeen: m.mateSeen || []
+      };
+    }catch(e){
+      return { runs:0, bestRealm:0, inherit:null, seen:[], mateSeen:[] };
+    }
+  }
+  function saveMeta(){
+    try{ localStorage.setItem(KEY, JSON.stringify(meta)); }catch(e){}
+  }
+  var meta = loadMeta();
+
+  function esc(s){
+    return String(s).replace(/[&<>"]/g, function(c){
+      return ({ '&':'&amp;', '<':'&lt;', '>':'&gt;', '"':'&quot;' })[c];
+    });
+  }
+
+  function rnd(n){ return Math.floor(Math.random() * n); }
+  function pick(arr){ return arr[rnd(arr.length)]; }
+
+  function shuffle(arr){
+    var a = arr.slice();
+    for (var i = a.length - 1; i > 0; i--){
+      var j = rnd(i + 1);
+      var t = a[i]; a[i] = a[j]; a[j] = t;
+    }
+    return a;
+  }
+
+  /* ============================================================
+     三、状态
+  ============================================================ */
+
+  var S = {
+    view: 'talent',
+    pool: [],
+    selected: [],
+    attrs: { root:0, wits:0, body:0, luck:0 },
+    points: 20,
+    P: null,
+    recent: [],
+    used: [],
+    pending: null,     // 当前抉择事件
+    wheel: null,       // 转盘是否在进行
+    wheelBase: 0,      // 转盘累计角度
+    tribu: null,       // 天劫进度
+    lastWheel: 0,      // 上次转盘触发的年龄
+    echoes: [],        // 延迟回响
+    ended: false
+  };
+
+  var view = document.getElementById('view');
+  var modal = document.getElementById('modal');
+  var mq = document.getElementById('mq');
+  var mopts = document.getElementById('mopts');
+
+  /* ============================================================
+     四、天赋视图
+  ============================================================ */
+
+  function rollTalents(){
+    var list = shuffle(TALENTS).slice(0, 10);
+
+    // 前世继承的天赋必出
+    if (meta.inherit){
+      var inh = null;
+      for (var i = 0; i < TALENTS.length; i++){
+        if (TALENTS[i].n === meta.inherit) inh = TALENTS[i];
+      }
+      if (inh){
+        var exists = list.some(function(t){ return t.n === inh.n; });
+        if (!exists){
+          list.pop();
+          list.unshift(inh);
+        } else {
+          list = [inh].concat(list.filter(function(t){ return t.n !== inh.n; }));
+        }
+      }
+    }
+
+    S.pool = list;
+    S.selected = [];
+  }
+
+  function renderTalent(){
+    S.view = 'talent';
+
+    var cards = S.pool.map(function(t, i){
+      var sel = S.selected.indexOf(i) >= 0 ? ' sel' : '';
+      return '' +
+        '<div class="tcard q' + t.q + sel + '" data-i="' + i + '">' +
+          '<span class="tq">' + QUALITY[t.q] + '</span>' +
+          '<div class="tn">' + esc(t.n) + '</div>' +
+          '<div class="td">' + esc(t.d) + '</div>' +
+        '</div>';
+    }).join('');
+
+    view.innerHTML = '' +
+      '<section class="panel">' +
+        '<div class="panel-title">' +
+          '<h2>抽 天 赋</h2>' +
+          '<span class="tip">十选三 · 已选 <b id="selCount" style="color:#4fe3c1">' + S.selected.length + '</b>/3</span>' +
+        '</div>' +
+        '<div class="tgrid" id="tgrid">' + cards + '</div>' +
+        '<button class="btn" id="toAttr" style="margin-top:12px">踏入仙途</button>' +
+      '</section>';
+
+    document.getElementById('tgrid').addEventListener('click', function(e){
+      var card = e.target.closest('.tcard');
+      if (!card) return;
+      var i = Number(card.getAttribute('data-i'));
+      var at = S.selected.indexOf(i);
+
+      if (at >= 0){
+        S.selected.splice(at, 1);
+      } else {
+        if (S.selected.length >= 3){
+          card.animate(
+            [{ transform:'translateX(0)' }, { transform:'translateX(-4px)' },
+             { transform:'translateX(4px)' }, { transform:'translateX(0)' }],
+            { duration:260 }
+          );
+          return;
+        }
+        S.selected.push(i);
+      }
+
+      var list = document.querySelectorAll('.tcard');
+      for (var k = 0; k < list.length; k++){
+        var n = Number(list[k].getAttribute('data-i'));
+        list[k].classList.toggle('sel', S.selected.indexOf(n) >= 0);
+      }
+      document.getElementById('selCount').textContent = S.selected.length;
+    });
+
+    document.getElementById('toAttr').addEventListener('click', function(){
+      if (S.selected.length !== 3) return;
+      var tf = talentFx();
+      S.points = 20 + tf.points;
+      S.attrs = { root:0, wits:0, body:0, luck:0 };
+      renderAttr();
+    });
+  }
+
+  /* ============================================================
+     五、天赋效果汇总
+  ============================================================ */
+
+  function chosenTalents(){
+    return S.selected.map(function(i){ return S.pool[i]; });
+  }
+
+  function talentFx(){
+    var sum = {
+      root:0, wits:0, body:0, luck:0,
+      life:0, points:0, speed:1, brk:0, flat:0,
+      flags:{}
+    };
+    chosenTalents().forEach(function(t){
+      var f = t.fx || {};
+      if (f.root)  sum.root  += f.root;
+      if (f.wits)  sum.wits  += f.wits;
+      if (f.body)  sum.body  += f.body;
+      if (f.luck)  sum.luck  += f.luck;
+      if (f.life)  sum.life  += f.life;
+      if (f.points) sum.points += f.points;
+      if (f.speed) sum.speed *= f.speed;
+      if (f.brk)   sum.brk   += f.brk;
+      if (f.flat)  sum.flat  += f.flat;
+      if (f.flag)  sum.flags[f.flag] = true;
+    });
+    return sum;
+  }
+
+  /* ============================================================
+     六、属性分配视图
+  ============================================================ */
+
+  var ATTR_META = [
+    { k:'root', n:'禀赋', d:'决定修炼速度，每年积累的修为' },
+    { k:'wits', n:'悟性', d:'决定突破成功率与顿悟机缘' },
+    { k:'body', n:'体魄', d:'决定寿元上限，体魄归零则身死' },
+    { k:'luck', n:'气运', d:'影响奇遇与化险为夷的概率' }
+  ];
+
+  function usedPoints(){
+    return S.attrs.root + S.attrs.wits + S.attrs.body + S.attrs.luck;
+  }
+
+  function renderAttr(){
+    S.view = 'attr';
+
+    var rows = ATTR_META.map(function(a){
+      return '' +
+        '<div class="attr-row">' +
+          '<span class="an">' + a.n + '</span>' +
+          '<button class="step" data-k="' + a.k + '" data-op="-1">−</button>' +
+          '<span class="av" id="av-' + a.k + '">' + S.attrs[a.k] + '</span>' +
+          '<button class="step" data-k="' + a.k + '" data-op="1">+</button>' +
+          '<span class="ad">' + a.d + '</span>' +
+        '</div>';
+    }).join('');
+
+    view.innerHTML = '' +
+      '<section class="panel">' +
+        '<div class="panel-title">' +
+          '<h2>分 属 性</h2>' +
+          '<span class="tip">单项上限 10</span>' +
+        '</div>' +
+        '<div class="attr-list">' + rows + '</div>' +
+        '<div class="points-bar">' +
+          '<span>可用点数</span>' +
+          '<b id="ptLeft">' + (S.points - usedPoints()) + '</b>' +
+        '</div>' +
+        '<div style="display:flex;gap:8px;margin-top:12px">' +
+          '<button class="btn ghost" id="rndAttr" style="flex:0 0 108px">随机分配</button>' +
+          '<button class="btn" id="startLife" style="flex:1">' +
+            ((S.points - usedPoints()) > 0 ? ('还需分配 ' + (S.points - usedPoints()) + ' 点') : '入 世') +
+          '</button>' +
+        '</div>' +
+      '</section>';
+
+    view.querySelector('.attr-list').addEventListener('click', function(e){
+      var btn = e.target.closest('.step');
+      if (!btn) return;
+      var k = btn.getAttribute('data-k');
+      var op = Number(btn.getAttribute('data-op'));
+      var left = S.points - usedPoints();
+
+      if (op > 0){
+        if (left <= 0) return;
+        if (S.attrs[k] >= 10) return;
+        S.attrs[k]++;
+      } else {
+        if (S.attrs[k] <= 0) return;
+        S.attrs[k]--;
+      }
+      document.getElementById('av-' + k).textContent = S.attrs[k];
+      var left = S.points - usedPoints();
+      document.getElementById('ptLeft').textContent = left;
+      var sb = document.getElementById('startLife');
+      if (sb) sb.textContent = left > 0 ? ('还需分配 ' + left + ' 点') : '入 世';
+    });
+
+    document.getElementById('rndAttr').addEventListener('click', function(){
+      S.attrs = { root:0, wits:0, body:0, luck:0 };
+      var left = S.points;
+      var keys = ['root', 'wits', 'body', 'luck'];
+      while (left > 0){
+        var k = pick(keys);
+        if (S.attrs[k] >= 10) continue;
+        var add = Math.min(left, Math.min(10 - S.attrs[k], 1 + rnd(4)));
+        S.attrs[k] += add;
+        left -= add;
+      }
+      renderAttr();
+    });
+
+    document.getElementById('startLife').addEventListener('click', function(){
+      if (S.points - usedPoints() > 0){
+        var b = this;
+        b.animate(
+          [{ transform:'translateX(0)' }, { transform:'translateX(-4px)' },
+           { transform:'translateX(4px)' }, { transform:'translateX(0)' }],
+          { duration:260 }
+        );
+        var pb = document.querySelector('.points-bar b');
+        if (pb){
+          pb.style.color = '#ff9aad';
+          setTimeout(function(){ pb.style.color = ''; }, 700);
+        }
+        return;
+      }
+      openOrigin();
+    });
+  }
+
+  /* ============================================================
+     七、开局
+  ============================================================ */
+
+  function randomRace(){
+    var pool = [];
+    for (var i = 0; i < RACES.length; i++){
+      for (var k = 0; k < RACES[i].w; k++) pool.push(RACES[i]);
+    }
+    return pick(pool);
+  }
+
+  function beginLife(raceId){
+    var tf = talentFx();
+    var flags = {};
+    for (var k in tf.flags){ if (tf.flags[k]) flags[k] = true; }
+
+    var race = raceOf(raceId || S.raceId || randomRace().id);
+    var rf = race.fx || {};
+    for (var k2 in rf){ if (k2 === 'flag') flags[rf[k2]] = true; }
+
+    S.P = {
+      age: 0,
+      realm: 0,
+      xp: 0,
+      root: S.attrs.root + tf.root + (rf.root || 0),
+      wits: S.attrs.wits + tf.wits + (rf.wits || 0),
+      body: S.attrs.body + tf.body + (rf.body || 0),
+      luck: S.attrs.luck + tf.luck + (rf.luck || 0),
+      lifeBonus: tf.life + (rf.life || 0),
+      speed: tf.speed * (rf.speed || 1),
+      brk: tf.brk + (rf.brk || 0),
+      flat: tf.flat,
+      flags: flags,
+      fateUsed: false,
+      deeds: [],
+      origin: race.id,
+      race: race.id,
+      raceLine: race.line,
+      relics: [],
+      arts: [],
+      quirks: [],
+      mate: null,
+      mates: [],
+      exMates: [],
+      mateMul: 1,
+      mateTribu: 0,
+      talismans: flags.artifact ? 2 : 0,
+      secMul: 1,
+      sect: '',
+      dao: '',
+      alive: true,
+      endReason: '',
+      talents: chosenTalents().slice()
+    };
+
+    if (flags.artifact) S.P.xp += 120;
+    if (flags.late) S.P.flags.late = true;
+    if (S.P.body < 3) S.P.body = 3;
+
+    S.recent = [];
+    S.used = [];
+    S.genUsed = [];
+    S.ageDone = [];
+    S.ageSpin = 0;
+    MATE_LIFE_LAST = -99;
+    S.lastGen = -99;
+    S.pity = 0;
+    S.chainKind = '';
+    S.chainN = 0;
+    for (var wi = 0; wi < WHEEL.length; wi++) WHEEL[wi].lv = 0;
+    S.echoes = [];
+    S.pending = null;
+    S.wheel = null;
+    S.wheelBase = 0;
+    S.tribu = null;
+    S.lastWheel = 0;
+    S.ended = false;
+
+    meta.runs = (meta.runs || 0) + 1;
+    saveMeta();
+
+    renderLife();
+
+    log(0, race.line, race.id === 'human' ? 'you' : 'bad');
+    if (race.id !== 'human') log(0, '（这一世你是「' + race.n + '」：' + race.d + '）', '');
+    if (S.P.flags.artifact){
+      var a0 = rollArtifact();
+      applyArtifact(a0);
+      log(0, '襁褓里，你攥着' + a0.n + '。它认得你。', 'good');
+    }
+    if (S.P.flags.demon) log(0, '接生婆说你出生时没有哭，只是睁着眼看屋顶。', 'bad');
+  }
+
+  /* ---------- 法宝与功法 ---------- */
+
+  function artifactMul(){
+    var P = S.P;
+    return (P && P.flags && P.flags.spiritborn) ? 2 : 1;
+  }
+
+  function applyArtifact(a){
+    var P = S.P;
+    if (!P || !a) return;
+    var m = artifactMul();
+    if (P.relics.length >= 9){
+      log(P.age, '你手里的' + a.n + '已经没有位置了。你把它埋在山里，说留给下一个路过的人。', '');
+      return;
+    }
+    P.relics.push(a);
+    if (a.fx.speed) P.speed *= 1 + a.fx.speed * 0.4;
+    if (a.fx.life)  P.lifeBonus += Math.round(a.fx.life * 0.5 * m);
+    if (a.fx.luck)  P.luck = Math.min(ATTR_CAP + 8, P.luck + a.fx.luck * m);
+    if (a.fx.body)  P.body += a.fx.body;
+    if (a.fx.wits)  P.wits = Math.min(ATTR_CAP + 4, P.wits + a.fx.wits);
+    if (a.fx.flat)  P.flat += a.fx.flat * m;
+  }
+
+  function relicSum(key){
+    var P = S.P, s = 0;
+    if (!P || !P.relics) return 0;
+    for (var i = 0; i < P.relics.length; i++) s += (P.relics[i].fx[key] || 0);
+    return s * artifactMul();
+  }
+
+  // 禀赋（天赋底子）决定这一世能装几篇功法
+  function artCap(){
+    var P = S.P;
+    return 1 + Math.floor(Math.max(0, P.root) / 8) + ((P.flags && P.flags.spiritborn) ? 1 : 0);
+  }
+
+  function tryLearnArt(){
+    var P = S.P;
+    if (!P || !P.alive) return;
+    if (P.arts.length >= artCap()){
+      log(P.age, '识海里已经塞满了。再多一篇，你就会变成别人的样子。', '');
+      return;
+    }
+
+    // 悟性定成功率
+    var rate = Math.min(0.95, 0.28 + P.wits * 0.045 + P.luck * 0.012);
+
+    var cand = null, tries = 0;
+    do { cand = pick(ARTS); tries++; } while (P.arts.indexOf(cand) >= 0 && tries < 12);
+    if (P.arts.indexOf(cand) >= 0) return;
+
+    if (Math.random() > rate){
+      log(P.age, '你捧起' + cand.n + '，读了三遍，一个字也没进脑子。它和你没有缘分。（悟性判定 ' + Math.round(rate * 100) + '%）', 'bad');
+      return;
+    }
+
+    P.arts.push(cand);
+    if (cand.speed) P.speed *= 1 + cand.speed * 0.5;
+    if (cand.brk) P.brk += cand.brk;
+    if (cand.life) P.lifeBonus += cand.life;
+    if (cand.body) P.body += cand.body;
+    if (cand.wits) P.wits = Math.min(ATTR_CAP + 4, P.wits + cand.wits);
+
+    log(P.age, '你学会了' + cand.n + '——' + cand.d + '。（悟性判定 ' + Math.round(rate * 100) + '%）', 'big');
+
+    if (cand.q && QUIRKS[cand.q]){
+      var dup = false;
+      for (var qi = 0; qi < P.quirks.length; qi++) if (P.quirks[qi].k === cand.q) dup = true;
+      if (!dup){
+        P.quirks.push({ k: cand.q, n: QUIRKS[cand.q].n, d: QUIRKS[cand.q].d });
+        log(P.age, '从此你多了一条规矩：' + QUIRKS[cand.q].d, 'you');
+      }
+    }
+  }
+
+  // 规矩不是白守的，也不是白守得住的
+  function checkQuirks(){
+    var P = S.P;
+    if (!P || !P.quirks || !P.quirks.length) return;
+    // 规矩找上门的间隔要够长，免得同一句话一年一回
+    if (P.age - (P.lastQuirk || -999) < 24) return;
+    if (Math.random() > 0.34) return;
+    P.lastQuirk = P.age;
+
+    var q = pick(P.quirks);
+
+    if (q.k === 'noLie'){
+      if (Math.random() < 0.55){
+        P.xp = Math.floor(P.xp * 0.94);
+        log(P.age, '你隐去了半句话。夜里那半句回来了，咬掉你一点修为。', 'bad');
+      } else {
+        P.wits = Math.min(ATTR_CAP + 4, P.wits + 1);
+        log(P.age, '你这辈子没说过谎，于是你看人看得格外准。', 'good');
+      }
+    } else if (q.k === 'noSleep'){
+      P.lifeBonus -= 18;
+      P.xp += Math.round(yearXP() * 2);
+      log(P.age, pick(['你又一整年没合眼。别人在睡，你在数呼吸。',
+                       '这一世你没有真正睡过。夜里你只是把眼睛闭上，然后听。',
+                       '你又熬过一整年。天亮的时候，你不太确定自己有没有睡着过。']), '');
+    } else if (q.k === 'knock'){
+      if (Math.random() < 0.4){
+        P.luck = Math.max(0, P.luck - 1);
+        log(P.age, '那年你忘了敲钟。第二天起来，觉得自己轻了一点。', 'bad');
+      } else {
+        P.luck = Math.min(ATTR_CAP + 8, P.luck + 1);
+        log(P.age, '你敲了钟。钟声传出去很远，有人应了一声。', 'good');
+      }
+    } else if (q.k === 'ask'){
+      if (Math.random() < 0.6){
+        P.luck = Math.min(ATTR_CAP + 8, P.luck + 1);
+        log(P.age, '你先问了一句。对面那个东西愣了一下，也回了你一句。', 'good');
+      } else {
+        log(P.age, '你问了，对面没有回答。你等了一会儿，自己走了。', '');
+      }
+    } else if (q.k === 'noBack'){
+      P.xp = Math.floor(P.xp * 0.93);
+      P.body = Math.max(3, P.body - 1);
+      log(P.age, '你回头看了一眼。身后的路塌了一段，人也矮了一寸。', 'bad');
+    } else if (q.k === 'barefoot'){
+      P.xp += Math.round(yearXP() * 1.4);
+      P.body = Math.max(3, P.body - 1);
+      log(P.age, '你光脚走了一年。脚底磨破了，可你知道这地是真的。', '');
+    }
+  }
+
+  /* ============================================================
+     八、数值
+  ============================================================ */
+
+  function maxAge(){
+    var P = S.P;
+    return Math.max(40, Math.floor(90 + P.body * 10 + P.lifeBonus));
+  }
+
+  function needXP(){
+    var P = S.P;
+    if (P.realm >= NEED.length) return Infinity;
+    return NEED[P.realm];
+  }
+
+  function yearXP(){
+    var P = S.P;
+    var base = 3 + P.root * 1.1 + P.wits * 0.3;
+    base *= P.speed;
+    if (P.flags.late && P.age >= 60) base *= 2;
+    base += P.flat;
+    base *= 1 + P.realm * 2.2;
+    base *= (P.secMul || 1);
+    base *= (P.mateMul || 1);
+    base *= 0.9 + Math.random() * 0.25;
+    return Math.max(1, Math.round(base));
+  }
+
+  function realmName(){
+    var P = S.P;
+    if (P.realm >= 9) return '飞升';
+    return REALMS[Math.min(P.realm, REALMS.length - 1)];
+  }
+
+  /* ============================================================
+     九、推进一年
+  ============================================================ */
+
+  function advanceYear(quiet){
+    var P = S.P;
+    if (!P.alive) return false;
+
+    P.age++;
+
+    // 寿元
+    if (P.age > maxAge()){
+      return endLife('寿元已尽。你坐在蒲团上，慢慢听不见自己的呼吸。');
+    }
+
+    // 一梦千年
+    if (P.flags.dream && P.age % 50 === 0){
+      var dreamXP = 200 + P.realm * 400;
+      P.xp += dreamXP;
+      if (!quiet) log(P.age, '你梦见自己活了很久很久，醒来时像是多懂了一些东西。', 'good');
+    }
+
+    // 修炼
+    P.xp += yearXP();
+
+    // 旧事的回响
+    checkEchoes();
+
+    // 学来的规矩，会自己找上门
+    checkQuirks();
+
+    // 这一生躲不掉的那几道坎
+    checkAgeEvent();
+
+    // 有道侣的日子，也不全是好事
+    mateLife();
+
+    // 突破（大乘满境交由天劫判定）
+    while (P.realm < 8 && P.xp >= NEED[P.realm]){
+      var ok = tryBreak(quiet);
+      if (!ok) break;
+    }
+
+    // 大乘修为圆满，天劫将至
+    if (P.realm === 8 && P.xp >= NEED[8]){
+      P.xp = NEED[8];
+      if (P.alive && !S.tribu) openTribulation();
+      return false;
+    }
+
+    // 事件
+    if (!quiet){
+      maybeEvent();
+    }
+
+    if (!P.alive) return false;
+
+    return true;
+  }
+
+  function tryBreak(quiet){
+    var P = S.P;
+    var rate = 0.42 + P.wits * 0.018 + P.luck * 0.018 + P.brk - P.realm * 0.075;
+    rate = Math.max(0.1, Math.min(0.9, rate));
+
+    var from = realmName();
+
+    if (Math.random() < rate){
+      P.realm++;
+      P.xp = 0;
+      P.body = Math.min(ATTR_CAP, P.body + 1);
+      P.lifeBonus += [0, 8, 16, 30, 55, 95, 150, 240, 420][P.realm] || 0;
+
+      if (P.realm < 9){
+        log(P.age, '突破成功。' + from + '的壁障碎了，你踏入了' + REALMS[P.realm] + '。', 'big');
+      } else {
+        log(P.age, '雷劫加身，九道天雷落尽。你渡劫成功了。', 'big');
+      }
+      if (P.realm <= 7 && Math.random() < 0.55) tryLearnArt();
+      return true;
+    }
+
+    // 失败
+    P.xp = Math.floor(P.xp * 0.65);
+    P.age += 3;
+
+    var madness = 0.15 + (P.flags.demon ? 0.12 : 0);
+
+    if (Math.random() < madness){
+      P.body -= 1;
+      log(P.age, '冲击' + from + '失败，真气逆冲，你走火入魔，吐出的血落在地上还在冒烟。', 'bad');
+    } else {
+      log(P.age, '冲击' + from + '失败。你睁开眼，修为散了三成，胸口像压着一块石头。', 'bad');
+    }
+    return false;
+  }
+
+  function maybeEvent(){
+    var P = S.P;
+    // 事件触发概率
+    var chance = 0.62 + Math.min(0.1, P.luck * 0.02);
+    if (Math.random() > chance) return;
+
+    var ev = pickEvent();
+    // 池子耗尽：改为生涯自述式小事件，永不重复
+    if (!ev){ genEvent(); return; }
+
+    S.used.push(EVENTS.indexOf(ev));
+
+    // 记住"这辈子已经见过"，下一世就不再撞同一件事
+    var idx2 = EVENTS.indexOf(ev);
+    if (meta.seen.indexOf(idx2) < 0){
+      meta.seen.push(idx2);
+      if (meta.seen.length > 500) meta.seen.shift();
+      saveMeta();
+    }
+
+    hitEvent(ev);
+  }
+
+  /* 池子见底时的小事件：随机组合，天然不重复 */
+  var G_A = ['天上那片云', '你身后三步的地方', '山下的那条路', '夜里的井', '你的影子', '远处的钟声',
+             '石头里的字', '窗外的雪', '你左边的空处', '那棵不落叶的树', '供桌上的一线灰', '你走过后留下的脚印'];
+  var G_B = ['今天动了一下', '少了一块', '开始往回走', '忽然有了回声', '自己合上了', '长了半寸',
+             '变成了别的形状', '停了很久', '多了个字', '朝你这边偏了一点', '不该在这儿的', '不再响了'];
+  var G_C = ['你看了很久，没有去追。', '你伸手，又收回来。', '你决定不弄明白。', '你记住了，也可能忘了。',
+             '你没有告诉任何人。', '你觉得它在等你。', '你绕开了。', '你把它当作没看见。'];
+  var G_OLD = ['你已经见过太多这样的事，早不惊讶了。', '你只是记下了年月，没有记内容。',
+               '你算了算，这已经是第七次。', '你想，也许它只是想让你看见。',
+               '你没有动，它也没有再动。', '你忽然觉得，这些都不重要了。'];
+
+  function genEvent(){
+    var P = S.P;
+
+    // 后期年份长，兜底不每年都说话
+    if (P.age - (S.lastGen || -99) < 8){ updateStatus(); return; }
+    S.lastGen = P.age;
+
+    var isOld = P.age > 200 && Math.random() < 0.45;
+    var tailArr = isOld ? G_OLD : G_C;
+    var ti = Math.floor(Math.random() * tailArr.length);
+
+    var ai, bi, key, tries = 0;
+    do {
+      ai = Math.floor(Math.random() * G_A.length);
+      bi = Math.floor(Math.random() * G_B.length);
+      key = ai + '|' + bi + '|' + (isOld ? 'o' : 'y') + ti;
+      tries++;
+    } while (S.genUsed.indexOf(key) >= 0 && tries < 12);
+    S.genUsed.push(key);
+
+    log(P.age, G_A[ai] + G_B[bi] + '。' + tailArr[ti], '');
+
+    var roll = Math.random();
+    if (roll < 0.22) applyFx({ dxp: 20 + P.realm * 40 });
+    else if (roll < 0.40) applyFx({ body: 1 });
+    else if (roll < 0.52) applyFx({ luck: 1 });
+    else if (roll < 0.60) applyFx({ wits: 1 });
+
+    if (Math.random() < 0.10){
+      log(P.age, pick(['你莫名地想笑。', '你听见极远处有人叹了一口气。', '你觉得有谁在看你，回头只有风。',
+                       '你想起了自己小时候的样子。', '你有点想知道山外面现在是什么年头。']), '');
+    }
+    updateStatus();
+  }
+
+  function pickEvent(){
+    var P = S.P;
+    var pool = [];
+
+    for (var i = 0; i < EVENTS.length; i++){
+      var e = EVENTS[i];
+      if (P.age < e.a || P.age > e.b) continue;
+      if (e.rm !== undefined && P.realm < e.rm) continue;
+      if (e.cond && !e.cond(P)) continue;
+      // 同一件事，一生只遇见一次
+      if (S.used.indexOf(i) >= 0) continue;
+
+      // 无宗门的角色不出宗门事件
+      if (e.set && e.set.sect && !P.sect) continue;
+
+      var w = e.w || 1;
+      // 前几世见过的事，这一世压低出现概率（全集见完则恢复正常）
+      if (meta.seen.length < EVENTS.length * 0.85 && meta.seen.indexOf(i) >= 0) w = w * 0.3;
+      // 气运影响好事
+      if (e.fx && (e.fx.luck > 0 || e.fx.dxp > 150)) w += P.luck * 0.15;
+
+      for (var k = 0; k < Math.round(w); k++) pool.push(e);
+    }
+
+    if (!pool.length) return null;
+
+    // 心魔/选择类事件优先级略高
+    var withChoice = pool.filter(function(e){ return !!e.ch; });
+    if (withChoice.length && Math.random() < 0.35){
+      return pick(withChoice);
+    }
+    return pick(pool);
+  }
+
+  function hitEvent(ev){
+    var P = S.P;
+
+    // 同一件事，也可能有截然不同的下场
+    if (ev.rolls){
+      var r = pick(ev.rolls);
+      log(P.age, r.t, r.cls || ev.cls || '');
+      if (r.fx) applyFx(r.fx);
+      if (r.deed) P.deeds.push(r.deed);
+      if (r.echo) queueEcho(r.echo);
+      updateStatus();
+      return;
+    }
+
+    var txt = Array.isArray(ev.t) ? pick(ev.t) : ev.t;
+
+    if (ev.ch){
+      log(P.age, txt, '');
+      openChoice(ev);
+      return;
+    }
+
+    log(P.age, txt, ev.cls || '');
+    if (ev.fx) applyFx(ev.fx);
+    if (ev.set){
+      if (ev.set.sect) P.sect = ev.set.sect;
+      if (ev.set.dao)  P.dao  = ev.set.dao;
+    }
+    if (ev.deed) P.deeds.push(ev.deed);
+    if (ev.echo) queueEcho(ev.echo);
+    updateStatus();
+  }
+
+  // 旧事的回响：多年之后才结算的结果
+  function queueEcho(e){
+    var P = S.P;
+    S.echoes.push({
+      at: P.age + (e.after || 30),
+      t: e.t,
+      fx: e.fx,
+      cls: e.cls || ''
+    });
+  }
+
+  function checkEchoes(){
+    var P = S.P;
+    if (!S.echoes.length) return;
+
+    var left = [];
+    for (var i = 0; i < S.echoes.length; i++){
+      var e = S.echoes[i];
+      if (P.age >= e.at){
+        log(P.age, e.t, e.cls || '');
+        if (e.fx) applyFx(e.fx);
+      } else {
+        left.push(e);
+      }
+    }
+    S.echoes = left;
+  }
+
+  function applyFx(fx){
+    var P = S.P;
+
+    function bump(key, v){
+      var next = P[key] + v;
+      var over = 0;
+      if (next > ATTR_CAP){ over = next - ATTR_CAP; next = ATTR_CAP; }
+      P[key] = next;
+      if (over > 0){ P.xp += over * 60; }
+    }
+
+    if (fx.root) bump('root', fx.root);
+    if (fx.wits) bump('wits', fx.wits);
+    if (fx.body){ bump('body', fx.body); if (P.body < 3) P.body = 3; }
+    if (fx.luck) bump('luck', fx.luck);
+    if (fx.life) P.lifeBonus += fx.life;
+    if (fx.dxp){
+      P.xp += fx.dxp;
+      log(P.age, '修为 +' + fx.dxp + '。', 'good');
+    }
+    if (typeof fx.xpMul === 'number'){
+      P.xp = Math.floor(P.xp * (1 + fx.xpMul));
+    }
+  }
+
+  /* ============================================================
+     九、道侣与年龄坎
+  ============================================================ */
+
+  function mateFxApply(fx){
+    var P = S.P;
+    if (!fx) return;
+    if (fx.brk) P.brk += fx.brk;
+    if (fx.tribu) P.mateTribu = (P.mateTribu || 0) + fx.tribu;
+    if (fx.speed) P.speed *= 1 + fx.speed * 0.6;
+    if (fx.life) P.lifeBonus += Math.max(-60, fx.life);
+    if (fx.body) P.body += fx.body;
+    if (fx.wits) P.wits = Math.min(ATTR_CAP + 4, P.wits + fx.wits);
+    if (fx.luck) P.luck = Math.max(0, Math.min(ATTR_CAP + 8, P.luck + fx.luck));
+    if (fx.dxpMul) P.mateMul = (P.mateMul || 1) + fx.dxpMul;
+  }
+
+  // 结识：quiet 时不刷提示语
+  function meetMate(quiet){
+    var P = S.P;
+    if (!P || !P.alive || P.mate) return null;
+
+    var pool = [];
+    for (var i = 0; i < MATES.length; i++){
+      if ((meta.mateSeen || []).indexOf(i) >= 0) continue;
+      pool.push({ i: i, m: MATES[i] });
+    }
+    if (!pool.length){
+      meta.mateSeen = [];
+      for (var j = 0; j < MATES.length; j++) pool.push({ i: j, m: MATES[j] });
+    }
+
+    var one = pick(pool);
+    meta.mateSeen.push(one.i);
+    if (meta.mateSeen.length > 30) meta.mateSeen.shift();
+    saveMeta();
+
+    var m = one.m;
+    P.mate = { n: m.n, t: m.t, d: m.d, tag: m.tag, since: P.age, fx: m.fx };
+    if (!P.mates) P.mates = [];
+    P.mates.push(P.mate);
+    mateFxApply(m.fx);
+
+    if (!quiet){
+      log(P.age, '你遇上了' + m.n + '。' + m.d + '。你们在一张桌上坐了一顿饭的工夫，就从今往后算作一对了。', 'you');
+    } else {
+      log(P.age, '你与' + m.n + '结为道侣。' + m.d + '。', 'you');
+    }
+    updateStatus();
+    return P.mate;
+  }
+
+  var MATE_LIFE_LAST = -99;
+
+  function mateLife(){
+    var P = S.P;
+    if (!P || !P.alive || !P.mate) return;
+    if (P.age - MATE_LIFE_LAST < 12) return;
+    if (Math.random() > 0.22) return;
+    MATE_LIFE_LAST = P.age;
+
+    var e = pick(MATE_LIFE);
+    var fx = e.fx || {};
+    log(P.age, '【' + P.mate.n + '】' + e.t, e.cls || '');
+
+    if (fx.dxpMul) P.xp += Math.round(yearXP() * 5 * fx.dxpMul);
+    if (fx.speed) P.speed *= 1 + fx.speed;
+    if (fx.wits) P.wits = Math.min(ATTR_CAP + 4, P.wits + fx.wits);
+    if (fx.luck) P.luck = Math.max(0, P.luck + fx.luck);
+    if (fx.body) P.body = Math.max(3, P.body + fx.body);
+    if (fx.life) P.lifeBonus += fx.life;
+    if (fx.brk) P.brk += fx.brk;
+
+    if (fx.mateless){
+      log(P.age, '你把她留下的半枚玉收进怀里。另一半，你这一世再没见着。', 'bad');
+      if (!P.exMates) P.exMates = [];
+      P.exMates.push(P.mate);
+      P.mate = null;
+      updateStatus();
+    }
+  }
+
+  // 年龄段必发事件：一生九道坎，躲不掉
+  function checkAgeEvent(){
+    var P = S.P;
+    if (!P || !P.alive) return false;
+    if (!S.ageDone) S.ageDone = [];
+    if ((S.ageSpin || 0) >= 3) return false;
+
+    for (var i = 0; i < AGE_EVENTS.length; i++){
+      if (S.ageDone[i]) continue;
+      var e = AGE_EVENTS[i];
+      if (P.age < e.from || P.age > e.to) continue;
+
+      S.ageDone[i] = true;
+      S.ageSpin = (S.ageSpin || 0) + 1;
+      log(P.age, e.t, e.cls || 'big');
+
+      if (e.fx) applyFx(e.fx);
+      if (e.artifact){
+        var a = rollArtifact();
+        applyArtifact(a);
+        log(P.age, '那道雷赔给你的东西是：' + a.n + '。', 'good');
+      }
+      if (e.mate && Math.random() < 0.62) meetMate(true);
+      updateStatus();
+      return true;
+    }
+    return false;
+  }
+
+  /* ============================================================
+     十、抉择
+  ============================================================ */
+
+  function openChoice(ev){
+    S.pending = ev;
+    mq.textContent = ev.ch.q;
+    mopts.innerHTML = '';
+
+    // 把弹窗挡住的前情捞回来，摆在选项上面
+    var box = document.getElementById('log');
+    var story = '';
+    if (box){
+      var items = box.querySelectorAll('.ev');
+      var start = Math.max(0, items.length - 4);
+      var frag = [];
+      for (var k = start; k < items.length; k++){
+        var ag = items[k].querySelector('.age');
+        var tx = items[k].querySelector('.txt');
+        if (!tx) continue;
+        var t = tx.textContent;
+        if (t.length > 120) t = t.slice(0, 120) + '…';
+        frag.push('<p><i>' + esc(ag ? ag.textContent : '') + '</i>' + esc(t) + '</p>');
+      }
+      if (frag.length) story = '<div class="choiceStory">' + frag.join('') + '</div>';
+    }
+    mopts.innerHTML = story;
+
+    ev.ch.o.forEach(function(o, i){
+      var b = document.createElement('button');
+      b.className = 'mopt';
+      b.textContent = o.t;
+      b.addEventListener('click', function(){
+        resolveChoice(i);
+      });
+      mopts.appendChild(b);
+    });
+
+    modal.classList.add('show');
+  }
+
+  function resolveChoice(i){
+    var ev = S.pending;
+    if (!ev) return;
+
+    var o = ev.ch.o[i];
+    modal.classList.remove('show');
+    S.pending = null;
+
+    log(S.P.age, o.r, 'you');
+    if (o.fx) applyFx(o.fx);
+    if (o.deed) S.P.deeds.push(o.deed);
+    if (o.echo) queueEcho(o.echo);
+    if (o.set){
+      if (o.set.sect) S.P.sect = o.set.sect;
+      if (o.set.dao)  S.P.dao  = o.set.dao;
+    }
+    updateStatus();
+  }
+
+  /* ============================================================
+     十一、人生视图
+  ============================================================ */
+
+  function renderLife(){
+    S.view = 'life';
+
+    view.innerHTML = '' +
+      '<section class="panel" style="padding:12px 12px 10px">' +
+        '<div class="status">' +
+          '<div class="cell"><div class="k">年龄</div><div class="v" id="st-age">0</div></div>' +
+          '<div class="cell"><div class="k">境界</div><div class="v gold small" id="st-realm">凡人</div></div>' +
+          '<div class="cell"><div class="k">寿元</div><div class="v small" id="st-life">0/0</div></div>' +
+          '<div class="cell"><div class="k">道途</div><div class="v small" id="st-dao">散修</div></div>' +
+        '</div>' +
+        '<div class="status2">' +
+          '<div class="minicard" id="mc-relic"><span class="mk">法宝</span><b id="st-relic">空手</b></div>' +
+          '<div class="minicard" id="mc-mate"><span class="mk">道侣</span><b id="st-mate">尚无</b></div>' +
+        '</div>' +
+        '<div class="xpwrap">' +
+          '<div class="xphead"><span id="xp-label">修为 0 / 60</span><span id="stat-line"></span></div>' +
+          '<div class="xpbar"><div class="xpfill" id="xpfill"></div></div>' +
+          '<div class="raceLine" id="st-race"></div>' +
+        '</div>' +
+      '</section>' +
+
+      '<section class="panel" style="padding:12px 12px 14px">' +
+        '<div class="log" id="log"></div>' +
+        '<div class="actions" style="margin-top:12px">' +
+          '<button class="btn" id="btn-year">转动命轮</button>' +
+        '</div>' +
+        '<p class="hintline">命轮一转，光阴随修为渐长。转到「奔流」时，天地会一次碾过你许多年。</p>' +
+      '</section>';
+
+    document.getElementById('btn-year').addEventListener('click', function(){
+      if (S.pending || S.wheel || S.tribu) return;
+      openWheel();
+    });
+
+    updateStatus();
+  }
+
+  function updateStatus(){
+    if (!S.P) return;
+
+    var P = S.P;
+    var el;
+
+    el = document.getElementById('st-age');
+    if (el) el.textContent = P.age;
+    el = document.getElementById('st-realm');
+    if (el) el.textContent = realmName();
+    el = document.getElementById('st-life');
+    if (el) el.textContent = P.age + ' / ' + maxAge();
+    el = document.getElementById('st-dao');
+    if (el){
+      var dao = P.dao || (P.sect ? P.sect : '散修');
+      el.textContent = dao;
+    }
+
+    el = document.getElementById('xp-label');
+    if (el){
+      var need = needXP();
+      el.textContent = '修为 ' + Math.floor(P.xp) + ' / ' + (need === Infinity ? '—' : need);
+    }
+    el = document.getElementById('xpfill');
+    if (el){
+      var pct = need === Infinity ? 100 : Math.min(100, (P.xp / need) * 100);
+      el.style.width = pct + '%';
+    }
+    el = document.getElementById('stat-line');
+    if (el){
+      el.textContent = '禀赋 ' + P.root + ' · 悟性 ' + P.wits + ' · 体魄 ' + P.body + ' · 气运 ' + P.luck;
+    }
+
+    // 种族 / 法宝 / 功法
+    var line2 = document.getElementById('st-race');
+    if (line2){
+      var rc = raceOf(P.race);
+      line2.textContent = rc.n + ' · 功法 ' + (P.arts ? P.arts.length : 0) + '/' + artCap() +
+        (P.arts && P.arts.length ? '（' + P.arts[P.arts.length - 1].n + '）' : '');
+    }
+
+    // 法宝卡
+    el = document.getElementById('st-relic');
+    if (el){
+      var rn = P.relics ? P.relics.length : 0;
+      el.textContent = rn ? rn + ' 件 · ' + P.relics[rn - 1].n : '空手';
+      var card1 = document.getElementById('mc-relic');
+      if (card1) card1.className = 'minicard' + (rn ? ' on' : '');
+    }
+
+    // 道侣卡
+    el = document.getElementById('st-mate');
+    if (el){
+      if (P.mate){
+        el.textContent = P.mate.n + '·' + P.mate.tag;
+      } else if (P.exMates && P.exMates.length){
+        el.textContent = '前任 ' + P.exMates[P.exMates.length - 1].n;
+      } else {
+        el.textContent = '尚无';
+      }
+      var card2 = document.getElementById('mc-mate');
+      if (card2) card2.className = 'minicard' + (P.mate ? ' on' : '');
+    }
+
+    // 已结束
+    if (!P.alive && !S.ended){
+      S.ended = true;
+      var btns = document.querySelectorAll('#btn-year');
+      for (var i = 0; i < btns.length; i++) btns[i].disabled = true;
+    }
+  }
+
+  function log(age, text, cls){
+    var box = document.getElementById('log');
+    if (!box) return;
+
+    var div = document.createElement('div');
+    div.className = 'ev' + (cls ? ' ' + cls : '');
+    div.innerHTML = '<span class="age">' + age + '岁</span><span class="txt">' + esc(text) + '</span>';
+    box.appendChild(div);
+
+    // 只保留最近 120 条
+    while (box.children.length > 120) box.removeChild(box.firstChild);
+    box.scrollTop = box.scrollHeight;
+  }
+
+  /* ============================================================
+     十二、结局
+  ============================================================ */
+
+  /* ============================================================
+     十二、闭关 · 机缘 · 天劫
+  ============================================================ */
+
+  function doSeclusion(){
+    var P = S.P;
+    if (!P.alive) return;
+
+    var startAge = P.age;
+    var startRealm = P.realm;
+    var sec = SECLUSIONS[Math.floor(Math.random() * SECLUSIONS.length)];
+
+    log(startAge, '你封了洞府，在石壁上刻下自己的名字，然后入定。', 'you');
+    log(startAge, sec.t, sec.cls || '');
+
+    if (sec.fx){
+      applyFx({
+        root:sec.fx.root, wits:sec.fx.wits, body:sec.fx.body,
+        luck:sec.fx.luck, life:sec.fx.life, dxp:sec.fx.dxp
+      });
+    }
+
+    P.secMul = (sec.fx && sec.fx.mul) ? sec.fx.mul : 1;
+
+    for (var i = 0; i < 10; i++){
+      if (!P.alive) break;
+      var ok = advanceYear(true);
+      if (!ok) break;
+    }
+
+    P.secMul = 1;
+
+    if (!P.alive) return;
+    if (S.tribu) return;      // 闭关中天劫已至，交由玩家应对
+
+    var grew = P.realm > startRealm;
+    var tail = grew
+      ? '出关时，你的境界已至' + realmName() + '。'
+      : '出关时，修为厚了一层，境界却仍在原处。';
+
+    var lines = [
+      '洞口的松针积了一地，扫开时下面还压着去年的。',
+      '你走出洞府，日光刺得眼睛发酸，站了很久才看清路。',
+      '山下的溪改了道，你花了半天才认出这是自己来时的路。',
+      '有一只鸟落在你肩上，啄了啄你的衣角，又飞走了。',
+      '你先想起的是饭菜的味道，然后才想起自己已经十年没吃东西。'
+    ];
+
+    log(P.age, tail + lines[Math.floor(Math.random() * lines.length)], 'big');
+  }
+
+  /* ---------- 命轮（主循环） ---------- */
+
+  /* ---------- 命轮 ---------- */
+  function openWheel(){
+    S.wheel = { spinning:false, idx:-1 };
+    S.lastWheel = S.P.age;
+
+    var c = document.getElementById('wheelCanvas');
+    if (c) c.style.transform = 'rotate(' + S.wheelBase + 'deg)';
+
+    var res = document.getElementById('wheelResult');
+    if (res){ res.textContent = ''; res.classList.remove('show'); }
+
+    var sb = document.getElementById('spinBtn');
+    if (sb){ sb.style.display = 'block'; sb.disabled = false; sb.textContent = '转 动 命 轮'; }
+
+    var wc = document.getElementById('wheelClose');
+    if (wc) wc.style.display = 'none';
+
+    var mqEl = document.getElementById('wheelMq');
+    if (mqEl) mqEl.textContent = '命轮一转，光阴 ' + yearsPerSpin() + ' 年';
+
+    drawWheel();
+    document.getElementById('wheel').classList.add('show');
+  }
+
+  function drawWheel(){
+    var c = document.getElementById('wheelCanvas');
+    if (!c) return;
+
+    var g = c.getContext('2d');
+    var R = 160, r = 148;
+
+    g.clearRect(0, 0, 320, 320);
+
+    var total = wheelTotal(), a0 = 0;
+    for (var i = 0; i < WHEEL.length; i++){
+      var span = WHEEL[i].w / total * Math.PI * 2;
+      var a1 = a0 + span;
+
+      g.beginPath();
+      g.moveTo(R, R);
+      g.arc(R, R, r, a0, a1);
+      g.closePath();
+      g.fillStyle = WHEEL[i].col;
+      g.fill();
+      g.strokeStyle = 'rgba(120,200,220,0.18)';
+      g.lineWidth = 1;
+      g.stroke();
+
+      g.save();
+      g.translate(R, R);
+      g.rotate(a0 + span / 2);
+      g.fillStyle = WHEEL[i].kind === 'legend' ? '#ffe6a8' : '#dfeefa';
+      g.font = '600 ' + (span < 0.34 ? 11 : 14) + 'px "Noto Serif SC", serif';
+      g.textAlign = 'center';
+      g.textBaseline = 'middle';
+      g.fillText(WHEEL[i].n + (WHEEL[i].lv ? '+' + WHEEL[i].lv : ''), 100, 0);
+      g.restore();
+
+      a0 = a1;
+    }
+
+    g.beginPath();
+    g.arc(R, R, 24, 0, Math.PI * 2);
+    g.fillStyle = '#0a1420';
+    g.fill();
+    g.strokeStyle = 'rgba(79,227,193,0.45)';
+    g.stroke();
+
+    g.fillStyle = '#ffd479';
+    g.font = '600 15px "Noto Serif SC", serif';
+    g.textAlign = 'center';
+    g.textBaseline = 'middle';
+    g.fillText('命', R, R + 1);
+  }
+
+  function spinWheel(){
+    if (!S.wheel || S.wheel.spinning || !S.P || !S.P.alive) return;
+
+    var idx = wheelRoll();
+
+    S.wheel.spinning = true;
+    S.wheel.idx = idx;
+
+    var total = wheelTotal(), start = 0;
+    for (var j = 0; j < idx; j++) start += WHEEL[j].w;
+    var centerDeg = (start + WHEEL[idx].w / 2) / total * 360;
+    var delta = ((270 - centerDeg) % 360 + 360) % 360;
+    var rot = 360 * 5 + delta;
+
+    S.wheelBase += rot;
+
+    var c = document.getElementById('wheelCanvas');
+    if (c) c.style.transform = 'rotate(' + S.wheelBase + 'deg)';
+
+    var sb = document.getElementById('spinBtn');
+    if (sb) sb.disabled = true;
+
+    setTimeout(function(){
+      if (!S.wheel || !S.P) return;
+      S.wheel.spinning = false;
+
+      var say = applySector(idx, false);
+
+      var el = document.getElementById('wheelResult');
+      if (el){
+        el.textContent = '「' + WHEEL[idx].n + '」 —— ' + say;
+        el.classList.add('show');
+      }
+
+      if (sb){ sb.style.display = 'none'; sb.disabled = false; }
+
+      if (!S.P || !S.P.alive){
+        document.getElementById('wheel').classList.remove('show');
+        S.wheel = null;
+        updateStatus();
+        return;
+      }
+
+      var wc = document.getElementById('wheelClose');
+      if (wc) wc.style.display = 'block';
+
+      updateStatus();
+    }, 2100);
+  }
+
+  function closeWheel(){
+    document.getElementById('wheel').classList.remove('show');
+    S.wheel = null;
+    updateStatus();
+  }
+
+  /* ---------- 转生轮盘：开局随机决定身份 ---------- */
+  var ORIGIN = { spinning: false, base: 0, chosen: null };
+
+  function originTotal(){
+    var t = 0;
+    for (var i = 0; i < RACES.length; i++) t += RACES[i].w;
+    return t;
+  }
+
+  function drawOriginWheel(){
+    var c = document.getElementById('originCanvas');
+    if (!c) return;
+    var g = c.getContext('2d');
+    var size = c.width, R = size / 2, rr = R - 16;
+    g.clearRect(0, 0, size, size);
+
+    var total = originTotal(), a0 = 0;
+    for (var i = 0; i < RACES.length; i++){
+      var span = RACES[i].w / total * Math.PI * 2;
+      var a1 = a0 + span;
+      g.beginPath(); g.moveTo(R, R); g.arc(R, R, rr, a0, a1); g.closePath();
+      g.fillStyle = RACES[i].col; g.fill();
+      g.strokeStyle = 'rgba(120,200,220,0.16)'; g.lineWidth = 1; g.stroke();
+
+      g.save(); g.translate(R, R); g.rotate(a0 + span / 2);
+      g.fillStyle = '#e3f0fb';
+      g.font = '600 ' + (span < 0.3 ? 10 : 13) + 'px "Noto Serif SC", serif';
+      g.textAlign = 'center'; g.textBaseline = 'middle';
+      g.fillText(RACES[i].n, 96, 0);
+      g.restore();
+
+      a0 = a1;
+    }
+
+    g.beginPath(); g.arc(R, R, 22, 0, Math.PI * 2);
+    g.fillStyle = '#0a1420'; g.fill();
+    g.strokeStyle = 'rgba(255,212,121,0.35)'; g.stroke();
+    g.fillStyle = '#ffd479'; g.font = '600 14px "Noto Serif SC", serif';
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.fillText('生', R, R + 1);
+  }
+
+  function openOrigin(){
+    ORIGIN.chosen = null; ORIGIN.base = 0; ORIGIN.spinning = false;
+    var c = document.getElementById('originCanvas');
+    if (c) c.style.transform = 'rotate(0deg)';
+    document.getElementById('originName').textContent = '';
+    document.getElementById('originDesc').textContent = '落进哪一格，就是哪一世。';
+    document.getElementById('originOk').style.display = 'none';
+    var sb = document.getElementById('originSpin');
+    sb.style.display = 'block'; sb.disabled = false;
+    drawOriginWheel();
+    document.getElementById('originModal').classList.add('show');
+  }
+
+  function spinOrigin(){
+    if (ORIGIN.spinning) return;
+
+    var total = originTotal(), roll = Math.random() * total, acc = 0, idx = 0;
+    for (var i = 0; i < RACES.length; i++){
+      acc += RACES[i].w;
+      if (roll <= acc){ idx = i; break; }
+    }
+
+    var start = 0;
+    for (var j = 0; j < idx; j++) start += RACES[j].w;
+    var centerDeg = (start + RACES[idx].w / 2) / total * 360;
+    var delta = ((270 - centerDeg) % 360 + 360) % 360;
+    ORIGIN.base += 360 * 5 + delta;
+
+    var c = document.getElementById('originCanvas');
+    if (c) c.style.transform = 'rotate(' + ORIGIN.base + 'deg)';
+
+    var sb = document.getElementById('originSpin');
+    sb.disabled = true;
+    ORIGIN.spinning = true;
+
+    setTimeout(function(){
+      ORIGIN.spinning = false;
+      ORIGIN.chosen = RACES[idx];
+      document.getElementById('originName').textContent = RACES[idx].n;
+      document.getElementById('originDesc').textContent = RACES[idx].d;
+      sb.style.display = 'none';
+      sb.disabled = false;
+      document.getElementById('originOk').style.display = 'block';
+    }, 2200);
+  }
+
+  function confirmOrigin(){
+    if (!ORIGIN.chosen) return;
+    S.raceId = ORIGIN.chosen.id;
+    document.getElementById('originModal').classList.remove('show');
+    beginLife(ORIGIN.chosen.id);
+  }
+
+  /* 抽取指定类别事件 */
+  function pickByKind(kind){
+    var P = S.P, pool = [];
+    for (var i = 0; i < EVENTS.length; i++){
+      var e = EVENTS[i];
+      if (e.kind !== kind) continue;
+      if (P.age < e.a || P.age > e.b) continue;
+      if (S.used.indexOf(i) >= 0) continue;
+      pool.push(e);
+    }
+    return pool.length ? pick(pool) : null;
+  }
+
+  function fireEvent(ev){
+    if (!ev) return;
+    S.used.push(EVENTS.indexOf(ev));
+    hitEvent(ev);
+  }
+
+  /* 一格：先过一年，再按格子结算 */
+  function applySector(idx, silent){
+    var P = S.P, sec = WHEEL[idx];
+    if (!P || !P.alive) return '……';
+
+    S.ageSpin = 0;
+    var realm0 = P.realm;
+    var yps = yearsPerSpin();
+
+    var died = false;
+    for (var y = 0; y < yps; y++){
+      if (!advanceYear(true)){ died = true; break; }
+    }
+    if (died){
+      if (!S.P || !S.P.alive) return '……';
+      if (S.tribu) return '你走到了大乘圆满，天劫将至。';
+      return '……';
+    }
+
+    if (P.realm > realm0){
+      log(P.age, '这几年里，你冲破了' + realmName() + '那道门槛。', 'big');
+      upgradeWheel();
+    }
+    if (!P.alive) return '……';
+
+    var mul = 1 + (sec.lv || 0) * 0.4;
+    var gain = Math.round(yearXP() * yps * mul);
+
+    if (S.chainKind === sec.kind){ S.chainN = (S.chainN || 1) + 1; }
+    else { S.chainKind = sec.kind; S.chainN = 1; }
+
+    if (S.chainN >= 3){
+      S.chainN = 0;
+      var bonus = Math.round(yearXP() * 2);
+      P.xp += bonus;
+      log(P.age, '命轮连转三次都落在「' + sec.n + '」，天地像被你踩出一条槽。修为 +' + bonus + '。', 'good');
+    }
+
+    if (sec.kind === 'legend') S.pity = 0;
+    else S.pity = (S.pity || 0) + 1;
+
+    var txt = '';
+
+    switch (sec.kind){
+      case 'event':
+        maybeEvent();
+        txt = '这一年，你遇上了一桩事。';
+        break;
+
+      case 'train':
+        P.xp += gain;
+        log(P.age, pick([
+          '你在洞府里坐满一年，气息沉下去，像石头沉进水底。修为 +' + gain + '。',
+          '这一年你只做了一件事：把气在骨头里转了三圈。修为 +' + gain + '。',
+          '你把蒲团坐出了一个坑。修为 +' + gain + '。',
+          '你在崖边练了一整年的桩，风把你的衣角吹薄了。修为 +' + gain + '。',
+          '你把上一篇经文又读了一遍，这次读出了别的意思。修为 +' + gain + '。',
+          '你把洞府的灯点了一整年，灯没灭，你也没走。修为 +' + gain + '。'
+        ]), 'good');
+        txt = '修为 +' + gain;
+        break;
+
+      case 'epiphany':
+        P.xp += gain * 2;
+        if (Math.random() < 0.35) P.wits = Math.min(ATTR_CAP, P.wits + 1);
+        log(P.age, pick([
+          '某个瞬间，你把从前看不懂的东西看懂了。修为 +' + (gain * 2) + '。',
+          '你听见自己骨头里响了一声，像一把锁开了。修为 +' + (gain * 2) + '。',
+          '你在打水的时候忽然站住，水洒了一地，你没有发觉。修为 +' + (gain * 2) + '。',
+          '你想起很多年前有人说过一句话，当时没听懂，这一刻懂了。修为 +' + (gain * 2) + '。'
+        ]), 'good');
+        txt = '修为 +' + (gain * 2);
+        break;
+
+      case 'peril': {
+        // 险境：气运说了算。运气好，摔下去反而捡到东西
+        var pr = Math.min(0.92, 0.34 + P.luck * 0.032 + relicSum('fortune'));
+        if (Math.random() < pr){
+          var pw = Math.random();
+          if (pw < 0.42){
+            var pg = Math.round(NEED[Math.min(P.realm, 8)] * 0.06);
+            P.xp += pg;
+            log(P.age, '仇家把你打下山崖。你没死，崖底有一处没人的洞府，你在里面坐了很多年。修为 +' + pg + '。', 'good');
+            txt = '坠崖未死，修为 +' + pg;
+          } else if (pw < 0.75){
+            var pa = rollArtifact();
+            applyArtifact(pa);
+            log(P.age, '你从崖上掉下去，砸在一具白骨旁边。白骨手里握着' + pa.n + '，见你来了，松开了手。', 'good');
+            txt = '得' + pa.n;
+          } else {
+            tryLearnArt();
+            txt = '崖底的石壁上刻着字。';
+          }
+        } else {
+          P.body = Math.max(3, P.body - 1);
+          P.lifeBonus -= 30;
+          log(P.age, '你在山中遇险，出来时少了一块肉，多了一道永远好不了的伤。', 'bad');
+          txt = '体魄 -1，寿元 -30';
+        }
+        break;
+      }
+
+      case 'fortune': {
+        // 奇遇：气运 + 罗盘之类的东西，决定你会不会遇上「不该遇上的」
+        var fr = Math.min(0.9, 0.28 + P.luck * 0.035 + relicSum('fortune'));
+        if (Math.random() < fr){
+          var fw = Math.random();
+          if (fw < 0.34){
+            var fa = rollArtifact();
+            applyArtifact(fa);
+            log(P.age, '你走进一片本不该有的雾。雾散了，脚边躺着' + fa.n + '。', 'good');
+            txt = '奇遇：' + fa.n;
+          } else if (fw < 0.6){
+            P.lifeBonus += 200;
+            log(P.age, '你在山里遇见一个自称「守园人」的老者。他递给你一枚果子，说：「吃了它，你就有更多时间了。」', 'good');
+            txt = '寿元 +200';
+          } else if (fw < 0.82){
+            P.wits = Math.min(ATTR_CAP + 4, P.wits + 2);
+            P.luck = Math.min(ATTR_CAP + 8, P.luck + 1);
+            log(P.age, '你在一处洞府里看见天花板上的星图。你看了很久，忽然明白自己一直在看一张地图。', 'good');
+            txt = '悟性 +2，气运 +1';
+          } else if (fw < 0.92 && !P.mate){
+            meetMate(true);
+            txt = '奇遇：遇上一个人';
+          } else {
+            tryLearnArt();
+            txt = '洞府的石桌上摊着一卷东西。';
+          }
+        } else {
+          log(P.age, '你走到一个本该有奇遇的地方。那里什么都没有，只有风。', '');
+          txt = '空跑一趟';
+        }
+        break;
+      }
+
+      case 'artifact': {
+        var aa = rollArtifact();
+        applyArtifact(aa);
+        log(P.age, '一件东西认了你：' + aa.n + '（' + aa.t + '·' + ['残','凡','灵','宝','仙'][aa.q] + '品）——' + aa.d, 'good');
+        txt = '得法宝：' + aa.n;
+        break;
+      }
+
+      case 'decade': {
+        // 奔流：原来「连转十轮」的那口气，现在压在轮盘上
+        var years = yearsPerSpin() * 5;
+        var extraYears = 0, stopped = false;
+        for (var d = 0; d < years; d++){
+          if (!advanceYear(true)){ stopped = true; break; }
+          extraYears++;
+        }
+        if (!S.P || !S.P.alive) return '……';
+        if (S.tribu) return '你走到了大乘圆满，天劫将至。';
+        var dg = Math.round(yearXP() * Math.max(1, extraYears) * 0.9);
+        P.xp += dg;
+        log(P.age, '轮盘卡住了。天地从你身上碾过去 ' + extraYears + ' 年，你抬头时，山换了颜色。修为 +' + dg + '。', 'big');
+        txt = '光阴奔流 ' + extraYears + ' 年，修为 +' + dg;
+        break;
+      }
+
+      case 'choice': {
+        var cev = null;
+        for (var i = 0; i < EVENTS.length; i++){
+          var e = EVENTS[i];
+          if (!e.ch) continue;
+          if (P.age < e.a || P.age > e.b) continue;
+          if (S.used.indexOf(i) >= 0) continue;
+          if (!cev) cev = e;
+        }
+        if (cev && !silent){ fireEvent(cev); txt = '有些事，得你自己拿主意。'; }
+        else { maybeEvent(); txt = '这一年你随波过去了。'; }
+        break;
+      }
+
+      case 'secret': {
+        var sev = pickByKind('secret');
+        if (sev){ fireEvent(sev); txt = '你踏进了一处不该在人间的地方。'; }
+        else {
+          P.xp += gain * 2;
+          if (Math.random() < 0.45) tryLearnArt();
+          if (!P.mate && Math.random() < 0.3) meetMate(true);
+          txt = '你寻到一处旧洞府，空着，灵气却极足。修为 +' + (gain * 2);
+        }
+        break;
+      }
+
+      case 'boon': {
+        var r = Math.random();
+        if (r < 0.34){ P.luck = Math.min(ATTR_CAP + 5, P.luck + 2); log(P.age, '你在山上捡到一样东西，从此运气好了些。', 'good'); txt = '气运 +2'; }
+        else if (r < 0.68){ P.lifeBonus += 40; log(P.age, '有人送来一株说不清名字的草，你吃了，觉得身子轻了。', 'good'); txt = '寿元 +40'; }
+        else {
+          var ba = rollArtifact();
+          applyArtifact(ba);
+          log(P.age, '有人把' + ba.n + '塞给你，说：「拿着，别问。」你问了，那人已经走了。', 'good');
+          txt = '法宝 +1：' + ba.n;
+        }
+        break;
+      }
+
+      case 'doom': {
+        var r2 = Math.random();
+        if (r2 < 0.4){ P.body = Math.max(3, P.body - 2); P.xp = Math.floor(P.xp * 0.8); log(P.age, '天降横祸。你在血泊里躺了半年，醒来第一件事是找自己的剑。', 'bad'); txt = '体魄 -2，修为 -20%'; }
+        else if (r2 < 0.7){ P.lifeBonus -= 60; log(P.age, '你的寿数被人从命册上划掉了一截。', 'bad'); txt = '寿元 -60'; }
+        else {
+          if (P.relics.length){
+            var lost = P.relics.pop();
+            log(P.age, '你护身的' + lost.n + '在夜里碎了。碎的时候，你听见一声很轻的叹息。', 'bad');
+            txt = '失去法宝：' + lost.n;
+          } else {
+            P.luck = Math.max(0, P.luck - 2);
+            log(P.age, '你什么也没有，于是老天拿走了你的运气。', 'bad');
+            txt = '气运 -2';
+          }
+        }
+        break;
+      }
+
+      case 'legend': {
+        P.xp += Math.round(NEED[Math.min(P.realm, 8)] * 0.12);
+        P.luck = Math.min(ATTR_CAP + 8, P.luck + 3);
+        var la = rollArtifact();
+        applyArtifact(la);
+        log(P.age, '这一年的分量，比你此前几百年加起来都重。你不太敢回想它是怎么发生的。', 'big');
+        txt = '修为暴涨，气运 +3';
+        meta.legend = (meta.legend || 0) + 1;
+        saveMeta();
+        break;
+      }
+
+      default:
+        txt = '这一年，什么也没有发生。';
+    }
+
+    updateStatus();
+    return txt;
+  }
+
+  function upgradeWheel(){
+    var pool = [];
+    for (var i = 0; i < WHEEL.length; i++){
+      if (WHEEL[i].kind === 'void') continue;
+      if ((WHEEL[i].lv || 0) >= 3) continue;
+      pool.push(i);
+    }
+    if (!pool.length) return;
+    var i2 = pick(pool);
+    WHEEL[i2].lv = (WHEEL[i2].lv || 0) + 1;
+    log(S.P.age, '命轮上「' + WHEEL[i2].n + '」那一格比从前宽了一点。（' + WHEEL[i2].n + '+' + WHEEL[i2].lv + '）', 'good');
+    drawWheel();
+  }
+
+  function spinMany(n){
+    if (!S.P || !S.P.alive) return;
+    for (var i = 0; i < n; i++){
+      if (!S.P || !S.P.alive) break;
+      if (S.tribu || S.pending) break;
+      applySector(wheelRoll(), true);
+    }
+    updateStatus();
+  }
+
+  /* ---------- 天劫 ---------- */
+
+  function openTribulation(){
+    var P = S.P;
+    if (!P.alive) return;
+
+    S.tribu = { step:0, busy:false, hp:5 + Math.max(3, Math.min(11, P.body)) };
+
+    log(P.age, '云层压下来，天光一寸寸熄了。你抬头，第一道雷已在酝酿。', 'big');
+
+    tribuRender();
+    document.getElementById('tribu').classList.add('show');
+  }
+
+  function tribuRate(mode){
+    var P = S.P, T = S.tribu;
+    var rate = 0.5 + P.wits * 0.006 + P.luck * 0.006 + P.brk - T.step * 0.018;
+    rate += relicSum('tribu') * 0.6;
+    if (P.mateTribu) rate += P.mateTribu * 0.6;
+    if (mode === 'guard') rate += 0.18;
+    if (mode === 'dao') rate += 0.30;
+    return Math.max(0.08, Math.min(0.82, rate));
+  }
+
+  function tribuRender(){
+    var P = S.P, T = S.tribu;
+    if (!T) return;
+
+    var dots = '';
+    for (var i = 0; i < 9; i++){
+      dots += '<span class="' + (i < T.step ? 'on' : 'off') + '">✦</span>';
+    }
+    document.getElementById('tribuDots').innerHTML = dots;
+
+    document.getElementById('tribuMsg').textContent = TRIB_TEXT[Math.min(T.step, 8)];
+
+    var rate = Math.round(tribuRate('hard') * 100);
+    document.getElementById('tribuInfo').textContent =
+      '第 ' + (T.step + 1) + ' 道 / 共九道　·　护体 ' + T.hp +
+      '　·　法宝 ' + (P.relics ? P.relics.length : 0) + '　·　硬抗成算 ' + rate + '%';
+
+    var opts = document.getElementById('tribuOpts');
+    opts.innerHTML = '';
+
+    var list = [
+      { k:'hard',  d:'失败：体魄 -2', t:'硬 抗 此 雷' },
+      { k:'guard', d:'成算 +18%，消耗 1 件法宝；失败体魄 -1', t:'以法宝护身' },
+      { k:'dao',   d:'成算 +30%，但无论成败体魄 -1、修为 -8%', t:'以道化雷' }
+    ];
+
+    for (var j = 0; j < list.length; j++){
+      (function(o){
+        var b = document.createElement('button');
+        b.className = 'mopt';
+        b.innerHTML = o.t + '<span style="display:block;font-size:11px;color:#7f8fa3;margin-top:3px">' + o.d + '</span>';
+
+        if (o.k === 'guard' && (!P.relics || P.relics.length <= 0)){
+          b.style.opacity = '.35';
+          b.style.cursor = 'not-allowed';
+        }
+
+        b.addEventListener('click', function(){
+          if (o.k === 'guard' && (!P.relics || P.relics.length <= 0)) return;
+          if (S.tribu && S.tribu.busy) return;
+          tribuChoose(o.k);
+        });
+
+        opts.appendChild(b);
+      })(list[j]);
+    }
+  }
+
+  function tribuChoose(mode){
+    var P = S.P, T = S.tribu;
+    if (!T || T.busy) return;
+    T.busy = true;
+
+    var ok = Math.random() < tribuRate(mode);
+    var msg;
+
+    if (mode === 'guard' && P.relics && P.relics.length) P.relics.pop();
+    if (mode === 'dao'){
+      T.hp -= 1;
+      P.xp = Math.floor(P.xp * 0.92);
+    }
+
+    if (ok){
+      if (Math.random() < 0.32){
+        T.hp -= 1;
+        msg = '雷光擦过你的肩，皮肉焦了一片。你咬牙站住了。';
+      } else {
+        msg = '雷光在你身前三寸散开，你连眼睛都没有闭上。';
+      }
+    } else {
+      T.hp -= 2;
+      msg = '雷光贯穿了你的胸口，血从嘴里涌出来，烫得吓人。';
+    }
+
+    log(P.age, '第' + (T.step + 1) + '道天雷：' + msg, ok ? 'good' : 'bad');
+
+    var dots = '';
+    for (var i = 0; i < 9; i++){
+      dots += '<span class="' + (i <= T.step ? 'on' : 'off') + '">✦</span>';
+    }
+    document.getElementById('tribuDots').innerHTML = dots;
+    document.getElementById('tribuMsg').textContent = msg;
+    document.getElementById('tribuOpts').innerHTML =
+      '<div style="font-size:12px;color:#8fa3b6;letter-spacing:2px;padding:12px 0">雷光未散……</div>';
+
+    T.step++;
+
+    setTimeout(function(){
+      if (!S.tribu || S.tribu !== T || !S.P) return;
+      if (T.hp <= 0){ tribuFail(); return; }
+      if (T.step >= 9){ tribuWin(); return; }
+      T.busy = false;
+      tribuRender();
+    }, 1100);
+  }
+
+  function tribuWin(){
+    var P = S.P;
+    S.tribu = null;
+    document.getElementById('tribu').classList.remove('show');
+    document.getElementById('tribuOpts').innerHTML = '';
+
+    log(P.age, '第九道雷散尽。天地忽然安静下来，安静得能听见自己的心跳。', 'big');
+
+    setTimeout(function(){
+      if (!S.P) return;
+      P.realm = 9;
+      P.xp = 0;
+      ascend();
+    }, 380);
+  }
+
+  function tribuFail(){
+    var P = S.P;
+    S.tribu = null;
+    document.getElementById('tribu').classList.remove('show');
+    document.getElementById('tribuOpts').innerHTML = '';
+
+    P.alive = false;
+    P.diedInTribu = true;
+    P.body = Math.max(0, P.body);
+    P.endReason = '雷光落尽，你的身体散作了尘埃。那一瞬你想起的，是青石镇的雨天。';
+    log(P.age, P.endReason, 'bad');
+
+    updateStatus();
+
+    if (P.realm > meta.bestRealm){ meta.bestRealm = P.realm; saveMeta(); }
+
+    setTimeout(function(){ if (S.P) showSummary(); }, 420);
+  }
+
+  function ascend(){
+    var P = S.P;
+    if (!P.alive) return false;
+
+    P.alive = false;
+    P.endReason = '九天雷云散开。你在云端回头看了一眼，这一世的人，从此不在人间。';
+    log(P.age, P.endReason, 'big');
+    updateStatus();
+
+    if (P.realm > meta.bestRealm){
+      meta.bestRealm = P.realm;
+      saveMeta();
+    }
+
+    setTimeout(function(){ showSummary(); }, 420);
+    return false;
+  }
+
+  function endLife(reason){
+    var P = S.P;
+    if (!P.alive) return false;
+
+    // 天命免死
+    if (P.flags.fate && !P.fateUsed){
+      P.fateUsed = true;
+      log(P.age, '你本该死了。但那一刻，有什么东西替你挡了一下——你不记得是什么。', 'big');
+      P.body = Math.max(1, P.body);
+      P.age = Math.max(1, P.age - 1);
+      return true;
+    }
+
+    P.alive = false;
+    P.endReason = reason;
+    log(P.age, reason, 'bad');
+
+    // 人走了，命轮也该收起来
+    var wl = document.getElementById('wheel');
+    if (wl) wl.classList.remove('show');
+    S.wheel = null;
+
+    updateStatus();
+
+    if (P.realm > meta.bestRealm){
+      meta.bestRealm = P.realm;
+      saveMeta();
+    }
+
+    setTimeout(function(){ showSummary(); }, 420);
+    return false;
+  }
+
+  var TITLES = [
+    '一世凡人', '炼气散修', '筑基修士', '金丹真人', '元婴老祖',
+    '化神尊者', '炼虚真君', '合体大能', '大乘老祖', '飞升仙人'
+  ];
+
+  /* ---------- 结局 ---------- */
+  var ENDINGS = [
+    { k:'天门', cond:function(P){ return P.realm >= 9; },
+      t:'第九道雷散尽，天门在你头顶裂开一线。你走进去的时候，听见身后整座山都在响——那是无数人的抬头。' },
+    { k:'身死道消', cond:function(P){ return P.diedInTribu; },
+      t:'雷光落尽。你散作尘埃，又被山风吹散。多年后有人在崖上拾到半枚焦黑的玉牌，认不出是谁的。' },
+    { k:'兵解', cond:function(P){ return P.age < 70 && P.fateUsed; },
+      t:'你本该死去，却被什么东西挡了一下。后来你想明白了：那不是运气，是有人替你付了账。' },
+    { k:'守城人', cond:function(P){ return P.deeds.indexOf('saveCity') >= 0; },
+      t:'那座城的城墙修了三百年，你守了两百年。你死后，城里的人把你的名字写进了城隍庙的第一行。' },
+    { k:'传道', cond:function(P){ return P.deeds.indexOf('teach') >= 0; },
+      t:'你收过的那个笨徒弟，后来成了别人的师父。他教徒弟的第一句话，是你当年随口说的。' },
+    { k:'剑折', cond:function(P){ return P.deeds.indexOf('killOld') >= 0 && P.realm >= 5; },
+      t:'你的剑断在某个说不清的地方。有人说你死了，有人说你只是把剑埋了，人也一起埋了。' },
+    { k:'开山立派', cond:function(P){ return !!P.sect && P.realm >= 5; },
+      t:'你在自己长大的那座山头立了块碑。碑上是宗门的名字，名字是你半夜想出来的，后来没有人改。' },
+    { k:'话本', cond:function(P){ return P.luck >= 18 && P.realm <= 3; },
+      t:'你这一生没修成什么。可你死后一百年，有个说书人靠讲你的故事发了财——故事里你一剑劈开了山。' },
+    { k:'吞天', cond:function(P){ return P.dao === '魔道' && P.realm >= 7 && P.age >= 400; },
+      t:'你终究没有飞升，也没有下地狱。你只是站在原地，把这一方天地的气运一点一点吸干。' },
+    { k:'无名碑', cond:function(P){ return P.realm >= 5 && P.age < 500; },      t:'你留下的东西不多：一座空洞府，半部没写完的手记，还有一块谁都不知道给谁立的碑。' },
+    { k:'教书人', cond:function(P){ return P.wits >= 18 && P.realm <= 4; },
+      t:'你没有飞升，也没有成魔。你在山下开了个学堂，教孩子们认字。最后一课，你教了“仙”字。' },
+    { k:'山中老怪', cond:function(P){ return P.realm >= 6 && P.age >= 800; },
+      t:'你活得太久了，久到忘了自己为什么活着。后来的修士路过你的山，会绕道走——不是怕，是敬。' },
+    { k:'凡人一世', cond:function(P){ return P.realm <= 1; },
+      t:'你没有等到仙缘，也没有等到大难。你种了一辈子地，死的时候院子里那棵枣树刚好结果。' },
+    { k:'短命', cond:function(P){ return P.age < 40; },
+      t:'你死得太早，早到来不及留下什么。只有一个人记得你的名字，那个人后来也忘了。' },
+    { k:'散修', cond:function(P){ return true; },
+      t:'你走完了这一生，没有惊天动地，也没有遗臭万年。山上的野草又长了一茬，没有人知道你埋在哪里。' }
+  ];
+
+  function mateTail(P, e){
+    if (!P || !P.mate) return e;
+    var tails = [
+      ' 你走后，' + P.mate.n + '还在原地站了很久。',
+      ' ' + P.mate.n + '把你没说完的那句话替你说完了。',
+      ' 你最后想起的，是' + P.mate.n + '说的那句“下次不许再惹这种人”。',
+      ' 你的道侣' + P.mate.n + '没来送你——据说她那天正好在办别的事。'
+    ];
+    return { k: e.k, t: e.t + pick(tails) };
+  }
+
+  function pickEnding(P){
+    var has = function(d){ return P.deeds.indexOf(d) >= 0; };
+
+    if (P.diedInTribu){
+      if (has('spareOld')) return { k:'雷下留人', t:'你死在第九道雷里。被你放走的那个老人，在你死后替你收了尸。他说，你比他强。' };
+      if (has('saveCity')) return { k:'城在，人不在', t:'雷落下的那天，那城里的所有人都听见了。他们在城墙上点了三天三夜的灯。' };
+      return ENDINGS[1];
+    }
+
+    if (P.realm >= 9){
+      var re9 = RACE_END[P.origin || 'human'];
+      if (re9 && re9.asc) return mateTail(P, pick(re9.asc));
+      if (has('saveCity')) return { k:'天门 · 携一城香火', t:'你飞升那天，那座城的人全都跪下了。你带走的不是修为，是两百年的香火气。' };
+      if (has('teach')) return { k:'天门 · 有人接灯', t:'你走的时候没有回头。山门里那个笨徒弟正拿着你的旧笔记，一个字一个字地读。' };
+      if (has('readNote') && P.wits >= 16) return { k:'天门 · 看破', t:'你踏进天门的那一刻忽然笑了。原来那个坐化的人写的不是遗言，是路标。' };
+      if (P.dao === '魔道') return { k:'天门 · 逆着走', t:'你是踩着别人的骨头上来的。天门开了，你没有犹豫，身后什么都没留下。' };
+      return ENDINGS[0];
+    }
+
+    if (P.origin && P.origin !== 'human'){
+      var re0 = RACE_END[P.origin];
+      if (re0 && re0.fall) return mateTail(P, pick(re0.fall));
+    }
+
+    // 未触发专属结局时，按最终境界给一个体面的收束，避免一律「散修」
+    if (P.realm >= 7) return pick([
+      { k:'一步之遥', t:'你走到了' + realmName() + '，只差一步。寿元先到，人留在了原地。山上那株老松，那年多了一圈年轮。' },
+      { k:'再等一世', t:'你在' + realmName() + '卡了很多年。有人劝你转修别道，你不肯。最后那口气散在蒲团上，姿势和前一天一模一样。' },
+      { k:'差一口气', t:'天门的高度你已经摸到了。你算了算剩下的寿元，够走完这条路，不够推开门。你在门前坐化了。' }
+    ]);
+    if (P.realm === 6) return pick([
+      { k:'山中的一声钟', t:'你死在' + realmName() + '，寿元耗尽。山门里有人敲了一声钟，敲完也没人问是敲给谁的。' },
+      { k:'半步', t:'' + realmName() + '的中境，你停在这里。后来有人翻你的手记，看到最后一句是“往下不够，往上不敢”。' }
+    ]);
+    if (P.realm === 5) return pick([
+      { k:'炉火未冷', t:'一炉丹没炼完，人先没了。那炉火在你死后还烧了三天，烧到最后自己灭了。' },
+      { k:'虚了', t:'你把自己炼得很空，最后连人形都守不住。有人在山里见过一团影子，说那东西还会呼吸。' }
+    ]);
+    if (P.realm === 4) return pick([
+      { k:'未竟', t:'你在' + realmName() + '止步。留下的只有半卷手稿，末尾一行写着“再等等”。没人等到。' },
+      { k:'元胎无声', t:'你的元婴养成了，却始终不出声。到死它都没睁眼，像一件没做完的东西。' },
+      { k:'洞府的主人', t:'洞府修得很齐整，丹炉、药圃、经架一应俱全。你死后三百年，才有人找到这处地方，那时你早成了一把骨头。' }
+    ]);
+    if (P.realm === 3) return pick([
+      { k:'一粒金丹', t:'金丹是成了，仙没成。你把丹埋在洞府后山，说留给下一个路过的人。' },
+      { k:'丹成，人散', t:'金丹圆成那夜，你高兴了一场，第二天就病倒了。修道这一行，有时候只差这么一点运气。' }
+    ]);
+
+    for (var i = 2; i < ENDINGS.length; i++){
+      if (ENDINGS[i].cond(P)) return ENDINGS[i];
+    }
+    return ENDINGS[ENDINGS.length - 1];
+  }
+
+  function showSummary(){
+    var P = S.P;
+
+    var title = TITLES[Math.min(P.realm, 9)];
+    if (P.diedInTribu) title = '渡劫身死';
+    else if (P.realm >= 9) title = '飞升仙人';
+    else if (P.dao === '魔道' && P.realm >= 3) title = '魔道尊者';
+    if (P.sect && P.realm <= 2) title = '山门弟子';
+
+    var score = P.realm * 1000 + P.age * 2 + (P.root + P.wits + P.body + P.luck) * 15;
+    var rank;
+    if (P.realm >= 9) rank = '传说';
+    else if (P.realm >= 6) rank = '绝代';
+    else if (P.realm >= 4) rank = '惊艳';
+    else if (P.realm >= 2) rank = '尚可';
+    else rank = '平庸';
+
+    var inheritChoices = P.talents.map(function(t, i){
+      return '<button class="mopt" data-inh="' + esc(t.n) + '" style="margin-top:6px">继承 · ' + esc(t.n) + '</button>';
+    }).join('');
+
+    var ending = pickEnding(P);
+
+    modal.classList.add('show');
+    mq.textContent = '';
+    mopts.innerHTML = '' +
+      '<div class="summary-title">' + title + '</div>' +
+      '<div class="summary-sub">第 ' + meta.runs + ' 世 · ' + rank + '</div>' +
+      '<div class="ending"><div class="ek">结局 · ' + ending.k + '</div><div class="et">' + ending.t + '</div></div>' +
+      '<div class="srow"><span>最终境界</span><b class="gold">' + realmName() + '</b></div>' +
+      '<div class="srow"><span>享年</span><b>' + P.age + ' 岁</b></div>' +
+      '<div class="srow"><span>禀赋 / 悟性</span><b>' + P.root + ' / ' + P.wits + '</b></div>' +
+      '<div class="srow"><span>体魄 / 气运</span><b>' + P.body + ' / ' + P.luck + '</b></div>' +
+      '<div class="srow"><span>种族</span><b>' + esc(raceOf(P.race).n) + '</b></div>' +
+      '<div class="srow"><span>法宝 / 功法</span><b>' + (P.relics ? P.relics.length : 0) + ' 件 / ' + (P.arts ? P.arts.length : 0) + ' 篇</b></div>' +
+      ((P.quirks && P.quirks.length) ? '<div class="srow"><span>守过的规矩</span><b>' + P.quirks.map(function(q){ return esc(q.n); }).join('、') + '</b></div>' : '') +
+      ((P.mate) ? '<div class="srow"><span>道侣</span><b class="gold">' + esc(P.mate.n) + '</b></div>' :
+       (P.mates && P.mates.length ? '<div class="srow"><span>道侣</span><b>共 ' + P.mates.length + ' 位，最后一位已散</b></div>' : '')) +
+      '<div class="srow"><span>道途</span><b>' + esc(P.dao || (P.sect ? P.sect : '散修')) + '</b></div>' +
+      '<div class="inherit">' + esc(P.endReason) + '<br>可择一份天赋，带往下一世。' + inheritChoices + '</div>' +
+      '<button class="btn ghost" id="againBtn" style="margin-top:12px">再入轮回</button>';
+
+    modal.querySelectorAll('[data-inh]').forEach(function(b){
+      b.addEventListener('click', function(){
+        meta.inherit = b.getAttribute('data-inh');
+        saveMeta();
+        b.textContent = '已继承 · ' + b.getAttribute('data-inh');
+      });
+    });
+
+    document.getElementById('againBtn').addEventListener('click', function(){
+      modal.classList.remove('show');
+      again();
+    });
+  }
+
+  function again(){
+    S.attrs = { root:0, wits:0, body:0, luck:0 };
+    S.P = null;
+    S.raceId = '';
+    S.ended = false;
+    S.pending = null;
+    S.tribu = null;
+    S.wheel = null;
+    S.wheelBase = 0;
+    S.lastWheel = 0;
+    S.echoes = [];
+    S.ageDone = [];
+    S.ageSpin = 0;
+    MATE_LIFE_LAST = -99;
+    document.getElementById('tribu').classList.remove('show');
+    document.getElementById('wheel').classList.remove('show');
+    mopts.innerHTML = '';
+    rollTalents();
+    renderTalent();
+  }
+
+  /* ============================================================
+     十三、启动
+  ============================================================ */
+
+  rollTalents();
+  renderTalent();
+
+  document.getElementById('spinBtn').addEventListener('click', spinWheel);
+  document.getElementById('wheelClose').addEventListener('click', closeWheel);
+
+  document.getElementById('originSpin').addEventListener('click', spinOrigin);
+  document.getElementById('originOk').addEventListener('click', confirmOrigin);
+
+})();
+</script>
+</body>
+</html>
