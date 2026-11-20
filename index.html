@@ -283,14 +283,14 @@
                 <span class="label">总局数</span>
                 <span class="value">{{ totalPlays }}</span>
             </div>
-            <button class="icon-btn" title="假装在工作（快捷键 W）" @click="workMode = true">🧑‍💻</button>
+            <button class="icon-btn" title="假装在工作（快捷键 F2 或 `）" @click="workMode = true">🧑‍💻</button>
         </div>
     </header>
 
     <main class="lobby" v-if="!stageOpen">
         <section class="hero">
             <h2>上班摸鱼，绝不手滑</h2>
-            <p>{{ games.length }} 个小游戏，一键切换 · 随时按 <b>Esc</b> 回到大厅 · 按 <b>W</b> 假装工作</p>
+            <p>{{ games.length }} 个小游戏，一键切换 · 随时按 <b>Esc</b> 回到大厅 · 按 <b>F2</b> 假装工作</p>
             <div class="scan-tip" v-if="isFileMode">
                 <p>游戏目录：<b>games/</b>　把新的 <b>.html</b> 游戏丢进去后，运行 <b>node scan.js</b>（或双击「刷新游戏列表.bat」）刷新清单即可。</p>
             </div>
@@ -318,7 +318,7 @@
         <section class="hint">
             <div class="hint-item">
                 <b>⌨️ 快捷键</b><br>
-                <b>Esc</b> 返回大厅 · <b>W</b> 假装工作 · <b>F</b> 全屏游戏 · <b>1~9</b> 按顺序直达对应游戏
+                <b>Esc</b> 返回大厅 · <b>F2</b> 假装工作 · <b>F</b> 全屏游戏 · <b>1~9</b> 按顺序直达对应游戏
             </div>
             <div class="hint-item">
                 <b>💡 摸鱼小贴士</b><br>
@@ -367,7 +367,7 @@
             <div class="emoji">🧑‍💻</div>
             <h3>正在努力工作…</h3>
             <p>老板看不到，摸鱼看不到，摸鱼更看不到～</p>
-            <div class="kbd">点击任意处 / 按 W 返回摸鱼</div>
+            <div class="kbd">点击任意处 / 按 F2 返回摸鱼</div>
         </div>
     </div>
 
@@ -560,7 +560,8 @@ createApp({
             if (key === 'escape') {
                 if (this.workMode) this.workMode = false;
                 else if (this.stageOpen) this.goHome();
-            } else if (key === 'w') {
+            } else if (e.key === 'F2' || key === '`' || e.code === 'Backquote') {
+                /* F2 / ` = 假装工作（避开游戏内 WASD、Shift、空格等常用键） */
                 this.workMode = !this.workMode;
             } else if (key === 'f' && this.stageOpen) {
                 this.toggleFullscreen();

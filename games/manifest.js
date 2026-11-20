@@ -1,6 +1,6 @@
 /* 自动生成，请勿手改 —— 运行 node scan.js 或双击「刷新游戏列表.bat」更新 */
 window.FISH_ARCADE_MANIFEST = {
-  "generatedAt": "2026-11-20T06:11:11.513Z",
+  "generatedAt": "2026-11-20T07:17:02.443Z",
   "games": [
     {
       "file": "code_artifact.html",
@@ -48,7 +48,7 @@ window.FISH_ARCADE_MANIFEST = {
       "file": "rainbow_island_adventure.html",
       "title": "彩虹岛冒险 · 横版平台",
       "desc": "",
-      "size": 23863
+      "size": 43083
     },
     {
       "file": "starport_tactical_defense.html",
@@ -60,7 +60,7 @@ window.FISH_ARCADE_MANIFEST = {
       "file": "steel_assault_run_gun.html",
       "title": "钢铁突击 · 跑轰射击",
       "desc": "",
-      "size": 21271
+      "size": 36040
     },
     {
       "file": "super_mario.html",
@@ -72,7 +72,7 @@ window.FISH_ARCADE_MANIFEST = {
       "file": "thunder_fighter_shmup.html",
       "title": "雷霆战机 · 纵版空战",
       "desc": "",
-      "size": 22343
+      "size": 29726
     },
     {
       "file": "toon_delta_extract.html",

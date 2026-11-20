@@ -138,7 +138,7 @@ window.FISH_ARCADE_GAMES = [
         title: '彩虹岛冒险 · 横版平台',
         en: 'Rainbow Island Adventure',
         icon: '🏝️',
-        desc: '经典横版闯关：跳跃、踩怪、收集金币，一路向右冲向终点旗杆。平台高低错落、怪物会巡逻甚至跳扑，90 秒限时，三关地图各有不同。',
+        desc: '经典横版闯关：跳跃、踩怪、收集金币，一路向右冲向终点旗杆。移动平台、尖刺陷阱、爱心与星星道具、四种怪物轮番登场，120 秒限时、三关地图各有不同。',
         tags: ['横版平台', '跑跳', '怀旧'],
         tone: 'amber',
         scoreKey: 'island_best'
@@ -148,7 +148,7 @@ window.FISH_ARCADE_GAMES = [
         title: '钢铁突击 · 跑轰射击',
         en: 'Steel Assault · Run & Gun',
         icon: '🔫',
-        desc: '魂斗罗式跑轰：横向推进一路向右，八方向瞄准射击，弹药打光得靠捡地上的补给箱。步兵、射手、重甲三类敌兵轮番上阵。',
+        desc: '魂斗罗式跑轰：横向推进一路向右，八方向瞄准射击，弹药打光得靠捡地上的补给箱。散弹/激光/步枪三种强力武器任选，步兵、射手、重甲、炮台、跳跳怪五类敌兵，BOSS 铁血巨炮镇守终点。',
         tags: ['跑轰', '射击', '魂斗罗'],
         tone: 'magenta',
         scoreKey: 'contra_best'
@@ -158,7 +158,7 @@ window.FISH_ARCADE_GAMES = [
         title: '雷霆战机 · 纵版空战',
         en: 'Thunder Fighter · Vertical Shooter',
         icon: '✈️',
-        desc: '雷电式纵版空战：鼠标或 WASD 操控战机自动开火，密集弹幕中穿梭躲弹。拾取星星升级火力至四级，第二关起还有 BOSS 终幕决战。',
+        desc: '雷电式纵版空战：鼠标或 WASD 操控战机自动开火，密集弹幕中穿梭躲弹。拾取星星升级火力至六级，空格放炸弹清屏，C 键切换追踪导弹/集束激光副武器，BOSS 三阶段弹幕决战。',
         tags: ['纵版射击', '弹幕', '雷电'],
         tone: 'cyan',
         scoreKey: 'thunder_best'
