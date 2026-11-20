@@ -28,16 +28,18 @@ jobs:
 
       - name: 准备静态站点
         run: |
+          set -e
+          # 把仓库内容复制到 _site（排除 .git 和 .github 本身）
           mkdir -p _site
-          # 把整个仓库复制成站点目录（保持相对路径结构）
-          cp -r . _site/
-          # 清理不该发布的内容
-          rm -rf _site/.git _site/_site _site/.github
+          rsync -a --exclude '.git/' --exclude '.github/' --exclude '_site/' ./ _site/
           # 重新扫描 games 目录，保证清单与实际游戏一致
           if [ -f _site/scan.js ]; then
-            node _site/scan.js || true
+            node _site/scan.js
           fi
+          echo "---- 站点内容 ----"
           ls -la _site
+          echo "---- games 目录 ----"
+          ls -la _site/games
 
       - name: 上传站点产物
         uses: actions/upload-pages-artifact@v3
