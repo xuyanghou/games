@@ -1,6 +1,6 @@
 /* 自动生成，请勿手改 —— 运行 node scan.js 或双击「刷新游戏列表.bat」更新 */
 window.FISH_ARCADE_MANIFEST = {
-  "generatedAt": "2026-11-20T01:02:56.181Z",
+  "generatedAt": "2026-11-20T02:20:49.038Z",
   "games": [
     {
       "file": "code_artifact.html",
@@ -22,9 +22,15 @@ window.FISH_ARCADE_MANIFEST = {
     },
     {
       "file": "super_mario.html",
-      "title": "超级玛丽 · 六关版",
+      "title": "超级玛丽 · 十关版",
       "desc": "",
-      "size": 64350
+      "size": 78281
+    },
+    {
+      "file": "toon_delta_extract.html",
+      "title": "卡通三角洲：搜打撤 | TOON DELTA: EXTRACT",
+      "desc": "",
+      "size": 45877
     }
   ]
 };

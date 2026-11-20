@@ -1,0 +1,1251 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>卡通三角洲：搜打撤 | TOON DELTA: EXTRACT</title>
+<style>
+    @import url('https://fonts.googleapis.com/css2?family=Noto+Sans+SC:wght@400;700;900&display=swap');
+
+    :root {
+        --bg: #10151f;
+        --panel: rgba(18, 25, 38, 0.92);
+        --stroke: rgba(255, 255, 255, 0.14);
+        --cyan: #35e0ff;
+        --gold: #ffcc00;
+        --green: #46e08a;
+        --red: #ff5c5c;
+        --text: #ffffff;
+        --dim: rgba(255, 255, 255, 0.6);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; -webkit-user-select: none; touch-action: none; }
+
+    html, body {
+        width: 100%; height: 100%; overflow: hidden;
+        background: var(--bg); color: var(--text);
+        font-family: 'Noto Sans SC', system-ui, sans-serif;
+    }
+
+    #wrap { position: relative; width: 100vw; height: 100vh; overflow: hidden; }
+
+    canvas { display: block; width: 100%; height: 100%; cursor: crosshair; }
+
+    /* ===== 顶部 HUD ===== */
+    #hud {
+        position: absolute; top: 0; left: 0; width: 100%;
+        padding: 12px 16px; display: flex; justify-content: space-between; align-items: flex-start;
+        pointer-events: none; z-index: 10; gap: 10px;
+    }
+
+    .hud-box { display: flex; flex-direction: column; gap: 4px; }
+    .hud-box.right { align-items: flex-end; }
+
+    .label { font-size: 0.68rem; color: var(--dim); letter-spacing: 2px; }
+    .val { font-size: 1.5rem; font-weight: 900; font-variant-numeric: tabular-nums; }
+    .val.gold { color: var(--gold); text-shadow: 0 0 14px rgba(255, 204, 0, 0.45); }
+    .val.cyan { color: var(--cyan); text-shadow: 0 0 14px rgba(53, 224, 255, 0.45); }
+    .val.red { color: var(--red); }
+    .val.sm { font-size: 1.05rem; }
+
+    .hp-track {
+        width: 168px; height: 9px; border-radius: 99px; overflow: hidden;
+        background: rgba(255, 255, 255, 0.14); border: 1px solid var(--stroke);
+    }
+    .hp-fill { height: 100%; width: 100%; background: linear-gradient(90deg, #46e08a, #9df5bd); transition: width 0.2s ease; }
+    .hp-fill.low { background: linear-gradient(90deg, #ff5c5c, #ffa07a); }
+
+    /* 撤离进度条 */
+    #extract-box {
+        position: absolute; left: 50%; bottom: 96px; transform: translateX(-50%);
+        width: min(420px, 78vw); padding: 12px 16px; border-radius: 14px;
+        background: var(--panel); border: 1px solid var(--stroke);
+        text-align: center; z-index: 12; display: none;
+    }
+    #extract-box.show { display: block; }
+    #extract-box .title { font-size: 0.85rem; font-weight: 900; letter-spacing: 2px; color: var(--gold); margin-bottom: 8px; }
+    .ex-track { height: 12px; border-radius: 99px; background: rgba(255, 255, 255, 0.12); overflow: hidden; }
+    .ex-fill { height: 100%; width: 0%; background: linear-gradient(90deg, #ffcc00, #ffe98a); }
+
+    /* 背包/物资栏 */
+    #loot-bar {
+        position: absolute; left: 50%; bottom: 16px; transform: translateX(-50%);
+        display: flex; gap: 8px; z-index: 12; pointer-events: none;
+    }
+    .loot-slot {
+        min-width: 66px; padding: 6px 10px; border-radius: 12px; text-align: center;
+        background: var(--panel); border: 1px solid var(--stroke);
+    }
+    .loot-slot .ic { font-size: 1.15rem; line-height: 1.2; }
+    .loot-slot .nm { font-size: 0.62rem; color: var(--dim); margin-top: 2px; }
+    .loot-slot .qt { font-size: 0.78rem; font-weight: 900; color: var(--gold); }
+
+    /* 提示条 */
+    #toast {
+        position: absolute; left: 50%; top: 78px; transform: translateX(-50%);
+        padding: 9px 18px; border-radius: 99px; background: var(--panel);
+        border: 1px solid var(--stroke); font-size: 0.85rem; z-index: 14;
+        opacity: 0; transition: opacity 0.25s ease; pointer-events: none; white-space: nowrap;
+    }
+    #toast.show { opacity: 1; }
+
+    /* 伤害/拾取飘字 */
+    #float-layer { position: absolute; inset: 0; pointer-events: none; z-index: 13; overflow: hidden; }
+    .float-text {
+        position: absolute; font-size: 0.9rem; font-weight: 900;
+        text-shadow: 0 2px 6px rgba(0, 0, 0, 0.85); animation: floatUp 0.85s ease-out forwards;
+    }
+    @keyframes floatUp {
+        from { opacity: 1; transform: translate(-50%, 0); }
+        to { opacity: 0; transform: translate(-50%, -42px); }
+    }
+
+    /* ===== 覆盖层 ===== */
+    .overlay {
+        position: absolute; inset: 0; z-index: 30;
+        display: flex; align-items: center; justify-content: center; padding: 20px;
+        background: rgba(8, 12, 20, 0.88); backdrop-filter: blur(6px);
+        transition: opacity 0.25s ease, visibility 0.25s ease;
+    }
+    .overlay.hidden { opacity: 0; visibility: hidden; pointer-events: none; }
+
+    .card {
+        background: linear-gradient(170deg, rgba(30, 40, 60, 0.96), rgba(16, 21, 33, 0.98));
+        border: 2px solid rgba(53, 224, 255, 0.35); border-radius: 22px;
+        padding: 28px 26px; width: 100%; max-width: 440px; text-align: center;
+        box-shadow: 0 20px 60px rgba(0, 0, 0, 0.6);
+    }
+
+    .kicker { font-size: 0.72rem; letter-spacing: 3px; color: var(--cyan); margin-bottom: 10px; }
+    .card h1 { font-size: 2.1rem; font-weight: 900; letter-spacing: 2px; margin-bottom: 6px; }
+    .card h1 span { display: block; font-size: 0.78rem; letter-spacing: 4px; color: var(--dim); font-weight: 400; margin-top: 6px; }
+    .card .desc { color: var(--dim); font-size: 0.88rem; line-height: 1.85; margin: 16px 0 18px; text-align: left; }
+    .card .desc b { color: var(--gold); }
+
+    .keys { display: grid; grid-template-columns: 1fr 1fr; gap: 7px; margin-bottom: 20px; text-align: left; }
+    .keys div { font-size: 0.76rem; color: var(--dim); background: rgba(255, 255, 255, 0.05); padding: 6px 10px; border-radius: 8px; }
+    .keys b { color: var(--cyan); font-family: monospace; }
+
+    .btn {
+        width: 100%; padding: 14px; border: none; border-radius: 14px; cursor: pointer;
+        font-family: inherit; font-size: 1.05rem; font-weight: 900; letter-spacing: 3px; color: #05080f;
+        background: linear-gradient(90deg, #35e0ff, #46e08a);
+        box-shadow: 0 8px 24px rgba(53, 224, 255, 0.3); transition: transform 0.15s ease;
+    }
+    .btn:hover { transform: translateY(-2px); }
+    .btn.ghost {
+        background: rgba(255, 255, 255, 0.08); color: var(--text);
+        border: 1px solid var(--stroke); box-shadow: none; font-size: 0.92rem; letter-spacing: 1px; margin-top: 10px;
+    }
+
+    .stat-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 18px; }
+    .stat-box { background: rgba(0, 0, 0, 0.3); border: 1px solid var(--stroke); border-radius: 12px; padding: 12px 8px; }
+    .stat-box .lb { font-size: 0.72rem; color: var(--dim); margin-bottom: 3px; }
+    .stat-box .vv { font-size: 1.5rem; font-weight: 900; }
+    .stat-box.full { grid-column: span 2; display: flex; align-items: center; justify-content: center; gap: 10px; }
+
+    .loot-list { text-align: left; margin-bottom: 18px; }
+    .loot-row {
+        display: flex; justify-content: space-between; align-items: center;
+        padding: 8px 12px; border-radius: 10px; background: rgba(255, 255, 255, 0.05);
+        margin-bottom: 6px; font-size: 0.84rem;
+    }
+    .loot-row .n { color: var(--dim); }
+    .loot-row .v { font-weight: 900; color: var(--gold); }
+
+    @media (max-width: 480px) {
+        .card h1 { font-size: 1.6rem; }
+        .hp-track { width: 120px; }
+    }
+</style>
+</head>
+<body>
+<div id="wrap">
+    <canvas id="game"></canvas>
+
+    <!-- HUD -->
+    <div id="hud">
+        <div class="hud-box">
+            <span class="label">行动代号</span>
+            <span class="val cyan sm" id="op-name">菜鸟-01</span>
+            <div class="hp-track"><div class="hp-fill" id="hp-fill"></div></div>
+            <span class="label" id="hp-text">HP 100 / 100</span>
+        </div>
+        <div class="hud-box right">
+            <span class="label">携出价值</span>
+            <span class="val gold" id="loot-value">0</span>
+            <span class="label" id="timer">剩余 60s</span>
+        </div>
+    </div>
+
+    <!-- 撤离进度 -->
+    <div id="extract-box">
+        <div class="title">⏱ 正在撤离…</div>
+        <div class="ex-track"><div class="ex-fill" id="ex-fill"></div></div>
+    </div>
+
+    <!-- 物资栏 -->
+    <div id="loot-bar"></div>
+
+    <!-- 飘字层 -->
+    <div id="float-layer"></div>
+
+    <!-- 提示 -->
+    <div id="toast"></div>
+
+    <!-- 开始界面 -->
+    <div class="overlay" id="start-screen">
+        <div class="card">
+            <div class="kicker">T O O N   D E L T A</div>
+            <h1>卡通三角洲<span>搜 打 撤</span></h1>
+            <p class="desc">
+                你是 Q 版小人突击队的一员，潜入 <b>玩具城</b> 搜刮战利品。<br>
+                找到 <b>撤离点</b> 并在倒计时结束前带着战利品撤离 —— <b>搜打撤</b> 的精髓就在这一取舍：
+                搜得越多越值钱，但时间也越紧。<br>
+                被小怪抓到会掉装备，撤离成功才算真正带出去。
+            </p>
+            <div class="keys">
+                <div><b>WASD / 方向键</b> 移动</div>
+                <div><b>鼠标</b> 瞄准</div>
+                <div><b>左键</b> 射击</div>
+                <div><b>E</b> 搜刮战利品</div>
+                <div><b>空格</b> 冲刺</div>
+                <div><b>Esc</b> 暂停</div>
+            </div>
+            <button class="btn" id="start-btn">开 始 行 动</button>
+        </div>
+    </div>
+
+    <!-- 暂停 -->
+    <div class="overlay hidden" id="pause-screen">
+        <div class="card">
+            <div class="kicker">P A U S E D</div>
+            <h1>行动暂停</h1>
+            <p class="desc">按 Esc 或点击下方按钮继续行动。</p>
+            <button class="btn" id="resume-btn">继 续</button>
+            <button class="btn ghost" id="quit-btn">放弃行动</button>
+        </div>
+    </div>
+
+    <!-- 结算 -->
+    <div class="overlay hidden" id="end-screen">
+        <div class="card">
+            <div class="kicker" id="end-kicker">MISSION REPORT</div>
+            <h1 id="end-title">撤 离 成 功</h1>
+            <p class="desc" id="end-desc"></p>
+            <div class="stat-grid">
+                <div class="stat-box">
+                    <div class="lb">本次携出</div>
+                    <div class="vv gold" id="end-value">0</div>
+                </div>
+                <div class="stat-box">
+                    <div class="lb">击杀小怪</div>
+                    <div class="vv" id="end-kills">0</div>
+                </div>
+                <div class="stat-box full">
+                    <span style="font-size:1.6rem" id="end-badge">💰</span>
+                    <div style="text-align:left">
+                        <div class="lb" style="margin-bottom:0">最高撤离记录</div>
+                        <div style="font-weight:900;color:var(--gold)" id="end-best">0</div>
+                    </div>
+                </div>
+            </div>
+            <div class="loot-list" id="end-loot"></div>
+            <button class="btn" id="again-btn">再 来 一 局</button>
+        </div>
+    </div>
+</div>
+
+<script>
+'use strict';
+/* =====================================================================
+   卡通三角洲：搜打撤
+   俯视角 Q 版小人射击 + 搜刮 + 撤离，Canvas 2D 单文件实现
+   ===================================================================== */
+
+/* ---------------------------------------------------------------
+   0. 画布与基础设置
+--------------------------------------------------------------- */
+const cv = document.getElementById('game');
+const ctx = cv.getContext('2d');
+let VW = 0, VH = 0, DPR = 1;
+
+/* 世界尺寸（比屏幕大，需要滚动） */
+const WORLD_W = 2000;
+const WORLD_H = 1400;
+
+/* 相机 */
+const cam = { x: 0, y: 0 };
+
+function resize() {
+    DPR = Math.min(window.devicePixelRatio || 1, 2);
+    VW = window.innerWidth;
+    VH = window.innerHeight;
+    cv.width = VW * DPR;
+    cv.height = VH * DPR;
+    ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+}
+window.addEventListener('resize', resize);
+resize();
+
+/* ---------------------------------------------------------------
+   1. 音频（Web Audio 简易音效）
+--------------------------------------------------------------- */
+const Audio2 = {
+    ctx: null,
+    muted: false,
+    init() {
+        if (!this.ctx) {
+            const AC = window.AudioContext || window.webkitAudioContext;
+            if (AC) this.ctx = new AC();
+        }
+        if (this.ctx && this.ctx.state === 'suspended') this.ctx.resume();
+    },
+    tone(freq, dur, type = 'square', vol = 0.1, slide = 0) {
+        if (this.muted || !this.ctx) return;
+        const now = this.ctx.currentTime;
+        const o = this.ctx.createOscillator();
+        const g = this.ctx.createGain();
+        o.type = type;
+        o.frequency.setValueAtTime(freq, now);
+        if (slide) o.frequency.exponentialRampToValueAtTime(Math.max(40, freq + slide), now + dur);
+        g.gain.setValueAtTime(vol, now);
+        g.gain.exponentialRampToValueAtTime(0.001, now + dur);
+        o.connect(g); g.connect(this.ctx.destination);
+        o.start(now); o.stop(now + dur);
+    },
+    shoot() { this.tone(520, 0.07, 'square', 0.07, -320); },
+    hit() { this.tone(180, 0.09, 'sawtooth', 0.06, -80); },
+    pickup() { this.tone(880, 0.1, 'triangle', 0.09); setTimeout(() => this.tone(1320, 0.1, 'triangle', 0.08), 70); },
+    hurt() { this.tone(140, 0.22, 'sawtooth', 0.12, -60); },
+    win() { [523, 659, 784, 1047].forEach((f, i) => setTimeout(() => this.tone(f, 0.3, 'triangle', 0.1), i * 130)); },
+    lose() { [392, 330, 262, 196].forEach((f, i) => setTimeout(() => this.tone(f, 0.35, 'sawtooth', 0.1), i * 150)); }
+};
+
+/* ---------------------------------------------------------------
+   2. 场景（简单几何区域）
+--------------------------------------------------------------- */
+let walls = [];      // 矩形障碍
+let lootItems = [];  // 地面战利品
+let enemies = [];    // 小怪
+let bullets = [];    // 子弹
+let particles = [];  // 粒子
+let extractZone = null;
+
+/* 战利品定义 */
+const LOOT_TYPES = [
+    { name: '塑料宝石', icon: '💎', value: 45,  color: '#35e0ff' },
+    { name: '金币',     icon: '🪙', value: 30,  color: '#ffcc00' },
+    { name: '玩具枪',   icon: '🔫', value: 70,  color: '#ff9f5c' },
+    { name: '能量电池', icon: '🔋', value: 55,  color: '#46e08a' },
+    { name: '神秘礼盒', icon: '🎁', value: 120, color: '#ff5c9e' },
+    { name: '旧手机',   icon: '📱', value: 25,  color: '#a9c4e8' }
+];
+
+/* ---------------------------------------------------------------
+   3. 游戏状态
+--------------------------------------------------------------- */
+let state = 'menu';  // menu | playing | paused | over
+let player;
+let timeLeft = 60;
+let totalTime = 60;
+let lootValue = 0;
+let kills = 0;
+let bestValue = parseInt(localStorage.getItem('toon_delta_best') || '0', 10);
+let collected = {};   // 战利品统计
+let mouseX = 0, mouseY = 0;
+let shakeTime = 0;
+let flashTime = 0;
+
+/* ---------------------------------------------------------------
+   4. 关卡生成
+--------------------------------------------------------------- */
+function generateLevel() {
+    walls = [];
+    lootItems = [];
+    enemies = [];
+    bullets = [];
+    particles = [];
+
+    /* 随机布置障碍（简单方块 + 圆形障碍） */
+    const blockCount = 26;
+    for (let i = 0; i < blockCount; i++) {
+        const w = 60 + Math.random() * 130;
+        const h = 60 + Math.random() * 130;
+        const x = 60 + Math.random() * (WORLD_W - w - 120);
+        const y = 60 + Math.random() * (WORLD_H - h - 120);
+        walls.push({ x, y, w, h, type: 'box', seed: Math.random() * 1000 });
+    }
+
+    /* 出生点（左下角安全区） */
+    const sx = 130, sy = WORLD_H - 130;
+
+    /* 撤离点（右上角） */
+    extractZone = { x: WORLD_W - 170, y: 150, r: 78 };
+
+    /* 战利品：保证有一部分在出生点附近，其余散布 */
+    for (let i = 0; i < 26; i++) {
+        const t = LOOT_TYPES[Math.floor(Math.random() * LOOT_TYPES.length)];
+        let x, y, tries = 0;
+        do {
+            if (i < 6) {
+                x = sx + (Math.random() - 0.5) * 420;
+                y = sy + (Math.random() - 0.5) * 420;
+            } else {
+                x = 80 + Math.random() * (WORLD_W - 160);
+                y = 80 + Math.random() * (WORLD_H - 160);
+            }
+            tries++;
+        } while (tries < 20 && isBlocked(x, y, 34));
+        lootItems.push({
+            x, y, type: t, bob: Math.random() * Math.PI * 2, taken: false
+        });
+    }
+
+    /* 敌人小怪：数量随难度上升 */
+    const enemyCount = 9;
+    for (let i = 0; i < enemyCount; i++) {
+        let x, y, tries = 0;
+        do {
+            x = 200 + Math.random() * (WORLD_W - 400);
+            y = 200 + Math.random() * (WORLD_H - 400);
+            tries++;
+        } while (tries < 30 && (isBlocked(x, y, 40) || Math.hypot(x - sx, y - sy) < 420));
+        const tier = i < 4 ? 0 : (i < 7 ? 1 : 2);
+        enemies.push(makeEnemy(x, y, tier));
+    }
+
+    /* 玩家 */
+    player = {
+        x: sx, y: sy, r: 15,
+        hp: 100, maxHp: 100,
+        speed: 195, angle: 0,
+        vx: 0, vy: 0,
+        fireCd: 0, iframe: 0, sprintCd: 0,
+        walkPhase: 0, hurtFlash: 0,
+        ammo: 0, infiniteAmmo: true
+    };
+
+    timeLeft = totalTime;
+    lootValue = 0;
+    kills = 0;
+    collected = {};
+    extractProgress = 0;
+    cam.x = sx - VW / 2;
+    cam.y = sy - VH / 2;
+}
+
+function makeEnemy(x, y, tier) {
+    const stats = [
+        { hp: 34, speed: 78, dmg: 11, r: 14, color: '#7f8cff', score: 10 },
+        { hp: 60, speed: 92, dmg: 17, r: 17, color: '#ff8a5c', score: 22 },
+        { hp: 95, speed: 108, dmg: 23, r: 20, color: '#ff5c7a', score: 40 }
+    ][tier];
+    return {
+        x, y, tier,
+        hp: stats.hp, maxHp: stats.hp,
+        speed: stats.speed, dmg: stats.dmg, r: stats.r,
+        color: stats.color, score: stats.score,
+        angle: 0, vx: 0, vy: 0, hurtFlash: 0,
+        walkPhase: Math.random() * 6.28,
+        state: 'patrol', timer: 0, alert: 0
+    };
+}
+
+/* 判断某点是否在障碍内 */
+function isBlocked(x, y, pad = 0) {
+    for (const w of walls) {
+        if (x > w.x - pad && x < w.x + w.w + pad && y > w.y - pad && y < w.y + w.h + pad) return true;
+    }
+    return false;
+}
+
+/* ---------------------------------------------------------------
+   5. 输入
+--------------------------------------------------------------- */
+const keys = {};
+window.addEventListener('keydown', (e) => {
+    const k = e.key.toLowerCase();
+    keys[k] = true;
+    if (k === 'escape') {
+        if (state === 'playing') pauseGame();
+        else if (state === 'paused') resumeGame();
+    }
+    if (k === 'e' && state === 'playing') {
+        /* 在撤离区内优先执行撤离，否则搜刮 */
+        const ez = extractZone;
+        const inZone = ez && Math.hypot(player.x - ez.x, player.y - ez.y) < ez.r;
+        if (inZone) tryExtract();
+        else tryLoot();
+    }
+    if ([' ', 'arrowup', 'arrowdown', 'arrowleft', 'arrowright'].includes(k)) e.preventDefault();
+});
+window.addEventListener('keyup', (e) => { keys[e.key.toLowerCase()] = false; });
+
+cv.addEventListener('mousemove', (e) => {
+    const r = cv.getBoundingClientRect();
+    mouseX = e.clientX - r.left;
+    mouseY = e.clientY - r.top;
+});
+cv.addEventListener('mousedown', (e) => { if (e.button === 0 && state === 'playing') shoot(); });
+window.addEventListener('mouseup', () => {});
+cv.addEventListener('contextmenu', (e) => e.preventDefault());
+
+/* 触屏简易支持 */
+let touchAim = null;
+cv.addEventListener('touchstart', (e) => {
+    if (state !== 'playing') return;
+    const t = e.changedTouches[0];
+    const r = cv.getBoundingClientRect();
+    mouseX = t.clientX - r.left;
+    mouseY = t.clientY - r.top;
+    touchAim = { x: mouseX, y: mouseY };
+}, { passive: true });
+cv.addEventListener('touchmove', (e) => {
+    if (!touchAim) return;
+    const t = e.changedTouches[0];
+    const r = cv.getBoundingClientRect();
+    mouseX = t.clientX - r.left;
+    mouseY = t.clientY - r.top;
+}, { passive: true });
+cv.addEventListener('touchend', () => { touchAim = null; }, { passive: true });
+
+/* ---------------------------------------------------------------
+   6. 核心玩法
+--------------------------------------------------------------- */
+
+/* 搜刮最近的战利品 */
+function tryLoot() {
+    let best = null, bestD = 74;
+    for (const it of lootItems) {
+        if (it.taken) continue;
+        const d = Math.hypot(it.x - player.x, it.y - player.y);
+        if (d < bestD) { bestD = d; best = it; }
+    }
+    if (!best) {
+        showToast('附近没有可搜刮的战利品');
+        return;
+    }
+    best.taken = true;
+    lootValue += best.type.value;
+    collected[best.type.name] = (collected[best.type.name] || 0) + 1;
+    Audio2.pickup();
+    spawnParticles(best.x, best.y, best.type.color, 12);
+    floatText(screenX(best.x), screenY(best.y), '+' + best.type.value, best.type.color);
+    showToast('搜到 ' + best.type.icon + ' ' + best.type.name + '  +' + best.type.value);
+    updateHUD();
+}
+
+/* 射击 */
+function shoot() {
+    if (player.fireCd > 0) return;
+    player.fireCd = 0.16;
+    Audio2.shoot();
+
+    const worldM = { x: mouseX + cam.x, y: mouseY + cam.y };
+    const ang = Math.atan2(worldM.y - player.y, worldM.x - player.x);
+    bullets.push({
+        x: player.x + Math.cos(ang) * 20,
+        y: player.y + Math.sin(ang) * 20,
+        vx: Math.cos(ang) * 640,
+        vy: Math.sin(ang) * 640,
+        life: 0.9,
+        dmg: 26
+    });
+    /* 后坐力 */
+    player.vx -= Math.cos(ang) * 42;
+    player.vy -= Math.sin(ang) * 42;
+    shakeTime = Math.max(shakeTime, 0.05);
+}
+
+/* 撤离：需要按住 E 持续 3 秒，中途离开/受击会中断 */
+let extractProgress = 0;
+const EXTRACT_TIME = 3;
+
+function tryExtract() {
+    const d = Math.hypot(player.x - extractZone.x, player.y - extractZone.y);
+    if (d > extractZone.r) {
+        showToast('需要到达右上角的绿色撤离区才能撤离');
+        return;
+    }
+    if (lootValue <= 0) {
+        showToast('两手空空，撤离毫无意义 —— 先去搜点战利品');
+        return;
+    }
+    /* 按住 E 累积进度（在 update 中处理），这里只做提示 */
+    showToast('按住 E 持续 3 秒完成撤离！');
+}
+
+/* ---------------------------------------------------------------
+   7. 更新
+--------------------------------------------------------------- */
+function update(dt) {
+    if (state !== 'playing') return;
+
+    /* 倒计时 */
+    timeLeft -= dt;
+    if (timeLeft <= 0) {
+        timeLeft = 0;
+        endGame(false, '时间耗尽，救援直升机没能及时到达，你被留在了玩具城。');
+        return;
+    }
+
+    /* 玩家移动 */
+    let mx = 0, my = 0;
+    if (keys['w'] || keys['arrowup']) my -= 1;
+    if (keys['s'] || keys['arrowdown']) my += 1;
+    if (keys['a'] || keys['arrowleft']) mx -= 1;
+    if (keys['d'] || keys['arrowright']) mx += 1;
+
+    const len = Math.hypot(mx, my);
+    let spd = player.speed;
+    if (keys[' '] && len > 0) {
+        if (player.sprintCd <= 0) {
+            spd *= 1.75;
+            player.sprintCd = 0.7;
+        }
+    }
+    player.sprintCd -= dt;
+
+    if (len > 0) {
+        mx /= len; my /= len;
+        player.walkPhase += dt * (spd > player.speed ? 16 : 11);
+    }
+
+    /* 速度积分（带阻尼，手感更顺） */
+    const accel = len > 0 ? 14 : 0;
+    player.vx += (mx * spd - player.vx) * Math.min(1, accel * dt);
+    player.vy += (my * spd - player.vy) * Math.min(1, accel * dt);
+
+    moveEntity(player, player.vx * dt, player.vy * dt);
+
+    /* 瞄准角度 */
+    player.angle = Math.atan2(mouseY + cam.y - player.y, mouseX + cam.x - player.x);
+
+    /* 冷却 */
+    player.fireCd -= dt;
+    player.iframe -= dt;
+    player.hurtFlash -= dt;
+    if (shakeTime > 0) shakeTime -= dt;
+    if (flashTime > 0) flashTime -= dt;
+    if (toastLock > 0) toastLock -= dt;
+
+    /* 子弹 */
+    for (let i = bullets.length - 1; i >= 0; i--) {
+        const b = bullets[i];
+        b.x += b.vx * dt;
+        b.y += b.vy * dt;
+        b.life -= dt;
+
+        let hit = false;
+        /* 击中敌人 */
+        for (const e of enemies) {
+            if (e.dead) continue;
+            if (Math.hypot(b.x - e.x, b.y - e.y) < e.r) {
+                e.hp -= b.dmg;
+                e.hurtFlash = 0.12;
+                e.alert = 3;
+                spawnParticles(b.x, b.y, e.color, 5);
+                Audio2.hit();
+                if (e.hp <= 0) {
+                    e.dead = true;
+                    kills++;
+                    lootValue += e.score;
+                    collected['击破小怪'] = (collected['击破小怪'] || 0) + 1;
+                    spawnParticles(e.x, e.y, e.color, 18);
+                    floatText(screenX(e.x), screenY(e.y), '+' + e.score, '#ffcc00');
+                    showToast('击破小怪，掉落战利品');
+                }
+                hit = true;
+                break;
+            }
+        }
+        if (!hit && isBlocked(b.x, b.y)) {
+            spawnParticles(b.x, b.y, '#8899aa', 4);
+            hit = true;
+        }
+        if (hit || b.life <= 0 || b.x < 0 || b.y < 0 || b.x > WORLD_W || b.y > WORLD_H) {
+            bullets.splice(i, 1);
+        }
+    }
+
+    /* 敌人 */
+    for (const e of enemies) {
+        if (e.dead) continue;
+        e.hurtFlash -= dt;
+        e.alert -= dt;
+
+        const dx = player.x - e.x;
+        const dy = player.y - e.y;
+        const dist = Math.hypot(dx, dy);
+
+        let tx = 0, ty = 0;
+        if (e.alert > 0 && dist < 460) {
+            /* 追击 */
+            e.state = 'chase';
+            tx = dx / (dist || 1);
+            ty = dy / (dist || 1);
+        } else {
+            /* 巡逻：随机游走 */
+            e.state = 'patrol';
+            e.timer -= dt;
+            if (e.timer <= 0) {
+                e.timer = 1.2 + Math.random() * 1.8;
+                const a = Math.random() * Math.PI * 2;
+                e.px = Math.cos(a);
+                e.py = Math.sin(a);
+            }
+            tx = e.px || 0;
+            ty = e.py || 0;
+        }
+
+        e.vx += (tx * e.speed - e.vx) * Math.min(1, 7 * dt);
+        e.vy += (ty * e.speed - e.vy) * Math.min(1, 7 * dt);
+        moveEntity(e, e.vx * dt, e.vy * dt);
+        e.angle = Math.atan2(dy, dx);
+        if (Math.hypot(e.vx, e.vy) > 12) e.walkPhase += dt * 9;
+
+        /* 接触伤害 */
+        if (dist < e.r + player.r + 2 && player.iframe <= 0) {
+            player.hp -= e.dmg;
+            player.iframe = 0.85;
+            player.hurtFlash = 0.35;
+            flashTime = 0.16;
+            shakeTime = 0.18;
+            Audio2.hurt();
+            floatText(screenX(player.x), screenY(player.y) - 26, '-' + e.dmg, '#ff5c5c');
+            /* 击退 */
+            const kx = dx / (dist || 1), ky = dy / (dist || 1);
+            player.vx += kx * 260;
+            player.vy += ky * 260;
+            e.vx -= kx * 120;
+            e.vy -= ky * 120;
+            if (player.hp <= 0) {
+                player.hp = 0;
+                endGame(false, '你在玩具城被小怪包围，生命值归零，装备全部遗落。');
+                return;
+            }
+        }
+    }
+
+    /* 粒子 */
+    for (let i = particles.length - 1; i >= 0; i--) {
+        const p = particles[i];
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.vy += 210 * dt;
+        p.life -= dt;
+        if (p.life <= 0) particles.splice(i, 1);
+    }
+
+    /* 相机跟随 */
+    const targetX = player.x - VW / 2;
+    const targetY = player.y - VH / 2;
+    cam.x += (targetX - cam.x) * Math.min(1, 9 * dt);
+    cam.y += (targetY - cam.y) * Math.min(1, 9 * dt);
+    cam.x = Math.max(0, Math.min(WORLD_W - VW, cam.x));
+    cam.y = Math.max(0, Math.min(WORLD_H - VH, cam.y));
+
+    /* 撤离区判定 + 长按 E 撤离进度 */
+    const ez = extractZone;
+    const inZone = Math.hypot(player.x - ez.x, player.y - ez.y) < ez.r;
+    const exBox = document.getElementById('extract-box');
+    const exFill = document.getElementById('ex-fill');
+
+    if (inZone) {
+        const holding = keys['e'];
+        if (holding && lootValue > 0) {
+            extractProgress += dt;
+            if (Math.random() < dt * 12) {
+                spawnParticles(
+                    ez.x + (Math.random() - 0.5) * ez.r,
+                    ez.y + (Math.random() - 0.5) * ez.r,
+                    '#46e08a', 1
+                );
+            }
+            if (extractProgress >= EXTRACT_TIME) {
+                endGame(true);
+                return;
+            }
+        } else if (!holding) {
+            extractProgress = Math.max(0, extractProgress - dt * 1.6);
+        }
+        exBox.classList.add('show');
+        exFill.style.width = Math.min(100, (extractProgress / EXTRACT_TIME) * 100) + '%';
+        exBox.querySelector('.title').textContent = lootValue > 0
+            ? '⏱ 按住 E 撤离中… ' + Math.ceil((EXTRACT_TIME - extractProgress) * 10) / 10 + 's'
+            : '⏱ 撤离区（先搜刮战利品）';
+    } else {
+        exBox.classList.remove('show');
+        extractProgress = Math.max(0, extractProgress - dt * 2);
+        exFill.style.width = '0%';
+    }
+
+    /* 靠近战利品提示 */
+    let nearLoot = null, nd = 70;
+    for (const it of lootItems) {
+        if (it.taken) continue;
+        const d = Math.hypot(it.x - player.x, it.y - player.y);
+        if (d < nd) { nd = d; nearLoot = it; }
+    }
+    const nearEnemy = enemies.some(e => !e.dead && Math.hypot(e.x - player.x, e.y - player.y) < 150);
+    if (toastLock <= 0) {
+        if (nearLoot) {
+            showToast('按 E 搜刮 ' + nearLoot.type.icon + ' ' + nearLoot.type.name + '（' + nearLoot.type.value + '）', 120);
+        } else if (nearEnemy) {
+            showToast('⚠️ 小怪靠近了！', 120);
+        }
+    }
+
+    updateHUD();
+}
+
+/* 带障碍碰撞的移动 */
+function moveEntity(o, dx, dy) {
+    const r = o.r;
+    /* X 轴 */
+    let nx = o.x + dx;
+    if (!hitWall(nx, o.y, r)) o.x = nx;
+    else o.vx = 0;
+    /* Y 轴 */
+    let ny = o.y + dy;
+    if (!hitWall(o.x, ny, r)) o.y = ny;
+    else o.vy = 0;
+    /* 世界边界 */
+    o.x = Math.max(r, Math.min(WORLD_W - r, o.x));
+    o.y = Math.max(r, Math.min(WORLD_H - r, o.y));
+}
+
+function hitWall(x, y, r) {
+    for (const w of walls) {
+        if (x + r > w.x && x - r < w.x + w.w && y + r > w.y && y - r < w.y + w.h) return true;
+    }
+    return false;
+}
+
+/* ---------------------------------------------------------------
+   8. 渲染 —— Q 版卡通风格
+--------------------------------------------------------------- */
+function screenX(wx) { return wx - cam.x; }
+function screenY(wy) { return wy - cam.y; }
+
+/* 画一个 Q 版小人 */
+function drawChibi(x, y, r, angle, opts) {
+    const o = opts || {};
+    const bodyColor = o.body || '#4fb3ff';
+    const headColor = o.head || '#ffd9b3';
+    const dark = o.dark || 'rgba(0,0,0,0.25)';
+
+    ctx.save();
+    ctx.translate(x, y);
+
+    /* 影子 */
+    ctx.fillStyle = 'rgba(0,0,0,0.22)';
+    ctx.beginPath();
+    ctx.ellipse(0, r * 0.95, r * 0.85, r * 0.32, 0, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* 身体（胶囊） */
+    const bob = Math.sin(o.walkPhase || 0) * (o.moving ? 2.2 : 0);
+    ctx.fillStyle = o.flash ? '#ffffff' : bodyColor;
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.72, -r * 0.1 + bob * 0.3, r * 1.44, r * 1.05, r * 0.45);
+    ctx.fill();
+
+    /* 腿 */
+    const step = o.moving ? Math.sin(o.walkPhase || 0) * r * 0.28 : 0;
+    ctx.fillStyle = dark;
+    ctx.beginPath();
+    ctx.roundRect(-r * 0.52 + step, r * 0.72, r * 0.4, r * 0.42, r * 0.18);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.roundRect(r * 0.12 - step, r * 0.72, r * 0.4, r * 0.42, r * 0.18);
+    ctx.fill();
+
+    /* 手臂（朝向瞄准方向） */
+    ctx.save();
+    ctx.rotate(angle);
+    ctx.fillStyle = o.flash ? '#ffffff' : bodyColor;
+    ctx.beginPath();
+    ctx.roundRect(r * 0.35, -r * 0.26, r * 0.95, r * 0.34, r * 0.17);
+    ctx.fill();
+    /* 武器 */
+    if (o.weapon !== false) {
+        ctx.fillStyle = o.gunColor || '#3a4356';
+        ctx.beginPath();
+        ctx.roundRect(r * 1.05, -r * 0.15, r * 0.95, r * 0.3, r * 0.1);
+        ctx.fill();
+    }
+    ctx.restore();
+
+    /* 头 */
+    ctx.fillStyle = o.flash ? '#ffffff' : headColor;
+    ctx.beginPath();
+    ctx.arc(0, -r * 0.62 + bob * 0.4, r * 0.78, 0, Math.PI * 2);
+    ctx.fill();
+
+    /* 头发/帽子 */
+    if (o.helmet) {
+        ctx.fillStyle = o.helmet;
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.62 + bob * 0.4, r * 0.78, Math.PI, 0);
+        ctx.fill();
+        ctx.fillRect(-r * 0.78, -r * 0.68 + bob * 0.4, r * 1.56, r * 0.16);
+    } else {
+        ctx.fillStyle = o.hair || '#3b2f2a';
+        ctx.beginPath();
+        ctx.arc(0, -r * 0.82 + bob * 0.4, r * 0.72, Math.PI * 1.05, Math.PI * 1.95);
+        ctx.fill();
+    }
+
+    /* 眼睛（朝向瞄准方向） */
+    ctx.fillStyle = '#22252c';
+    const ex = Math.cos(angle) * r * 0.16;
+    const ey = Math.sin(angle) * r * 0.14 - r * 0.62 + bob * 0.4;
+    ctx.beginPath();
+    ctx.arc(ex - r * 0.26, ey, r * 0.11, 0, Math.PI * 2);
+    ctx.fill();
+    ctx.beginPath();
+    ctx.arc(ex + r * 0.26, ey, r * 0.11, 0, Math.PI * 2);
+    ctx.fill();
+
+    ctx.restore();
+}
+
+function render() {
+    ctx.clearRect(0, 0, VW, VH);
+
+    /* 相机震动 */
+    let sx = 0, sy = 0;
+    if (shakeTime > 0) {
+        sx = (Math.random() - 0.5) * shakeTime * 60;
+        sy = (Math.random() - 0.5) * shakeTime * 60;
+    }
+    ctx.save();
+    ctx.translate(-cam.x + sx, -cam.y + sy);
+
+    /* 地面 */
+    ctx.fillStyle = '#1b2436';
+    ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+
+    /* 地面格纹 */
+    ctx.strokeStyle = 'rgba(255,255,255,0.035)';
+    ctx.lineWidth = 2;
+    for (let x = 0; x <= WORLD_W; x += 100) {
+        ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, WORLD_H); ctx.stroke();
+    }
+    for (let y = 0; y <= WORLD_H; y += 100) {
+        ctx.beginPath(); ctx.moveTo(0, y); ctx.lineTo(WORLD_W, y); ctx.stroke();
+    }
+
+    /* 边缘渐暗 */
+    const eg = ctx.createRadialGradient(WORLD_W / 2, WORLD_H / 2, WORLD_H * 0.3, WORLD_W / 2, WORLD_H / 2, WORLD_H * 0.85);
+    eg.addColorStop(0, 'rgba(0,0,0,0)');
+    eg.addColorStop(1, 'rgba(0,0,0,0.55)');
+    ctx.fillStyle = eg;
+    ctx.fillRect(0, 0, WORLD_W, WORLD_H);
+
+    /* 撤离区 */
+    if (extractZone) {
+        const z = extractZone;
+        const pulse = 0.5 + Math.sin(performance.now() * 0.004) * 0.5;
+        ctx.save();
+        ctx.fillStyle = 'rgba(70, 224, 138, 0.13)';
+        ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, Math.PI * 2); ctx.fill();
+        ctx.strokeStyle = 'rgba(70, 224, 138, 0.75)';
+        ctx.lineWidth = 3;
+        ctx.setLineDash([10, 8]);
+        ctx.lineDashOffset = -performance.now() * 0.02;
+        ctx.beginPath(); ctx.arc(z.x, z.y, z.r, 0, Math.PI * 2); ctx.stroke();
+        ctx.setLineDash([]);
+        /* 中心图标 */
+        ctx.fillStyle = 'rgba(70, 224, 138, ' + (0.55 + pulse * 0.4) + ')';
+        ctx.font = '900 30px sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText('🚁', z.x, z.y);
+        ctx.fillStyle = 'rgba(255,255,255,0.85)';
+        ctx.font = '700 12px "Noto Sans SC", sans-serif';
+        ctx.fillText('撤离点', z.x, z.y + z.r + 18);
+        ctx.restore();
+    }
+
+    /* 障碍 */
+    for (const w of walls) {
+        ctx.fillStyle = 'rgba(0,0,0,0.28)';
+        ctx.beginPath();
+        ctx.roundRect(w.x + 4, w.y + 6, w.w, w.h, 12);
+        ctx.fill();
+        ctx.fillStyle = '#39455e';
+        ctx.beginPath();
+        ctx.roundRect(w.x, w.y, w.w, w.h, 12);
+        ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        ctx.beginPath();
+        ctx.roundRect(w.x + 4, w.y + 4, w.w - 8, w.h * 0.42, 9);
+        ctx.fill();
+    }
+
+    /* 战利品 */
+    for (const it of lootItems) {
+        if (it.taken) continue;
+        const bob = Math.sin(performance.now() * 0.003 + it.bob) * 4;
+        ctx.save();
+        ctx.globalAlpha = 0.28;
+        ctx.fillStyle = it.type.color;
+        ctx.beginPath();
+        ctx.ellipse(it.x, it.y + 13, 13, 5, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.globalAlpha = 1;
+        ctx.font = '900 22px "Apple Color Emoji","Segoe UI Emoji",sans-serif';
+        ctx.textAlign = 'center'; ctx.textBaseline = 'middle';
+        ctx.fillText(it.type.icon, it.x, it.y + bob);
+        ctx.restore();
+    }
+
+    /* 敌人 */
+    for (const e of enemies) {
+        if (e.dead) continue;
+        const moving = Math.hypot(e.vx, e.vy) > 12;
+        drawChibi(e.x, e.y, e.r, e.angle, {
+            body: e.color,
+            head: '#ffd9b3',
+            hair: e.tier === 2 ? '#2b2f3a' : (e.tier === 1 ? '#5a3a2a' : '#7a4a2a'),
+            walkPhase: e.walkPhase,
+            moving: moving,
+            flash: e.hurtFlash > 0,
+            gunColor: '#2f3849',
+            helmet: e.tier === 2
+        });
+        /* 血条 */
+        if (e.hp < e.maxHp) {
+            ctx.fillStyle = 'rgba(0,0,0,0.5)';
+            ctx.fillRect(e.x - 15, e.y - e.r - 18, 30, 4);
+            ctx.fillStyle = '#ff5c5c';
+            ctx.fillRect(e.x - 15, e.y - e.r - 18, 30 * (e.hp / e.maxHp), 4);
+        }
+    }
+
+    /* 玩家 */
+    if (player) {
+        drawChibi(player.x, player.y, player.r, player.angle, {
+            body: '#4fb3ff',
+            head: '#ffd9b3',
+            hair: '#2f2a35',
+            walkPhase: player.walkPhase,
+            moving: Math.hypot(player.vx, player.vy) > 20,
+            flash: player.hurtFlash > 0 || player.iframe > 0,
+            gunColor: '#242c3a',
+            helmet: true
+        });
+        /* 准星 */
+        ctx.strokeStyle = 'rgba(255,255,255,0.7)';
+        ctx.lineWidth = 1.5;
+        ctx.beginPath();
+        ctx.arc(mouseX + cam.x, mouseY + cam.y, 9, 0, Math.PI * 2);
+        ctx.stroke();
+        ctx.beginPath();
+        ctx.moveTo(mouseX + cam.x - 14, mouseY + cam.y); ctx.lineTo(mouseX + cam.x - 5, mouseY + cam.y);
+        ctx.moveTo(mouseX + cam.x + 5, mouseY + cam.y); ctx.lineTo(mouseX + cam.x + 14, mouseY + cam.y);
+        ctx.moveTo(mouseX + cam.x, mouseY + cam.y - 14); ctx.lineTo(mouseX + cam.x, mouseY + cam.y - 5);
+        ctx.moveTo(mouseX + cam.x, mouseY + cam.y + 5); ctx.lineTo(mouseX + cam.x, mouseY + cam.y + 14);
+        ctx.stroke();
+    }
+
+    /* 子弹 */
+    for (const b of bullets) {
+        ctx.save();
+        ctx.strokeStyle = '#ffe98a';
+        ctx.lineWidth = 3.5;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(b.x, b.y);
+        ctx.lineTo(b.x - b.vx * 0.018, b.y - b.vy * 0.018);
+        ctx.stroke();
+        ctx.restore();
+    }
+
+    /* 粒子 */
+    for (const p of particles) {
+        ctx.globalAlpha = Math.max(0, p.life);
+        ctx.fillStyle = p.color;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.size, 0, Math.PI * 2);
+        ctx.fill();
+    }
+    ctx.globalAlpha = 1;
+
+    ctx.restore();
+
+    /* 受击红闪 */
+    if (flashTime > 0) {
+        ctx.fillStyle = 'rgba(255, 60, 60, ' + (flashTime * 1.6) + ')';
+        ctx.fillRect(0, 0, VW, VH);
+    }
+
+    /* 底部渐暗（UI 可读性） */
+    const bg = ctx.createLinearGradient(0, VH - 120, 0, VH);
+    bg.addColorStop(0, 'rgba(10,14,22,0)');
+    bg.addColorStop(1, 'rgba(10,14,22,0.55)');
+    ctx.fillStyle = bg;
+    ctx.fillRect(0, VH - 120, VW, 120);
+}
+
+/* ---------------------------------------------------------------
+   9. 特效与 UI
+--------------------------------------------------------------- */
+function spawnParticles(x, y, color, count) {
+    for (let i = 0; i < count; i++) {
+        const a = Math.random() * Math.PI * 2;
+        const sp = 40 + Math.random() * 170;
+        particles.push({
+            x, y,
+            vx: Math.cos(a) * sp,
+            vy: Math.sin(a) * sp - 30,
+            size: 2 + Math.random() * 3.5,
+            color: Math.random() < 0.3 ? '#ffffff' : color,
+            life: 0.5 + Math.random() * 0.35
+        });
+    }
+}
+
+function floatText(sx, sy, text, color) {
+    const layer = document.getElementById('float-layer');
+    const el = document.createElement('div');
+    el.className = 'float-text';
+    el.textContent = text;
+    el.style.left = sx + 'px';
+    el.style.top = sy + 'px';
+    el.style.color = color;
+    layer.appendChild(el);
+    setTimeout(() => el.remove(), 900);
+}
+
+let toastTimer = null;
+let toastLock = 0;   // 提示锁定时间，期间不覆盖重要提示
+function showToast(msg, keep) {
+    const el = document.getElementById('toast');
+    el.textContent = msg;
+    el.classList.add('show');
+    clearTimeout(toastTimer);
+    if (keep) {
+        /* keep 为刷新间隔（毫秒）：常驻提示，周期性重置隐藏计时 */
+        toastLock = 0.6;
+        toastTimer = setTimeout(() => el.classList.remove('show'), keep);
+    } else {
+        toastLock = 1.6;
+        toastTimer = setTimeout(() => el.classList.remove('show'), 1500);
+    }
+}
+
+function updateHUD() {
+    if (!player) return;
+    const pct = Math.max(0, player.hp / player.maxHp);
+    const fill = document.getElementById('hp-fill');
+    fill.style.width = (pct * 100) + '%';
+    fill.classList.toggle('low', pct < 0.35);
+    document.getElementById('hp-text').textContent = 'HP ' + Math.ceil(player.hp) + ' / ' + player.maxHp;
+    document.getElementById('loot-value').textContent = lootValue;
+    document.getElementById('timer').textContent = '剩余 ' + Math.ceil(timeLeft) + 's';
+
+    /* 物资栏 */
+    const bar = document.getElementById('loot-bar');
+    const names = Object.keys(collected);
+    const html = names.length
+        ? names.map(n => {
+            const t = LOOT_TYPES.find(x => x.name === n);
+            const ic = t ? t.icon : '💀';
+            return '<div class="loot-slot"><div class="ic">' + ic + '</div><div class="nm">' + n + '</div><div class="qt">' + collected[n] + '</div></div>';
+        }).join('')
+        : '<div class="loot-slot"><div class="ic">🎒</div><div class="nm">空</div><div class="qt">0</div></div>';
+    if (bar.dataset.sig !== html) {
+        bar.dataset.sig = html;
+        bar.innerHTML = html;
+    }
+}
+
+/* ---------------------------------------------------------------
+   10. 流程控制
+--------------------------------------------------------------- */
+function startGame() {
+    Audio2.init();
+    generateLevel();
+    state = 'playing';
+    document.getElementById('start-screen').classList.add('hidden');
+    document.getElementById('end-screen').classList.add('hidden');
+    document.getElementById('pause-screen').classList.add('hidden');
+    showToast('行动开始！找到绿色撤离区，按 E 撤离');
+}
+
+function pauseGame() {
+    if (state !== 'playing') return;
+    state = 'paused';
+    document.getElementById('pause-screen').classList.remove('hidden');
+}
+
+function resumeGame() {
+    if (state !== 'paused') return;
+    state = 'playing';
+    document.getElementById('pause-screen').classList.add('hidden');
+}
+
+function endGame(success, reason) {
+    state = 'over';
+    if (success) {
+        Audio2.win();
+        if (lootValue > bestValue) {
+            bestValue = lootValue;
+            localStorage.setItem('toon_delta_best', bestValue.toString());
+        }
+        document.getElementById('end-kicker').textContent = 'EXTRACTED SUCCESS';
+        document.getElementById('end-title').textContent = '撤 离 成 功';
+        document.getElementById('end-desc').innerHTML = '你带着战利品成功撤离了玩具城。<br>搜刮越多，收益越高 —— 下次敢不敢多待一会儿？';
+        document.getElementById('end-badge').textContent = '💰';
+    } else {
+        Audio2.lose();
+        document.getElementById('end-kicker').textContent = 'MISSION FAILED';
+        document.getElementById('end-title').textContent = '撤 离 失 败';
+        document.getElementById('end-desc').innerHTML = reason || '这次没能带出任何东西。';
+        document.getElementById('end-badge').textContent = '💀';
+    }
+    document.getElementById('end-value').textContent = success ? lootValue : 0;
+    document.getElementById('end-kills').textContent = kills;
+    document.getElementById('end-best').textContent = bestValue;
+
+    /* 战利品清单 */
+    const listEl = document.getElementById('end-loot');
+    const names = Object.keys(collected);
+    listEl.innerHTML = names.length
+        ? names.map(n => {
+            const t = LOOT_TYPES.find(x => x.name === n);
+            return '<div class="loot-row"><span class="n">' + (t ? t.icon + ' ' : '') + n + '</span><span class="v">×' + collected[n] + '</span></div>';
+        }).join('')
+        : '<div class="loot-row"><span class="n">没有任何收获</span><span class="v">0</span></div>';
+
+    document.getElementById('end-screen').classList.remove('hidden');
+}
+
+document.getElementById('start-btn').addEventListener('click', startGame);
+document.getElementById('again-btn').addEventListener('click', startGame);
+document.getElementById('resume-btn').addEventListener('click', resumeGame);
+document.getElementById('quit-btn').addEventListener('click', () => {
+    document.getElementById('pause-screen').classList.add('hidden');
+    document.getElementById('start-screen').classList.remove('hidden');
+    state = 'menu';
+});
+
+/* ---------------------------------------------------------------
+   11. 主循环
+--------------------------------------------------------------- */
+let last = 0;
+function loop(ts) {
+    if (!last) last = ts;
+    const dt = Math.min((ts - last) / 1000, 0.05);
+    last = ts;
+    update(dt);
+    render();
+    requestAnimationFrame(loop);
+}
+requestAnimationFrame(loop);
+</script>
+</body>
+</html>
