@@ -132,5 +132,35 @@ window.FISH_ARCADE_GAMES = [
         tags: ['街机', '像素', '经典'],
         tone: 'green',
         scoreKey: 'snake_best'
+    },
+    {
+        file: 'rainbow_island_adventure.html',
+        title: '彩虹岛冒险 · 横版平台',
+        en: 'Rainbow Island Adventure',
+        icon: '🏝️',
+        desc: '经典横版闯关：跳跃、踩怪、收集金币，一路向右冲向终点旗杆。平台高低错落、怪物会巡逻甚至跳扑，90 秒限时，三关地图各有不同。',
+        tags: ['横版平台', '跑跳', '怀旧'],
+        tone: 'amber',
+        scoreKey: 'island_best'
+    },
+    {
+        file: 'steel_assault_run_gun.html',
+        title: '钢铁突击 · 跑轰射击',
+        en: 'Steel Assault · Run & Gun',
+        icon: '🔫',
+        desc: '魂斗罗式跑轰：横向推进一路向右，八方向瞄准射击，弹药打光得靠捡地上的补给箱。步兵、射手、重甲三类敌兵轮番上阵。',
+        tags: ['跑轰', '射击', '魂斗罗'],
+        tone: 'magenta',
+        scoreKey: 'contra_best'
+    },
+    {
+        file: 'thunder_fighter_shmup.html',
+        title: '雷霆战机 · 纵版空战',
+        en: 'Thunder Fighter · Vertical Shooter',
+        icon: '✈️',
+        desc: '雷电式纵版空战：鼠标或 WASD 操控战机自动开火，密集弹幕中穿梭躲弹。拾取星星升级火力至四级，第二关起还有 BOSS 终幕决战。',
+        tags: ['纵版射击', '弹幕', '雷电'],
+        tone: 'cyan',
+        scoreKey: 'thunder_best'
     }
 ];

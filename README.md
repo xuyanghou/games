@@ -3,7 +3,7 @@
 上班摸鱼专用的小游戏合集。一个页面统一收纳多个 HTML 小游戏，双击即可开玩，无需安装、无需联网、无需任何授权。
 
 > 技术栈：原生 HTML + CSS + JavaScript，界面层使用 Vue 3（已本地化，离线可用）。
-> 游戏本体均为**单文件原生 HTML**，零依赖、零构建。（当前共 11 款：夜市大排档、霓虹脉冲、星际港湾、超级玛丽、卡通三角洲、灵蛇渡劫、修仙人生模拟器、数字幻方 2048、雷区迷阵扫雷、霓虹弹跳打砖块、像素吞噬者贪吃蛇）
+> 游戏本体均为**单文件原生 HTML**，零依赖、零构建。（当前共 14 款：夜市大排档、霓虹脉冲、星际港湾、超级玛丽、卡通三角洲、灵蛇渡劫、修仙人生模拟器、数字幻方 2048、雷区迷阵扫雷、霓虹弹跳打砖块、像素吞噬者贪吃蛇、彩虹岛冒险、钢铁突击、雷霆战机）
 
 ### 🌐 在线体验
 
@@ -77,6 +77,9 @@ d:\nodeJs学习\games\
 │   ├── minefield_maze.html         雷区迷阵 · 扫雷
 │   ├── neon_bounce_breakout.html   霓虹弹跳 · 打砖块
 │   ├── pixel_devourer_snake.html   像素吞噬者 · 贪吃蛇
+│   ├── rainbow_island_adventure.html  彩虹岛冒险 · 横版平台
+│   ├── steel_assault_run_gun.html  钢铁突击 · 跑轰射击
+│   ├── thunder_fighter_shmup.html  雷霆战机 · 纵版空战
 │   └── manifest.js         ← 【自动生成】扫描结果清单，请勿手改
 │
 ├── games.config.js         ← 【可选】卡片图标 / 配色 / 简介 / 最高分配置
@@ -122,6 +125,9 @@ games/
 ├── minefield_maze.html
 ├── neon_bounce_breakout.html
 ├── pixel_devourer_snake.html
+├── rainbow_island_adventure.html
+├── steel_assault_run_gun.html
+├── thunder_fighter_shmup.html
 └── my_new_game.html      ← 👈 放这里
 ```
 
@@ -196,9 +202,9 @@ window.FISH_ARCADE_GAMES = [
 
 | `tone` | 效果 |
 |---|---|
-| `amber` | 暖橙（夜市大排档 / 修仙人生模拟器 / 数字幻方） |
-| `cyan` | 赛博青（霓虹脉冲 / 灵蛇渡劫） |
-| `magenta` | 品红（星际港湾 / 霓虹弹跳） |
+| `amber` | 暖橙（夜市大排档 / 修仙人生模拟器 / 数字幻方 / 彩虹岛冒险） |
+| `cyan` | 赛博青（霓虹脉冲 / 灵蛇渡劫 / 雷霆战机） |
+| `magenta` | 品红（星际港湾 / 霓虹弹跳 / 钢铁突击） |
 | `green` | 草绿（超级玛丽 / 像素吞噬者） |
 | `blue` | 科技蓝（雷区迷阵） |
 | `purple` | 梦幻紫（卡通三角洲） |
