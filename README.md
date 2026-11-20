@@ -3,7 +3,7 @@
 上班摸鱼专用的小游戏合集。一个页面统一收纳多个 HTML 小游戏，双击即可开玩，无需安装、无需联网、无需任何授权。
 
 > 技术栈：原生 HTML + CSS + JavaScript，界面层使用 Vue 3（已本地化，离线可用）。
-> 四个游戏本体（夜市大排档、霓虹脉冲、星际港湾、超级玛丽）均为**单文件原生 HTML**，零依赖、零构建。
+> 五个游戏本体（夜市大排档、霓虹脉冲、星际港湾、超级玛丽、卡通三角洲）均为**单文件原生 HTML**，零依赖、零构建。
 
 ### 🌐 在线体验
 
@@ -70,6 +70,7 @@ d:\nodeJs学习\games\
 │   ├── neon_pulse_orbit.html       霓虹脉冲：轨道
 │   ├── starport_tactical_defense.html  星际港湾：战术防御
 │   ├── super_mario.html            超级玛丽 · 六关版
+│   ├── toon_delta_extract.html     卡通三角洲：搜打撤
 │   └── manifest.js         ← 【自动生成】扫描结果清单，请勿手改
 │
 ├── games.config.js         ← 【可选】卡片图标 / 配色 / 简介 / 最高分配置
@@ -108,6 +109,7 @@ games/
 ├── neon_pulse_orbit.html
 ├── starport_tactical_defense.html
 ├── super_mario.html
+├── toon_delta_extract.html
 └── my_new_game.html      ← 👈 放这里
 ```
 
@@ -187,7 +189,7 @@ window.FISH_ARCADE_GAMES = [
 | `magenta` | 品红（星际港湾） |
 | `green` | 草绿（超级玛丽） |
 | `blue` | 科技蓝 |
-| `purple` | 梦幻紫 |
+| `purple` | 梦幻紫（卡通三角洲） |
 
 不写 `tone` 时会按 `amber → cyan → magenta → green → blue → purple` 循环自动分配，保证相邻卡片不撞色。
 
