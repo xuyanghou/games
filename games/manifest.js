@@ -1,6 +1,6 @@
 /* 自动生成，请勿手改 —— 运行 node scan.js 或双击「刷新游戏列表.bat」更新 */
 window.FISH_ARCADE_MANIFEST = {
-  "generatedAt": "2026-11-20T07:49:44.485Z",
+  "generatedAt": "2026-11-21T02:24:51.093Z",
   "games": [
     {
       "file": "code_artifact.html",
@@ -91,6 +91,18 @@ window.FISH_ARCADE_MANIFEST = {
       "title": "修仙人生模拟器",
       "desc": "",
       "size": 202492
+    },
+    {
+      "file": "找牛挑战.html",
+      "title": "找牛 · 100 关逻辑解谜",
+      "desc": "",
+      "size": 34685
+    },
+    {
+      "file": "死考·场景互动版.html",
+      "title": "死考 · 三千万考生",
+      "desc": "",
+      "size": 46803
     }
   ]
 };

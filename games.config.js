@@ -172,5 +172,25 @@ window.FISH_ARCADE_GAMES = [
         tags: ['纵版射击', '弹幕', '雷电'],
         tone: 'cyan',
         scoreKey: 'thunder_best'
+    },
+    {
+        file: '找牛挑战.html',
+        title: '找牛 · 100 关逻辑解谜',
+        en: 'Find The Cow · 100 Levels',
+        icon: '🐮',
+        desc: '每种颜色一头牛、每行每列各一头，牛与牛还不能相邻（含斜角）。像数独一样靠排除法推理，100 关从简到难，还有限次提示帮你卡壳时指条路。',
+        tags: ['推理', '解谜', '逻辑'],
+        tone: 'green',
+        scoreKey: null
+    },
+    {
+        file: '死考·场景互动版.html',
+        title: '死考 · 三千万考生',
+        en: 'Death Exam · Interactive Scene',
+        icon: '📜',
+        desc: '考场里的怪事越来越多：点场景中的亮点搜集环境线索，在真相未明时做出选择。每一次试探都消耗理智，违规两次直接交卷 —— 分数越高，说明你越接近真相。',
+        tags: ['文字冒险', '推理', '暗黑'],
+        tone: 'magenta',
+        scoreKey: null
     }
 ];
