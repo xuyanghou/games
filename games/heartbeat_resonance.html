@@ -1,0 +1,643 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<title>心律共振 · 节奏解谜</title>
+<style>
+    :root {
+        --bg: #07060e;
+        --panel: rgba(255,255,255,0.055);
+        --stroke: rgba(255,255,255,0.12);
+        --text: #fff;
+        --dim: rgba(255,255,255,0.5);
+        --p1: #ff4d8d;
+        --p2: #4dd8ff;
+        --p3: #ffd24d;
+        --ok: #46e08a;
+    }
+    * { box-sizing:border-box; margin:0; padding:0; user-select:none; -webkit-user-select:none; }
+    html, body { width:100%; height:100%; overflow:hidden; background:var(--bg); color:var(--text);
+        font-family:'Noto Sans SC', -apple-system, "Segoe UI", "Microsoft YaHei", sans-serif; }
+    body { background: radial-gradient(ellipse at 50% 30%, #16112a, #07060e 65%); }
+    #wrap { position:relative; width:100vw; height:100vh; display:flex; flex-direction:column;
+        align-items:center; justify-content:center; gap:10px; padding:12px; }
+
+    .head { width:100%; max-width:820px; display:flex; align-items:center; justify-content:space-between; gap:10px; }
+    .title h1 { font-size:1.45rem; font-weight:900; letter-spacing:4px;
+        background:linear-gradient(90deg,var(--p1),var(--p2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .title p { font-size:0.7rem; color:var(--dim); margin-top:2px; letter-spacing:2px; }
+    .scores { display:flex; gap:8px; }
+    .box { background:var(--panel); border:1px solid var(--stroke); border-radius:12px; padding:6px 13px; text-align:center; min-width:66px; }
+    .box .k { font-size:0.6rem; color:var(--dim); letter-spacing:1px; }
+    .box .v { font-size:1.1rem; font-weight:900; font-variant-numeric:tabular-nums; color:var(--p3); }
+
+    #stage { position:relative; width:100%; max-width:820px; aspect-ratio:16/10;
+        border-radius:18px; overflow:hidden; border:1px solid var(--stroke);
+        background:#0c0a16; box-shadow:0 20px 60px rgba(0,0,0,0.65); }
+    canvas { display:block; width:100%; height:100%; touch-action:none; }
+
+    .bar { width:100%; max-width:820px; display:flex; gap:8px; align-items:center; justify-content:center; }
+    .btn { padding:9px 20px; border-radius:12px; border:none; cursor:pointer; font-weight:900; letter-spacing:1px;
+        color:#1a0d14; background:linear-gradient(90deg,var(--p1),var(--p3)); font-size:0.85rem; }
+    .btn.ghost { background:rgba(255,255,255,0.07); color:var(--text); border:1px solid var(--stroke); }
+    .btn:disabled { opacity:0.45; cursor:not-allowed; }
+
+    .hint { width:100%; max-width:820px; font-size:0.75rem; color:var(--dim); line-height:1.75; text-align:center; }
+    .hint b { color:var(--p2); }
+
+    .overlay { position:absolute; inset:0; display:grid; place-items:center; background:rgba(6,4,12,0.9);
+        backdrop-filter:blur(6px); z-index:20; text-align:center; padding:20px; }
+    .overlay.hide { display:none; }
+    .panel h2 { font-size:1.9rem; font-weight:900; letter-spacing:4px; margin-bottom:10px;
+        background:linear-gradient(90deg,var(--p1),var(--p2)); -webkit-background-clip:text; background-clip:text; color:transparent; }
+    .panel p { color:var(--dim); font-size:0.88rem; margin-bottom:6px; line-height:1.85; }
+    .panel .big { font-size:2.4rem; font-weight:900; color:var(--p3); margin:12px 0; font-variant-numeric:tabular-nums; }
+    .keys { display:flex; gap:10px; justify-content:center; margin:16px 0 6px; flex-wrap:wrap; }
+    .kcol { text-align:center; }
+    .kcol div { width:52px; height:52px; border-radius:14px; display:grid; place-items:center; font-size:1.35rem;
+        background:rgba(255,255,255,0.07); border:1.5px solid var(--stroke); margin-bottom:5px; }
+    .kcol span { font-size:0.68rem; color:var(--dim); }
+</style>
+</head>
+<body>
+<div id="wrap">
+    <div class="head">
+        <div class="title">
+            <h1>心律共振</h1>
+            <p>HEARTBEAT RESONANCE · 节奏</p>
+        </div>
+        <div class="scores">
+            <div class="box"><div class="k">分数</div><div class="v" id="score">0</div></div>
+            <div class="box"><div class="k">连击</div><div class="v" id="combo">0</div></div>
+            <div class="box"><div class="k">最高连击</div><div class="v" id="maxcombo">0</div></div>
+            <div class="box"><div class="k">阶段</div><div class="v" id="stage">1</div></div>
+        </div>
+    </div>
+
+    <div id="stage">
+        <canvas id="cv"></canvas>
+        <div class="overlay" id="ov">
+            <div class="panel">
+                <h2 id="ovTitle">心律共振</h2>
+                <p id="ovDesc">光圈收缩到判定线的瞬间，按下对应的键。<br>越准，判定越高，连击越长 —— 心跳乱了，节拍也就散了。</p>
+                <div class="big" id="ovBig" style="display:none"></div>
+                <div class="keys" id="ovKeys">
+                    <div class="kcol"><div>←</div><span>左键</span></div>
+                    <div class="kcol"><div>↓</div><span>下键</span></div>
+                    <div class="kcol"><div>↑</div><span>上键</span></div>
+                    <div class="kcol"><div>→</div><span>右键</span></div>
+                </div>
+                <button class="btn" id="ovBtn">开始共振</button>
+            </div>
+        </div>
+    </div>
+
+    <div class="bar">
+        <button class="btn" id="pauseBtn">⏸ 暂停</button>
+        <button class="btn ghost" id="restartBtn">↻ 重新开始</button>
+    </div>
+
+    <div class="hint">
+        <b>操作</b>：光圈收缩到白色判定环时按 <b>方向键</b>（也可用 D F J K 或鼠标点击对应轨道）<br>
+        <b>判定</b>：PERFECT ±45ms · GOOD ±110ms · MISS 其他 · 连击会提升倍率并让节拍加快
+    </div>
+</div>
+
+<script>
+(function () {
+    'use strict';
+
+    const W = 820, H = 512;
+    const LANES = 4;
+    const HIT_WINDOW = 0.11;   // GOOD 判定窗口（秒）
+    const LANE_COLORS = ['#ff4d8d', '#4dd8ff', '#ffd24d', '#a78bfa'];
+    const LANE_KEYS = ['ArrowLeft', 'ArrowDown', 'ArrowUp', 'ArrowRight'];
+    const LANE_ALT = ['a', 's', 'w', 'd'];
+    const LANE_KEY_DFJK = ['j', 'k', 'l', 'i'];
+
+    let cv, ctx, DPR = 1;
+    let notes = [], hits = [], particles = [], ripples = [];
+    let score = 0, combo = 0, maxCombo = 0;
+    let state = 'menu';       // menu / play / win / lose
+    let paused = false;
+    let songTime = 0, spawnIdx = 0;
+    let stageLv = 1, stagesCleared = 0;
+    let life = 5;
+    let shake = 0, flashJudge = 0, flashJudgeColor = '#fff';
+    let judgeText = '', judgeLife = 0;
+    let beatPhase = 0, lastBeat = -1;
+    let best = parseInt(localStorage.getItem('resonance_best') || '0', 10) || 0;
+    let audioOn = true, actx = null;
+
+    /* 节奏谱：[时间(秒), 轨道] */
+    let chart = [];
+
+    function buildChart() {
+        chart = [];
+        let t = 0;
+        const stages = [
+            { bpm: 92,  bars: 8,  pat: [0, 2, 1, 3] },
+            { bpm: 108, bars: 8,  pat: [0, 1, 2, 3, 1, 2] },
+            { bpm: 124, bars: 10, pat: [0, 2, 0, 3, 1, 3, 2, 1] },
+            { bpm: 142, bars: 12, pat: [0, 1, 2, 3, 0, 2, 1, 3, 3, 1] }
+        ];
+        for (let s = 0; s < stages.length; s++) {
+            const st = stages[s];
+            const spb = 60 / st.bpm;
+            for (let bar = 0; bar < st.bars; bar++) {
+                for (let i = 0; i < st.pat.length; i++) {
+                    const lane = st.pat[(i + bar) % st.pat.length];
+                    chart.push({ t: t + i * spb * 0.5, lane: lane, stage: s });
+                }
+                /* 每小节尾部加一个重音 */
+                if (bar % 4 === 3) chart.push({ t: t + st.pat.length * spb * 0.5, lane: (bar + s) % 4, stage: s, heavy: true });
+                t += spb;
+            }
+            /* 阶段间休息 */
+            t += spb * 2;
+        }
+        return chart;
+    }
+
+    /* ================= 工具 ================= */
+    function tone(freq, dur, vol, type) {
+        if (!audioOn) return;
+        try {
+            if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+            if (!actx) return;
+            const o = actx.createOscillator(), g = actx.createGain();
+            o.type = type || 'triangle';
+            o.frequency.value = freq;
+            g.gain.value = vol || 0.05;
+            o.connect(g); g.connect(actx.destination);
+            const now = actx.currentTime;
+            g.gain.setValueAtTime(vol || 0.05, now);
+            g.gain.exponentialRampToValueAtTime(0.0001, now + dur);
+            o.start(now); o.stop(now + dur);
+        } catch (e) { /* ignore */ }
+    }
+    function noise(dur, vol) {
+        if (!audioOn) return;
+        try {
+            if (!actx) { const AC = window.AudioContext || window.webkitAudioContext; if (AC) actx = new AC(); }
+            if (!actx) return;
+            const n = Math.floor(actx.sampleRate * dur);
+            const buf = actx.createBuffer(1, n, actx.sampleRate);
+            const d = buf.getChannelData(0);
+            for (let i = 0; i < n; i++) d[i] = (Math.random() * 2 - 1) * (1 - i / n);
+            const src = actx.createBufferSource(); src.buffer = buf;
+            const g = actx.createGain(); g.gain.value = vol || 0.05;
+            src.connect(g); g.connect(actx.destination);
+            src.start();
+        } catch (e) { /* ignore */ }
+    }
+    function rnd(a, b) { return a + Math.random() * (b - a); }
+    function clamp(v, a, b) { return v < a ? a : (v > b ? b : v); }
+
+    /* ================= 更新 ================= */
+    function update(dt) {
+        if (state !== 'play' || paused) return;
+        songTime += dt;
+        beatPhase += dt;
+
+        /* 生成音符 */
+        const LOOKAHEAD = 2.2;
+        while (spawnIdx < chart.length && chart[spawnIdx].t - songTime < LOOKAHEAD) {
+            const c = chart[spawnIdx];
+            notes.push({ t: c.t, lane: c.lane, heavy: !!c.heavy, done: false, dead: false, stage: c.stage });
+            spawnIdx++;
+        }
+
+        /* 判定窗口：过了窗口才算 MISS */
+        for (const n of notes) {
+            if (n.done) continue;
+            if (songTime > n.t + HIT_WINDOW + 0.12) {
+                n.done = true; n.dead = true;
+                miss();
+            }
+        }
+
+        /* 音符移出 */
+        for (let i = notes.length - 1; i >= 0; i--) {
+            if (notes[i].t < songTime - 1.2) notes.splice(i, 1);
+        }
+
+        /* 打击特效 */
+        for (let i = hits.length - 1; i >= 0; i--) {
+            hits[i].life -= dt;
+            if (hits[i].life <= 0) hits.splice(i, 1);
+        }
+        for (let i = particles.length - 1; i >= 0; i--) {
+            const p = particles[i];
+            p.life -= dt;
+            p.x += p.vx * dt; p.y += p.vy * dt;
+            p.vy += 500 * dt;
+            if (p.life <= 0) particles.splice(i, 1);
+        }
+        for (let i = ripples.length - 1; i >= 0; i--) {
+            ripples[i].life -= dt;
+            if (ripples[i].life <= 0) ripples.splice(i, 1);
+        }
+        judgeLife = Math.max(0, judgeLife - dt);
+        shake = Math.max(0, shake - dt * 3);
+        flashJudge = Math.max(0, flashJudge - dt * 3);
+
+        /* 阶段推进 */
+        const curStage = stageOf(songTime);
+        if (curStage > stageLv) {
+            stageLv = curStage;
+            flashJudge = 0.6;
+            judgeText = 'STAGE ' + stageLv;
+            judgeLife = 1.2;
+            judgeTextColor = '#4dd8ff';
+            tone(880, 0.16, 0.07, 'triangle');
+        }
+
+        /* 结束条件 */
+        if (spawnIdx >= chart.length && notes.length === 0) {
+            endGame(true);
+        }
+    }
+
+    function stageOf(t) {
+        let s = 1;
+        for (let i = 0; i < chart.length; i++) {
+            if (chart[i].stage >= s) { s = chart[i].stage + 1; }
+            if (chart[i].t > t) break;
+        }
+        return s;
+    }
+
+    /* ================= 判定 ================= */
+    function laneX(lane) {
+        const totalW = W * 0.68;
+        const startX = (W - totalW) / 2;
+        const lw = totalW / LANES;
+        return startX + lw * lane + lw / 2;
+    }
+    function judgeY() { return H * 0.74; }
+
+    function press(lane) {
+        if (state !== 'play' || paused) return;
+        const PERFECT = 0.045, GOOD = HIT_WINDOW;
+        let bestNote = null, bestDiff = 999;
+        for (const n of notes) {
+            if (n.done || n.lane !== lane) continue;
+            const d = Math.abs(songTime - n.t);
+            if (d < bestDiff) { bestDiff = d; bestNote = n; }
+        }
+        const x = laneX(lane);
+        if (bestNote && bestDiff <= GOOD) {
+            bestNote.done = true;
+            combo++;
+            maxCombo = Math.max(maxCombo, combo);
+            const mult = 1 + Math.floor(combo / 10) * 0.5;
+            if (bestDiff <= PERFECT) {
+                const pts = Math.round(100 * mult);
+                score += pts;
+                judgeText = 'PERFECT';
+                judgeTextColor = '#ffd24d';
+                flashJudge = 0.4; flashJudgeColor = '#ffd24d';
+                shake = Math.max(shake, 0.12);
+                tone(880 + combo * 6, 0.09, 0.06, 'square');
+                spawnBurst(x, judgeY(), LANE_COLORS[lane], 14);
+            } else {
+                const pts = Math.round(50 * mult);
+                score += pts;
+                judgeText = 'GOOD';
+                judgeTextColor = '#46e08a';
+                flashJudge = 0.25; flashJudgeColor = '#46e08a';
+                tone(660, 0.07, 0.045, 'triangle');
+                spawnBurst(x, judgeY(), LANE_COLORS[lane], 8);
+            }
+            ripples.push({ x: x, y: judgeY(), r: 8, max: 60, life: 0.35, maxLife: 0.35, color: LANE_COLORS[lane] });
+            judgeLife = 0.7;
+            document.getElementById('combo').textContent = combo;
+            document.getElementById('maxcombo').textContent = maxCombo;
+            document.getElementById('score').textContent = score;
+        } else {
+            /* 空敲 */
+            combo = 0;
+            document.getElementById('combo').textContent = 0;
+            tone(140, 0.08, 0.04, 'sawtooth');
+            flashJudge = 0.18; flashJudgeColor = '#666';
+            judgeText = ''; judgeLife = 0;
+        }
+    }
+
+    function miss() {
+        combo = 0;
+        life--;
+        judgeText = 'MISS';
+        judgeTextColor = '#ff5c5c';
+        judgeLife = 0.7;
+        flashJudge = 0.35; flashJudgeColor = '#ff5c5c';
+        shake = Math.max(shake, 0.22);
+        tone(100, 0.18, 0.07, 'sawtooth');
+        document.getElementById('combo').textContent = 0;
+        if (life <= 0) endGame(false);
+    }
+
+    function spawnBurst(x, y, color, n) {
+        for (let i = 0; i < n; i++) {
+            const a = rnd(0, Math.PI * 2), sp = rnd(60, 240);
+            particles.push({ x: x, y: y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp - 40, color: color, life: rnd(0.3, 0.65), maxLife: 0.65, r: rnd(2, 4) });
+        }
+    }
+
+    /* ================= 渲染 ================= */
+    function render() {
+        ctx.save();
+        if (shake > 0) ctx.translate(rnd(-shake * 6, shake * 6), rnd(-shake * 6, shake * 6));
+
+        /* 背景 */
+        ctx.fillStyle = '#0c0a16';
+        ctx.fillRect(0, 0, W, H);
+        /* 背景脉冲环 */
+        const pulse = (Math.sin(songTime * Math.PI * 2 * (1.5 + stageLv * 0.22)) * 0.5 + 0.5);
+        const bg = ctx.createRadialGradient(W / 2, H / 2, 20, W / 2, H / 2, W * 0.62);
+        bg.addColorStop(0, 'rgba(' + (60 + pulse * 40) + ',' + (30 + pulse * 20) + ',' + (80 + pulse * 60) + ',0.5)');
+        bg.addColorStop(1, 'rgba(0,0,0,0)');
+        ctx.fillStyle = bg;
+        ctx.fillRect(0, 0, W, H);
+
+        /* 四条轨道 */
+        const totalW = W * 0.68;
+        const startX = (W - totalW) / 2;
+        const lw = totalW / LANES;
+        for (let l = 0; l < LANES; l++) {
+            const x = startX + lw * l;
+            const grd = ctx.createLinearGradient(0, 0, 0, H);
+            grd.addColorStop(0, 'rgba(255,255,255,0.012)');
+            grd.addColorStop(0.75, 'rgba(255,255,255,0.05)');
+            grd.addColorStop(1, 'rgba(255,255,255,0.01)');
+            ctx.fillStyle = grd;
+            ctx.fillRect(x, 0, lw, H);
+            ctx.strokeStyle = 'rgba(255,255,255,0.055)';
+            ctx.lineWidth = 1;
+            ctx.beginPath(); ctx.moveTo(x, 0); ctx.lineTo(x, H); ctx.stroke();
+            ctx.beginPath(); ctx.moveTo(x + lw, 0); ctx.lineTo(x + lw, H); ctx.stroke();
+        }
+
+        /* 判定环 */
+        const jy = judgeY();
+        for (let l = 0; l < LANES; l++) {
+            const x = laneX(l);
+            ctx.strokeStyle = 'rgba(255,255,255,0.18)';
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(x, jy, 34, 0, Math.PI * 2); ctx.stroke();
+            ctx.strokeStyle = LANE_COLORS[l];
+            ctx.globalAlpha = 0.5;
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(x, jy, 27, 0, Math.PI * 2); ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+        /* 判定线 */
+        ctx.strokeStyle = 'rgba(255,255,255,0.4)';
+        ctx.setLineDash([7, 7]);
+        ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.moveTo(startX, jy); ctx.lineTo(startX + totalW, jy); ctx.stroke();
+        ctx.setLineDash([]);
+
+        /* 音符 */
+        const SPEED = 260;
+        for (const n of notes) {
+            const dt = n.t - songTime;
+            const y = jy - dt * SPEED;
+            if (y < -60 || y > H + 60) continue;
+            const x = laneX(n.lane);
+            const approach = 1 - clamp(Math.abs(dt) / 0.45, 0, 1);
+            const r = n.heavy ? 22 : 16;
+            /* 收缩光圈 */
+            ctx.strokeStyle = LANE_COLORS[n.lane];
+            ctx.globalAlpha = 0.35 + approach * 0.55;
+            ctx.lineWidth = n.heavy ? 3.5 : 2.5;
+            ctx.beginPath(); ctx.arc(x, y, r + (1 - approach) * 34, 0, Math.PI * 2); ctx.stroke();
+            /* 实心核 */
+            ctx.globalAlpha = 0.95;
+            const g2 = ctx.createRadialGradient(x, y, 1, x, y, r);
+            g2.addColorStop(0, '#fff');
+            g2.addColorStop(0.45, LANE_COLORS[n.lane]);
+            g2.addColorStop(1, 'rgba(0,0,0,0)');
+            ctx.fillStyle = g2;
+            ctx.beginPath(); ctx.arc(x, y, r, 0, Math.PI * 2); ctx.fill();
+            if (n.heavy) {
+                ctx.strokeStyle = '#fff';
+                ctx.globalAlpha = 0.8;
+                ctx.lineWidth = 2;
+                ctx.beginPath(); ctx.arc(x, y, r - 4, 0, Math.PI * 2); ctx.stroke();
+            }
+            ctx.globalAlpha = 1;
+        }
+
+        /* 打击特效 */
+        for (const h of hits) {
+            ctx.globalAlpha = h.life / h.maxLife;
+            ctx.strokeStyle = h.color;
+            ctx.lineWidth = 3;
+            ctx.beginPath(); ctx.arc(h.x, h.y, h.r + (1 - h.life / h.maxLife) * 26, 0, Math.PI * 2); ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+        /* 涟漪 */
+        for (const rp of ripples) {
+            const k = 1 - rp.life / rp.maxLife;
+            ctx.globalAlpha = (1 - k) * 0.7;
+            ctx.strokeStyle = rp.color;
+            ctx.lineWidth = 2;
+            ctx.beginPath(); ctx.arc(rp.x, rp.y, rp.r + k * rp.max, 0, Math.PI * 2); ctx.stroke();
+            ctx.globalAlpha = 1;
+        }
+        /* 粒子 */
+        for (const p of particles) {
+            ctx.globalAlpha = clamp(p.life / p.maxLife, 0, 1);
+            ctx.fillStyle = p.color;
+            ctx.beginPath(); ctx.arc(p.x, p.y, p.r, 0, Math.PI * 2); ctx.fill();
+        }
+        ctx.globalAlpha = 1;
+
+        /* 判定文字 */
+        if (judgeLife > 0 && judgeText) {
+            ctx.globalAlpha = Math.min(1, judgeLife * 2);
+            ctx.textAlign = 'center';
+            ctx.fillStyle = judgeTextColor;
+            ctx.font = '900 30px system-ui, sans-serif';
+            ctx.shadowColor = judgeTextColor; ctx.shadowBlur = 16;
+            ctx.fillText(judgeText, W / 2, jy - 62);
+            ctx.shadowBlur = 0;
+            ctx.globalAlpha = 1;
+        }
+        /* 判定闪光 */
+        if (flashJudge > 0) {
+            ctx.fillStyle = flashJudgeColor;
+            ctx.globalAlpha = flashJudge * 0.14;
+            ctx.fillRect(0, 0, W, H);
+            ctx.globalAlpha = 1;
+        }
+
+        /* 连击显示 */
+        if (combo >= 3) {
+            ctx.textAlign = 'center';
+            ctx.fillStyle = '#fff';
+            ctx.globalAlpha = 0.9;
+            ctx.font = '900 24px system-ui, sans-serif';
+            ctx.fillText(combo + ' COMBO', W / 2, jy + 46);
+            ctx.globalAlpha = 1;
+        }
+
+        /* 生命 */
+        ctx.textAlign = 'left';
+        ctx.font = 'bold 15px system-ui, sans-serif';
+        for (let i = 0; i < 5; i++) {
+            ctx.fillStyle = i < life ? '#ff4d8d' : 'rgba(255,255,255,0.16)';
+            ctx.beginPath();
+            ctx.arc(18 + i * 20, 20, 6, 0, Math.PI * 2);
+            ctx.fill();
+        }
+
+        ctx.restore();
+    }
+
+    /* ================= 流程 ================= */
+    function reset() {
+        chart = buildChart();
+        notes = []; hits = []; particles = []; ripples = [];
+        score = 0; combo = 0; maxCombo = 0;
+        songTime = 0; spawnIdx = 0; stageLv = 1; life = 5;
+        shake = 0; flashJudge = 0; judgeText = ''; judgeLife = 0;
+        paused = false;
+        document.getElementById('pauseBtn').textContent = '⏸ 暂停';
+        updateHUD();
+    }
+    let judgeTextColor = '#fff';
+
+    function updateHUD() {
+        document.getElementById('score').textContent = score;
+        document.getElementById('combo').textContent = combo;
+        document.getElementById('maxcombo').textContent = maxCombo;
+        document.getElementById('stage').textContent = stageLv;
+    }
+
+    function endGame(win) {
+        state = win ? 'win' : 'lose';
+        const ov = document.getElementById('ov');
+        document.getElementById('ovTitle').textContent = win ? '共振完成' : '心跳失序…';
+        document.getElementById('ovDesc').innerHTML = win
+            ? '你跟上了整首曲子的每一个脉冲。<br>最高连击 ' + maxCombo + ' —— 再快一点？'
+            : '漏拍太多，心跳乱了。<br>坚持到了第 ' + stageLv + ' 阶段。';
+        const big = document.getElementById('ovBig');
+        big.style.display = '';
+        big.textContent = '得分 ' + score;
+        document.getElementById('ovKeys').style.display = 'none';
+        document.getElementById('ovBtn').textContent = '再来一次';
+        ov.classList.remove('hide');
+        if (win) {
+            if (score > best) { best = score; localStorage.setItem('resonance_best', String(best)); }
+            [523, 659, 784, 1046].forEach((f, i) => setTimeout(() => tone(f, 0.18, 0.06, 'triangle'), i * 110));
+        } else {
+            tone(140, 0.4, 0.08, 'sawtooth');
+        }
+    }
+
+    /* ================= 交互 ================= */
+    function init() {
+        cv = document.getElementById('cv');
+        ctx = cv.getContext('2d');
+        resize();
+        window.addEventListener('resize', resize);
+        reset();
+        state = 'menu';
+
+        /* 键盘 */
+        window.addEventListener('keydown', (e) => {
+            const k = e.key;
+            let lane = LANE_KEYS.indexOf(k);
+            if (lane < 0) lane = LANE_KEYS.indexOf(k.toLowerCase());
+            if (lane < 0) lane = LANE_ALT.indexOf(k.toLowerCase());
+            if (lane < 0) lane = LANE_KEY_DFJK.indexOf(k.toLowerCase());
+            if (lane >= 0) {
+                e.preventDefault();
+                if (!e.repeat) press(lane);
+                return;
+            }
+            if (k === 'p' || k === 'P') {
+                paused = !paused;
+                document.getElementById('pauseBtn').textContent = paused ? '▶ 继续' : '⏸ 暂停';
+            }
+            if (k === ' ' && state === 'play') {
+                e.preventDefault();
+                press(-1);
+            }
+        });
+
+        /* 触摸 / 鼠标点击轨道 */
+        cv.addEventListener('pointerdown', (e) => {
+            e.preventDefault();
+            if (state !== 'play') return;
+            const r = cv.getBoundingClientRect();
+            const x = (e.clientX - r.left) / r.width * W;
+            const totalW = W * 0.68;
+            const startX = (W - totalW) / 2;
+            const lw = totalW / LANES;
+            let lane = Math.floor((x - startX) / lw);
+            if (lane < 0 || lane >= LANES) return;
+            press(lane);
+        }, { passive: false });
+
+        document.getElementById('ovBtn').addEventListener('click', () => {
+            reset();
+            state = 'play';
+            document.getElementById('ov').classList.add('hide');
+            document.getElementById('ovKeys').style.display = '';
+            tone(440, 0.1, 0.05, 'triangle');
+        });
+        document.getElementById('pauseBtn').addEventListener('click', (e) => {
+            paused = !paused;
+            e.target.textContent = paused ? '▶ 继续' : '⏸ 暂停';
+        });
+        document.getElementById('restartBtn').addEventListener('click', () => {
+            reset();
+            state = 'play';
+            document.getElementById('ov').classList.add('hide');
+            document.getElementById('ovKeys').style.display = '';
+        });
+    }
+
+    function resize() {
+        const stage = document.getElementById('stage');
+        const rect = stage.getBoundingClientRect();
+        DPR = Math.min(2, window.devicePixelRatio || 1);
+        cv.width = Math.round(W * DPR);
+        cv.height = Math.round(H * DPR);
+        cv.style.width = '100%'; cv.style.height = '100%';
+        ctx.setTransform(DPR, 0, 0, DPR, 0, 0);
+    }
+
+    /* ================= 主循环 ================= */
+    let last = 0;
+    function loop(ts) {
+        if (!last) last = ts;
+        const dt = Math.min((ts - last) / 1000, 0.05);
+        last = ts;
+        update(dt);
+        render();
+        requestAnimationFrame(loop);
+    }
+
+    init();
+    requestAnimationFrame(loop);
+
+    /* 调试接口 */
+    window.__RES__ = {
+        get state() { return state; }, set state(v) { state = v; },
+        get score() { return score; }, get combo() { return combo; },
+        get maxCombo() { return maxCombo; }, get life() { return life; },
+        get stageLv() { return stageLv; }, get songTime() { return songTime; },
+        get notes() { return notes; }, get chart() { return chart; },
+        press, update, render, reset,
+        start() { reset(); state = 'play'; }
+    };
+})();
+</script>
+</body>
+</html>

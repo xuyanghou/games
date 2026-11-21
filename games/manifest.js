@@ -1,12 +1,24 @@
 /* 自动生成，请勿手改 —— 运行 node scan.js 或双击「刷新游戏列表.bat」更新 */
 window.FISH_ARCADE_MANIFEST = {
-  "generatedAt": "2026-11-21T02:24:51.093Z",
+  "generatedAt": "2026-11-21T03:58:10.535Z",
   "games": [
     {
       "file": "code_artifact.html",
       "title": "夜市大排档：美食合成",
       "desc": "",
       "size": 48715
+    },
+    {
+      "file": "heartbeat_resonance.html",
+      "title": "心律共振 · 节奏解谜",
+      "desc": "",
+      "size": 26595
+    },
+    {
+      "file": "lava_guardian_td.html",
+      "title": "熔渣守卫 · 塔防",
+      "desc": "",
+      "size": 43710
     },
     {
       "file": "lingshe.html",
@@ -94,9 +106,9 @@ window.FISH_ARCADE_MANIFEST = {
     },
     {
       "file": "找牛挑战.html",
-      "title": "找牛 · 100 关逻辑解谜",
+      "title": "找牛 · 无限关卡",
       "desc": "",
-      "size": 34685
+      "size": 20946
     },
     {
       "file": "死考·场景互动版.html",
