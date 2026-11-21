@@ -3,95 +3,49 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
-<title>找牛 · 100 关逻辑解谜</title>
+<title>找牛 · 无限关卡</title>
 <style>
 :root{
   --bg:#f6f3ec; --card:#fffdf9; --ink:#2f2b26; --sub:#7a7168;
-  --line:#ded6c9; --accent:#e8734a; --accent2:#3c8f6b;
-  --shadow:0 10px 30px rgba(80,60,30,.10);
+  --line:#ded6c9; --accent:#e8734a; --green:#3c8f6b;
 }
 *{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
 body{
-  margin:0; background:radial-gradient(circle at 20% 0%,#fffaf0,#f6f3ec 55%,#efe9de);
-  color:var(--ink); font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",sans-serif;
-  min-height:100vh; display:flex; flex-direction:column; align-items:center; padding:14px 12px 40px;
+  margin:0;min-height:100vh;padding:14px 12px 40px;
+  background:radial-gradient(circle at 20% 0%,#fffaf0,#f6f3ec 55%,#efe9de);
+  color:var(--ink);font-family:"PingFang SC","Microsoft YaHei",system-ui,-apple-system,"Segoe UI",sans-serif;
+  display:flex;flex-direction:column;align-items:center;
 }
-h1{font-size:19px;margin:6px 0 2px;letter-spacing:1px}
-.sub{color:var(--sub);font-size:12.5px;margin-bottom:10px}
 .wrap{width:100%;max-width:480px}
-.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:var(--shadow)}
-.hidden{display:none!important}
-
-/* ---------- 关卡列表 ---------- */
-#home{padding:14px 14px 18px}
-.statline{display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;font-size:13px;color:var(--sub)}
-.statline b{color:var(--ink);font-size:15px}
-.gridlv{display:grid;grid-template-columns:repeat(5,1fr);gap:9px}
-.lv{
-  position:relative;border:1px solid var(--line);border-radius:12px;background:#fff;
-  padding:9px 4px 7px;text-align:center;cursor:pointer;color:var(--ink);
-  transition:transform .12s,box-shadow .12s;font-variant-numeric:tabular-nums;
-}
-.lv:active{transform:scale(.96)}
-.lv .no{font-size:15px;font-weight:700;line-height:1.1}
-.lv .sz{font-size:10.5px;color:var(--sub);margin-top:2px}
-.lv.cleared{background:#effaf3;border-color:#bfe6cd}
-.lv.cleared .no{color:#2f7d54}
-.lv.locked{background:#f2efe9;color:#a8a096;cursor:not-allowed}
-.lv.locked .no{color:#b3aaa0}
-.lv .tick{position:absolute;top:5px;right:6px;font-size:10px;color:#3c8f6b}
-.lv .bt{font-size:10px;color:#5b8f77;margin-top:1px}
-.lv.cur{box-shadow:0 0 0 2px rgba(232,115,74,.45) inset}
-.legend{display:flex;gap:14px;flex-wrap:wrap;font-size:12px;color:var(--sub);margin-top:14px;align-items:center}
-.dot{display:inline-block;width:10px;height:10px;border-radius:3px;margin-right:5px;vertical-align:-1px}
-
-/* ---------- 游戏 ---------- */
-#game{padding:12px 12px 16px}
-.topbar{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
-.iconbtn{
-  border:1px solid var(--line);background:#fff;border-radius:11px;padding:7px 11px;
-  font-size:13px;color:var(--ink);cursor:pointer;display:inline-flex;align-items:center;gap:5px
-}
-.iconbtn:active{transform:scale(.97)}
-.title{text-align:center;line-height:1.25}
-.title b{font-size:16px}
-.title span{display:block;font-size:11.5px;color:var(--sub);margin-top:2px}
-.meta{display:flex;justify-content:space-between;align-items:center;font-size:12.5px;color:var(--sub);margin:8px 2px 8px;font-variant-numeric:tabular-nums}
+header{text-align:center;margin:2px 0 10px}
+h1{font-size:20px;letter-spacing:2px;margin:0 0 3px}
+.tag{font-size:12px;color:var(--sub)}
+.card{background:var(--card);border:1px solid var(--line);border-radius:18px;box-shadow:0 12px 30px rgba(80,60,30,.10);padding:12px 12px 14px}
+.hud{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:8px}
+.hud .lv{font-size:15px;font-weight:700}
+.hud .lv small{font-weight:400;font-size:11px;color:var(--sub);margin-left:5px}
+.hearts{font-size:16px;letter-spacing:3px}
+.hearts .off{opacity:.25;filter:grayscale(1)}
+.meta{display:flex;justify-content:space-between;font-size:12px;color:var(--sub);margin:0 2px 8px;font-variant-numeric:tabular-nums}
 .meta b{color:var(--ink)}
-
 .boardbox{display:flex;justify-content:center}
-.board{
-  display:grid;gap:0;border:4px solid #3b352e;border-radius:6px;overflow:hidden;
-  background:#3b352e;box-shadow:0 12px 26px rgba(60,45,25,.18);
-  width:100%;max-width:100%;user-select:none;touch-action:manipulation;
-}
-.cell{
-  aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;
-  position:relative;cursor:pointer;border:1px solid rgba(70,55,35,.10);
-  transition:filter .12s;
-}
-.cell:active{filter:brightness(.95)}
+.board{display:grid;gap:0;border:4px solid #3b352e;border-radius:8px;overflow:hidden;background:#3b352e;box-shadow:0 14px 28px rgba(60,45,25,.18);user-select:none;touch-action:manipulation}
+.cell{aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;position:relative;cursor:pointer;border:1px solid rgba(70,55,35,.10);font-size:1em;transition:filter .12s}
+.cell:active{filter:brightness(.94)}
 .cell.edge-r{border-right:3px solid #3b352e}
 .cell.edge-b{border-bottom:3px solid #3b352e}
-.cell .x{font-size:.62em;font-weight:700;color:rgba(47,43,38,.55);line-height:1}
-.cell .cow{line-height:1;filter:drop-shadow(0 2px 2px rgba(90,60,20,.25))}
-.cell.given{outline:2px solid rgba(60,143,107,.5) inset}
+.cell .cow{line-height:1;filter:drop-shadow(0 2px 2px rgba(90,60,20,.25));animation:pop .22s ease-out}
+.cell .x{font-size:.62em;font-weight:700;color:rgba(47,43,38,.5);line-height:1}
+.cell.found{background-image:linear-gradient(180deg,rgba(255,255,255,.35),rgba(255,255,255,0))}
 .cell.bad{animation:shake .35s}
+@keyframes pop{0%{transform:scale(.3)}70%{transform:scale(1.15)}100%{transform:scale(1)}}
 @keyframes shake{0%,100%{transform:translateX(0)}25%{transform:translateX(-4px)}75%{transform:translateX(4px)}}
-
-.tools{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px;margin-top:12px}
-.tool{border:1px solid var(--line);background:#fff;border-radius:13px;padding:9px 4px;text-align:center;cursor:pointer;font-size:12.5px;color:var(--ink)}
+.tools{display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:11px}
+.tool{border:1px solid var(--line);background:#fff;border-radius:13px;padding:9px 4px;text-align:center;cursor:pointer;font-size:13px}
 .tool:active{transform:scale(.97)}
-.tool.active{background:#2f2b26;color:#fff;border-color:#2f2b26}
 .tool small{display:block;font-size:10px;color:var(--sub);margin-top:2px}
-.tool.active small{color:#d8d2c8}
-.switcher{display:flex;align-items:center;justify-content:space-between;margin-top:10px;font-size:12.5px;color:var(--sub);gap:10px}
-.switch{width:44px;height:24px;border-radius:99px;background:#dcd5ca;position:relative;cursor:pointer;transition:background .15s;flex:0 0 auto}
-.switch b{position:absolute;top:3px;left:3px;width:18px;height:18px;border-radius:50%;background:#fff;transition:left .15s;box-shadow:0 1px 3px rgba(0,0,0,.2)}
-.switch.on{background:#3c8f6b}
-.switch.on b{left:23px}
-
-/* ---------- 弹层 ---------- */
+.hintline{margin-top:9px;font-size:11.5px;color:var(--sub);line-height:1.7}
+.hintline b{color:var(--ink)}
 .mask{position:fixed;inset:0;background:rgba(30,25,18,.45);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
 .modal{background:#fffdf9;border-radius:18px;max-width:420px;width:100%;padding:18px 18px 16px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
 .modal h3{margin:0 0 8px;font-size:17px;text-align:center}
@@ -101,484 +55,449 @@ h1{font-size:19px;margin:6px 0 2px;letter-spacing:1px}
 .btn{flex:1;border:none;border-radius:12px;padding:11px;font-size:14px;cursor:pointer;background:#e9e3d8;color:#2f2b26}
 .btn.primary{background:var(--accent);color:#fff}
 .btn.ghost{background:#fff;border:1px solid var(--line)}
-.toast{
-  position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);
-  background:rgba(47,43,38,.94);color:#fff;padding:9px 14px;border-radius:11px;font-size:13px;
-  opacity:0;pointer-events:none;transition:.18s;max-width:80vw;text-align:center;z-index:60
-}
+.toast{position:fixed;left:50%;bottom:26px;transform:translateX(-50%) translateY(8px);background:rgba(47,43,38,.94);color:#fff;padding:9px 14px;border-radius:11px;font-size:13px;opacity:0;pointer-events:none;transition:.18s;max-width:80vw;text-align:center;z-index:60}
 .toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
 </style>
 </head>
 <body>
 <div class="wrap">
-  <h1>找牛 · 100 关</h1>
-  <div class="sub">每种颜色一头牛 · 每行每列各一头 · 牛与牛不能相邻（含斜角）</div>
+  <header>
+    <h1>找 牛</h1>
+    <div class="tag">每种颜色一头牛 · 每行每列各一头 · 牛不能相邻（含斜角）</div>
+  </header>
 
-  <!-- 关卡列表 -->
-  <div id="home" class="card">
-    <div class="statline">
-      <span>已通关 <b id="doneCount">0</b> / 100</span>
-      <span id="resumeWrap"><button class="iconbtn" id="btnResume">继续上次</button></span>
-    </div>
-    <div class="gridlv" id="levelGrid"></div>
-    <div class="legend">
-      <span><i class="dot" style="background:#effaf3;border:1px solid #bfe6cd"></i>已通关</span>
-      <span><i class="dot" style="background:#f2efe9;border:1px solid #d9d2c6"></i>未解锁</span>
-      <span><i class="dot" style="background:#fff;border:1px solid #ded6c9"></i>可挑战</span>
-      <span style="flex:1"></span>
-      <button class="iconbtn" id="btnHelp">玩法 / 技巧</button>
-    </div>
-  </div>
-
-  <!-- 游戏 -->
-  <div id="game" class="card hidden">
-    <div class="topbar">
-      <button class="iconbtn" id="btnBack">← 关卡</button>
-      <div class="title"><b id="lvTitle">第 1 关</b><span id="lvSub">6×6 · 已放 0/6</span></div>
-      <button class="iconbtn" id="btnRestart">重来</button>
+  <div class="card">
+    <div class="hud">
+      <div class="lv">第 <span id="lvNo">1</span> 关<small id="lvSize">6×6</small></div>
+      <div class="hearts" id="hearts"></div>
     </div>
     <div class="meta">
+      <span>已找到 <b id="found">0/6</b></span>
       <span>用时 <b id="timer">0:00</b></span>
-      <span>提示 <b id="hintLeft">3</b></span>
-      <span>最佳 <b id="bestTime">—</b></span>
+      <span>已通过 <b id="cleared">0</b> 关</span>
     </div>
     <div class="boardbox"><div class="board" id="board"></div></div>
     <div class="tools">
-      <div class="tool active" data-mode="x">✕ 打叉<small>排除格子</small></div>
-      <div class="tool" data-mode="cow">🐮 放牛<small>确定位置</small></div>
-      <div class="tool" id="btnUndo">↶ 撤回<small>上一步</small></div>
       <div class="tool" id="btnHint">💡 提示<small id="hintSub">还剩 3 次</small></div>
+      <div class="tool" id="btnRestart">↻ 重来<small>本关重置</small></div>
+      <div class="tool" id="btnHelp">? 规则<small>玩法与技巧</small></div>
     </div>
-    <div class="switcher">
-      <span>放牛后自动在同行 / 同列 / 同色 / 周围打叉</span>
-      <div class="switch on" id="autoCross"><b></b></div>
-    </div>
+    <div class="hintline">点格子找牛：<b>点对了牛就出现</b>，点错了会打叉并掉一颗心。找到一头牛后，它所在的行、列、同色区域和周围八格会自动被排除。</div>
   </div>
 </div>
-
 <div class="toast" id="toast"></div>
 
 <script>
-const LEVELS = [{"n":6,"reg":"000003110223122233142233444555444555","sol":"203514","c":8,"ld":0},{"n":6,"reg":"222001332001332201332241533444555544","sol":"352041","c":8,"ld":0},{"n":6,"reg":"200003200113221113244133445533445555","sol":"240513","c":8,"ld":0},{"n":6,"reg":"000111000011222311223334225344555554","sol":"041352","c":8,"ld":0},{"n":6,"reg":"211000221110221100233344535344555444","sol":"530241","c":8,"ld":0},{"n":6,"reg":"110000111000122333422333442355444555","sol":"302415","c":8,"ld":0},{"n":6,"reg":"001112001112041322443322443355433555","sol":"025314","c":8,"ld":0},{"n":6,"reg":"200000200111222211442335443355443355","sol":"251304","c":8,"ld":0},{"n":6,"reg":"000011220011222013442333444553455553","sol":"351402","c":8,"ld":0},{"n":6,"reg":"100000111022133222533244533244555444","sol":"314250","c":8,"ld":0},{"n":6,"reg":"100022110002113322143332444555445555","sol":"205314","c":8,"ld":0},{"n":6,"reg":"002111002111022333022235444335444455","sol":"031425","c":8,"ld":0},{"n":6,"reg":"211000211100221105223335444335444555","sol":"420315","c":8,"ld":0},{"n":6,"reg":"000111000221300211333224333244555544","sol":"053142","c":8,"ld":0},{"n":6,"reg":"112300112300112300442335442235445555","sol":"502413","c":8,"ld":0},{"n":7,"reg":"0001111022111100223330224333554466355546665544666","sol":"0426315","c":8,"ld":0},{"n":7,"reg":"0000000111111422231142223334253344455536465556666","sol":"4203516","c":8,"ld":0},{"n":7,"reg":"0001112001112200331223334122334445266664556666455","sol":"1350462","c":8,"ld":0},{"n":7,"reg":"1110000111002044133224433222443335266355556666655","sol":"4263051","c":8,"ld":0},{"n":7,"reg":"0001222001122200111223334145333444536664553666655","sol":"0251463","c":8,"ld":0},{"n":7,"reg":"0001111001111122211332233333225544425556642555666","sol":"1304625","c":8,"ld":0},{"n":7,"reg":"2000011240031124033112443331244536625556662555566","sol":"2504136","c":8,"ld":0},{"n":7,"reg":"0011122001122200512220451233445133344555664456666","sol":"0246135","c":8,"ld":0},{"n":7,"reg":"2200011220001122330112433331446635544665554466555","sol":"4603152","c":8,"ld":0},{"n":7,"reg":"1000000110022211112221344425334445533346653336665","sol":"2051364","c":8,"ld":0},{"n":7,"reg":"2111000211110022133002223344256334455666445556644","sol":"6203514","c":8,"ld":0},{"n":7,"reg":"1000000111002211332224433322444335544636554666665","sol":"2053164","c":8,"ld":0},{"n":7,"reg":"0000111220111122003314223333444666344555664555566","sol":"2406135","c":8,"ld":0},{"n":7,"reg":"1110002111000233102223362244336655436655546655444","sol":"4250631","c":8,"ld":0},{"n":7,"reg":"0000000222001122233114423331442333146655556666555","sol":"3624051","c":8,"ld":0},{"n":8,"reg":"0001111102002111022221710333337733344447664444576666555766555777","sol":"05314627","c":8,"ld":0},{"n":8,"reg":"0000011103020111033221110332222233322444355554445577664455777666","sol":"07416253","c":8,"ld":0},{"n":8,"reg":"0011122201111122001322220013324403333544666555546666575477777744","sol":"02647513","c":8,"ld":0},{"n":8,"reg":"1000000011020233112222335524243355444433554666775566677755667777","sol":"20375146","c":8,"ld":0},{"n":8,"reg":"1000022210000242113322421335524411335444166355546663755766677777","sol":"30516427","c":8,"ld":0},{"n":8,"reg":"1110002211000022130044223330442233554444355576665577776655777666","sol":"31705264","c":8,"ld":0},{"n":8,"reg":"1000023311002233100222331022523344455533444555664745756677777766","sol":"20361574","c":8,"ld":0},{"n":8,"reg":"1100004411100004110022441332222433335254336655546667775566677777","sol":"30417526","c":8,"ld":0},{"n":8,"reg":"0000011130000111322221153333225533442557333465574444665744466777","sol":"15302647","c":8,"ld":0},{"n":8,"reg":"2000001120000111222333112223336124733361447755664475556647775566","sol":"37051462","c":8,"ld":0},{"n":8,"reg":"1300000013030222133302221333422216644444116445551666475516677777","sol":"30714625","c":8,"ld":0},{"n":8,"reg":"2001111122000111220031134225333344455336444557664455776677777766","sol":"25061374","c":8,"ld":0},{"n":8,"reg":"0011111100111133022213332223333322244455664447556644775566667777","sol":"04253716","c":8,"ld":0},{"n":8,"reg":"0000222200111226331115263334452634445526334445563747756677777766","sol":"02613574","c":8,"ld":0},{"n":8,"reg":"1111100211111002415330024453330244533302475562227756666277566662","sol":"63750241","c":8,"ld":0},{"n":8,"reg":"0000222133002211330002113333221153444217554444475566667755666777","sol":"27513046","c":8,"ld":0},{"n":8,"reg":"2200000122200011223003116233333162555444665554446677544467777777","sol":"57146302","c":8,"ld":0},{"n":8,"reg":"0000002311102223111022231114255314444553446455534666675766667777","sol":"20471635","c":8,"ld":0},{"n":8,"reg":"1100000011110222113300223333422255534446555744465577766657777766","sol":"31625074","c":8,"ld":0},{"n":8,"reg":"0000013300211133222241337224413377544463755444637555566677556666","sol":"35264170","c":8,"ld":0},{"n":8,"reg":"0000111120001111223314112234441752344467553466675536667755336777","sol":"36025147","c":8,"ld":0},{"n":8,"reg":"4000000142002011422222114442333344555333455666337555666677777766","sol":"47360251","c":8,"ld":0},{"n":8,"reg":"1100000210000222110332224433352244363557443655774436557744666777","sol":"20741536","c":8,"ld":0},{"n":8,"reg":"1100022211100222333005223330455266304455663444756664477566777775","sol":"31604725","c":8,"ld":0},{"n":8,"reg":"0000011100021111302221573322445733344557336645576666455766664777","sol":"07314625","c":8,"ld":0},{"n":8,"reg":"1110000011110023111122235514423354444233555466637554666377777766","sol":"42573160","c":8,"ld":0},{"n":8,"reg":"1110002211100022131000223334444235554442355554463777566677776666","sol":"41605372","c":8,"ld":0},{"n":8,"reg":"0000111100021111032222413332254466335544663555446635774466777777","sol":"16427305","c":8,"ld":0},{"n":8,"reg":"2210000021111100222111332244433355444633555446335777666657776666","sol":"74063152","c":8,"ld":0},{"n":8,"reg":"2000001122001111220033112544333325544433275544667755546677777666","sol":"15064273","c":8,"ld":0},{"n":9,"reg":"220001111200001111223303115222333555444336555444466655444866677848867777888888877","sol":"260318574","c":8,"ld":0},{"n":9,"reg":"111120000111222000331122220333162444533364444553666674555566774558867777888888877","sol":"605281473","c":8,"ld":0},{"n":9,"reg":"011111112001122222001122222004142333044445333444465553777665583777766588777668888","sol":"025837416","c":8,"ld":0},{"n":9,"reg":"110000022111110222131100222333550244663354444663555544663855777683887777888887777","sol":"538274061","c":8,"ld":0},{"n":9,"reg":"000011114000011144022221144332221144332255444336885557636685577666888577666888777","sol":"064175283","c":8,"ld":0},{"n":9,"reg":"111000000111112000113322200144333222444335522446366555746666555747778888777888888","sol":"806317425","c":8,"ld":0},{"n":9,"reg":"000001113000011113022011433022211433222444443626555743666557773665577888665778888","sol":"061835247","c":8,"ld":0},{"n":9,"reg":"111000000111112200313112200333344222353664442355664442555664842775768888777788888","sol":"836251407","c":8,"ld":0},{"n":9,"reg":"111000000111110000151332222553333442553344442555346662577886662777886662778886622","sol":"728360514","c":8,"ld":0},{"n":9,"reg":"111000055110000005111022225132222255333324455336444458666674558666777788666777888","sol":"304157268","c":8,"ld":0},{"n":9,"reg":"220001111200001111220035111223335114233355444663355444666655744666885777888888777","sol":"370285164","c":8,"ld":0},{"n":9,"reg":"000233111002233111002233311442253311442555555444556667448886677448886777888886677","sol":"072613584","c":8,"ld":0},{"n":9,"reg":"000111133000111133222413113222443333226443355666445555666667558766677788777777788","sol":"031647258","c":8,"ld":0},{"n":9,"reg":"220000000222201110222211110442533111444553333444555333466658777666688777668888777","sol":"861504273","c":8,"ld":0},{"n":9,"reg":"220000001222220011444220331444233331455533331445555511666687571668887777688887777","sol":"584703162","c":8,"ld":0},{"n":9,"reg":"000004111220044111220004111222554333222544373555546377855546377886666667888888877","sol":"170642583","c":8,"ld":0},{"n":9,"reg":"111111000222111000222211300442233330444253333445555666745556688777666888777776888","sol":"742603518","c":8,"ld":0},{"n":9,"reg":"000000011433002211443322221444335111443355551748335666778885566778885566788885666","sol":"486315702","c":8,"ld":0},{"n":9,"reg":"221110000222111100223311100222334400552344444555334446555336666777766888777668888","sol":"740351628","c":8,"ld":0},{"n":9,"reg":"000000000112220333112220333152222333555663344556663444556867774556877877888888877","sol":"302681475","c":8,"ld":0},{"n":9,"reg":"111000022110000222113302222113344466113344666553447668555477768554477788555477888","sol":"316240758","c":8,"ld":0},{"n":9,"reg":"000221111000222111000252233044452333444455333744555533746666588777666688778888888","sol":"285716403","c":8,"ld":0},{"n":9,"reg":"111222000111112000141322200443332206444533306745555566747888566777888556777888566","sol":"705316824","c":8,"ld":0},{"n":9,"reg":"000001111000201111550221314552223334555263334755263344775666644777786648778888888","sol":"253681407","c":8,"ld":0},{"n":9,"reg":"330001111330000111332220141332221144666225544668255444668255747668855777888885777","sol":"364075182","c":8,"ld":0},{"n":10,"reg":"0000111144220011111422211111142223333344555533444755553884776666684477666668877766866889978888889999","sol":"3514702968","c":8,"ld":0},{"n":10,"reg":"1111112000111322200013332220004333322005444362555544466655557476966588777799688877779668887999999888","sol":"8063175294","c":8,"ld":0},{"n":10,"reg":"0000000111000011111144222211334422255133444225533344655573386669957788666997777866999978886699977888","sol":"0638251794","c":8,"ld":0},{"n":10,"reg":"0000021111000002111133302221443330224144333552444455555264445755666699777888669977788866997778899999","sol":"3750926148","c":8,"ld":0},{"n":10,"reg":"0000001122000111112260011122226604443255664443335566443373556664377355669977788599997788859997788888","sol":"2486391570","c":8,"ld":0},{"n":10,"reg":"1130000222113000022211300002221133334222153633444455666647445556666744558888877755988877779999999997","sol":"5092813746","c":8,"ld":0},{"n":10,"reg":"0000011111000001111122445533332244453333244445553322664555382666675888269677788826999788889999977777","sol":"1908263574","c":8,"ld":0},{"n":10,"reg":"0002221111000022111104002222334400422333444444555384666675538886677553888677555388889777738899999999","sol":"0968173524","c":8,"ld":0},{"n":10,"reg":"1110000000111000040411122224443112222444333325244433355555663377556666777755999677888899967788889996","sol":"5130968247","c":8,"ld":0},{"n":10,"reg":"1122223000112223300011122333001442233300144455300044465537774666555777666685577768868999778888899997","sol":"9046153827","c":8,"ld":0},{"n":10,"reg":"2111100000221110000022211303302421533333444655533344465655394476665559777766595977888899997778889999","sol":"9306275148","c":8,"ld":0},{"n":10,"reg":"0001113322000111332200011133224006553332444655553244766655524477766652447886899947778889994777889999","sol":"0397185246","c":8,"ld":0},{"n":10,"reg":"0000000011332200111133222014413332221411336224444453667747445566677788556677778855699998885569999888","sol":"4931702685","c":8,"ld":0},{"n":10,"reg":"0000022111005002221103555222113335442111335544221733554466673334446777886666677788889699778888999977","sol":"0971536824","c":8,"ld":0},{"n":10,"reg":"0000001111220001111322200311332225533337244453367724445556772248855667444888567784886666998889999999","sol":"0516247938","c":8,"ld":0}];
-const CAT_COLORS = [
-  "#ffd9c0","#ffe9a8","#cdf0c0","#b9e7ef","#c4d6fb",
-  "#ded0fb","#ffd0ea","#f9c3c3","#e6d3b3","#c9e8d8"
-];
-const KEY = "cowgame.v1";
-
-/* ---------------- 存档 ---------------- */
-function loadSave(){
-  let s = { unlocked: 1, best: {}, done: {} };
-  try{
-    const raw = localStorage.getItem(KEY);
-    if(raw) s = Object.assign(s, JSON.parse(raw));
-  }catch(e){}
-  if(!s.best) s.best = {};
-  if(!s.done) s.done = {};
-  return s;
-}
-function saveNow(){ try{ localStorage.setItem(KEY, JSON.stringify(save)); }catch(e){} }
-let save = loadSave();
-
-/* ---------------- 关卡数据 ---------------- */
-function decodeReg(str, n){
-  const reg = [];
-  for(let r=0;r<n;r++) reg.push(str.slice(r*n,(r+1)*n).split("").map(Number));
-  return reg;
-}
-function parseLevel(i){
-  const lv = LEVELS[i];
-  return {
-    n: lv.n,
-    reg: decodeReg(lv.reg, lv.n),
-    sol: lv.sol.split("").map(Number),
-    idx: i
+/* ============ 可复现随机数 ============ */
+function mulberry32(a){
+  return function(){
+    a |= 0; a = a + 0x6D2B79F5 | 0;
+    let t = Math.imul(a ^ a >>> 15, 1 | a);
+    t = t + Math.imul(t ^ t >>> 7, 61 | t) ^ t;
+    return ((t ^ t >>> 14) >>> 0) / 4294967296;
   };
 }
+const rnd = (rng, n) => Math.floor(rng() * n);
 
-/* ---------------- 求解器（提示用） ---------------- */
+/* ============ 生成合法解：每行每列一头、不八邻接 ============ */
+function genSolution(n, rng){
+  const sol = new Array(n).fill(-1), used = new Array(n).fill(false);
+  function dfs(r){
+    if(r === n) return true;
+    const cols = [...Array(n).keys()].sort(() => rng() - 0.5);
+    for(const c of cols){
+      if(used[c]) continue;
+      if(r > 0 && Math.abs(c - sol[r-1]) <= 1) continue;
+      sol[r] = c; used[c] = true;
+      if(dfs(r + 1)) return true;
+      used[c] = false; sol[r] = -1;
+    }
+    return false;
+  }
+  return dfs(0) ? sol : null;
+}
+
+ /* 区域生成：先做一批 2~3 格的“小区域”（强制配对），其余长成不规则大块。
+    小区域是唯一解的关键——它把“某两格必有一牛”变成可以推理的硬约束。 */
+function adjCands(n, reg, id){
+  const out = [];
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    if(reg[r][c] !== -1) continue;
+    if((r>0 && reg[r-1][c]===id) || (r<n-1 && reg[r+1][c]===id) ||
+       (c>0 && reg[r][c-1]===id) || (c<n-1 && reg[r][c+1]===id)) out.push([r,c]);
+  }
+  return out;
+}
+function genRegions(n, sol, rng){
+  const reg = Array.from({length:n}, () => new Array(n).fill(-1));
+  const size = new Array(n).fill(1);
+  for(let r=0;r<n;r++) reg[r][sol[r]] = r;   // 区域 id = 该区域牛所在的行号
+  let left = n*n - n;
+  const ids = [...Array(n).keys()];
+  const smallCount = Math.max(1, Math.round(n*0.55));
+  const order = ids.slice().sort(() => rng() - 0.5);
+  const smallIds = [];
+  for(const id of order){
+    if(smallIds.length >= smallCount) break;
+    const want = 2 + Math.floor(rng()*2);      // 2 或 3 格
+    while(size[id] < want && left > 0){
+      const cands = adjCands(n, reg, id);
+      if(!cands.length) break;
+      const p = cands[rnd(rng, cands.length)];
+      reg[p[0]][p[1]] = id; size[id]++; left--;
+    }
+    smallIds.push(id);
+  }
+  while(left > 0){
+    const bigs = ids.filter(i => smallIds.indexOf(i) < 0);
+    const list = (bigs.length ? bigs : ids).slice().sort((a,b) => size[a] - size[b]);
+    let moved = false;
+    for(const id of list){
+      if(left === 0) break;
+      const k = 1 + Math.floor(rng()*n*2);     // 一次连续长 1~2n 格，制造大小差异
+      for(let t=0;t<k && left>0;t++){
+        const cands = adjCands(n, reg, id);
+        if(!cands.length) break;
+        const p = cands[rnd(rng, cands.length)];
+        reg[p[0]][p[1]] = id; size[id]++; left--; moved = true;
+      }
+    }
+    if(!moved) return null;
+  }
+  return reg;
+}
+
+/* ============ 约束传播 + 数解（数到 2 就停） ============ */
 const DIR8 = [[-1,-1],[-1,0],[-1,1],[0,-1],[0,1],[1,-1],[1,0],[1,1]];
 function buildUnits(n, reg){
-  const rows=[], cols=[];
-  for(let r=0;r<n;r++) rows.push([...Array(n).keys()].map(c=>r*n+c));
-  for(let c=0;c<n;c++) cols.push([...Array(n).keys()].map(r=>r*n+c));
-  const byReg = Array.from({length:n},()=>[]);
-  for(let r=0;r<n;r++)for(let c=0;c<n;c++) byReg[reg[r][c]].push(r*n+c);
-  return rows.concat(cols, byReg);
+  const u = [];
+  for(let r=0;r<n;r++) u.push([...Array(n).keys()].map(c => r*n+c));
+  for(let c=0;c<n;c++) u.push([...Array(n).keys()].map(r => r*n+c));
+  const byReg = Array.from({length:n}, () => []);
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++) byReg[reg[r][c]].push(r*n+c);
+  byReg.forEach(a => u.push(a));
+  return u;
 }
 function propagate(n, st, U){
   let ch = true;
   while(ch){
     ch = false;
     for(const unit of U){
-      let star=0, pos=[];
+      let star = 0, pos = [];
       for(const i of unit){ if(st[i]===1) star++; else if(st[i]===0) pos.push(i); }
-      if(star>1) return false;
-      if(pos.length+star===0) return false;
-      if(star===0 && pos.length===1){ st[pos[0]]=1; ch=true; }
-      if(star===1){ for(const i of pos){ st[i]=-1; ch=true; } }
+      if(star > 1) return false;
+      if(pos.length + star === 0) return false;
+      if(star === 0 && pos.length === 1){ st[pos[0]] = 1; ch = true; }
+      if(star === 1){ for(const i of pos){ st[i] = -1; ch = true; } }
     }
     for(let i=0;i<st.length;i++){
-      if(st[i]!==1) continue;
-      const r=Math.floor(i/n), c=i%n;
+      if(st[i] !== 1) continue;
+      const r = Math.floor(i/n), c = i%n;
       for(const [dr,dc] of DIR8){
-        const nr=r+dr, nc=c+dc;
+        const nr = r+dr, nc = c+dc;
         if(nr<0||nr>=n||nc<0||nc>=n) continue;
-        const j=nr*n+nc;
-        if(st[j]===0){ st[j]=-1; ch=true; }
-        else if(st[j]===1) return false;
+        const j = nr*n+nc;
+        if(st[j] === 0){ st[j] = -1; ch = true; }
+        else if(st[j] === 1) return false;
       }
     }
   }
   return true;
 }
-function findSolution(n, reg, marks){
+function countUpTo(n, reg, cap){
   const U = buildUnits(n, reg);
+  let cnt = 0;
   function rec(st){
-    if(!propagate(n, st, U)) return null;
-    const unknown = st.map((v,i)=>v===0?i:-1).filter(i=>i>=0);
-    if(unknown.length===0) return st;
-    let best=null;
+    if(cnt >= cap) return;
+    const cp = st.slice();
+    if(!propagate(n, cp, U)) return;
+    if(cp.every(v => v !== 0)){ cnt++; return; }
+    let best = null;
     for(const unit of U){
-      const pos = unit.filter(i=>st[i]===0);
-      if(pos.length===0) continue;
-      if(!best || pos.length<best.length) best = pos;
+      const pos = unit.filter(i => cp[i] === 0);
+      if(!pos.length) continue;
+      if(!best || pos.length < best.length) best = pos;
     }
-    if(!best) return null;
+    if(!best) return;
     for(const i of best){
-      const nx = st.slice(); nx[i]=1;
-      const r = rec(nx);
-      if(r) return r;
+      const nx = cp.slice(); nx[i] = 1;
+      rec(nx);
+      if(cnt >= cap) return;
     }
-    return null;
   }
-  return rec(marks.slice());
+  rec(new Array(n*n).fill(0));
+  return cnt;
 }
 
-/* ---------------- 游戏状态 ---------------- */
-let cur = null;          // {n,reg,sol,idx}
-let marks = [];          // 0 空 / 1 牛 / -1 叉
-let undoStack = [];
-let mode = "x";
-let autoCross = true;
-let hintsLeft = 3;
-let startTs = null, timerId = null, elapsed = 0;
-let finished = false;
+/* ============ 无限关卡：按关卡号可复现生成唯一解盘面 ============ */
+const cache = new Map();
+function levelSize(i){
+  if(i <= 10) return 6;
+  if(i <= 25) return 7;
+  if(i <= 45) return 8;
+  if(i <= 70) return 9;
+  return 10;
+}
+function makeLevel(i){
+  if(cache.has(i)) return cache.get(i);
+  const n = levelSize(i);
+  const rng = mulberry32((i * 2654435761) ^ 0x9e3779b9);
+  let best = null, bestCount = 1e9;
+  for(let t=0;t<1500;t++){
+    const sol = genSolution(n, rng);
+    if(!sol) continue;
+    const reg = genRegions(n, sol, rng);
+    if(!reg) continue;
+    const c = countUpTo(n, reg, 2);
+    if(c === 1){ const lv = {n, reg, sol, unique:true, idx:i}; cache.set(i, lv); return lv; }
+    if(c < bestCount){          // 极少数情况下退化为“解最少的盘面”，保证可玩
+      bestCount = c; best = {n, reg, sol, unique:false, idx:i};
+    }
+  }
+  const lv = best || (()=>{
+    const rng2 = mulberry32((i + 7) * 40503);
+    const sol = genSolution(n, rng2) || [...Array(n).keys()];
+    const reg = genRegions(n, sol, rng2) || Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>c));
+    return {n, reg, sol, unique:false, idx:i};
+  })();
+  cache.set(i, lv);
+  return lv;
+}
+
+/* ============ 游戏状态 ============ */
+const KEY = "cowfind.v1";
+const COLORS = ["#ffd9c0","#ffe9a8","#cdf0c0","#b9e7ef","#c4d6fb","#ded0fb","#ffd0ea","#f9c3c3","#e6d3b3","#c9e8d8"];
+let lv = null;               // 当前关卡 {n, reg, sol}
+let found = [];              // 是否已找到牛
+let excluded = [];           // 是否已打叉
+let hearts = 3, hintsLeft = 3;
+let startTs = null, timerId = null, elapsed = 0, finished = false, levelNo = 1;
+let save = { level: 1, cleared: 0 };
+
+try{
+  const raw = localStorage.getItem(KEY);
+  if(raw) save = Object.assign(save, JSON.parse(raw));
+}catch(e){}
+function saveNow(){ try{ localStorage.setItem(KEY, JSON.stringify(save)); }catch(e){} }
 
 const $ = s => document.querySelector(s);
 const boardEl = $("#board");
+const boxEl = document.querySelector(".boardbox");
 
-function fmt(sec){
-  const m = Math.floor(sec/60), s = Math.floor(sec%60);
-  return m + ":" + String(s).padStart(2,"0");
-}
+function fmt(sec){ const m = Math.floor(sec/60), s = Math.floor(sec%60); return m + ":" + String(s).padStart(2,"0"); }
 function toast(msg, ms=1500){
-  const t = $("#toast");
-  t.textContent = msg;
-  t.classList.add("show");
-  clearTimeout(toast._t);
-  toast._t = setTimeout(()=>t.classList.remove("show"), ms);
+  const t = $("#toast"); t.textContent = msg; t.classList.add("show");
+  clearTimeout(toast._t); toast._t = setTimeout(() => t.classList.remove("show"), ms);
 }
-
-/* ---------------- 关卡列表 ---------------- */
-function renderHome(){
-  const grid = $("#levelGrid");
-  grid.innerHTML = "";
-  const curIdx = save.unlocked - 1;
-  for(let i=0;i<100;i++){
-    const b = document.createElement("button");
-    b.className = "lv";
-    const done = !!save.done[i];
-    const locked = i+1 > save.unlocked;
-    if(done) b.classList.add("cleared");
-    if(locked && !done) b.classList.add("locked");
-    if(i === curIdx) b.classList.add("cur");
-    b.innerHTML = `<div class="no">${i+1}</div><div class="sz">${LEVELS[i].n}×${LEVELS[i].n}</div>` +
-      (done ? `<div class="tick">✓</div><div class="bt">${fmt(save.best[i]||0)}</div>` : "");
-    if(!locked || done){
-      b.onclick = ()=>startLevel(i);
-    }else{
-      b.onclick = ()=>toast("先通关上一关才能解锁");
-    }
-    grid.appendChild(b);
-  }
-  $("#doneCount").textContent = Object.keys(save.done).length;
-  $("#btnResume").style.display = save.unlocked>1 && Object.keys(save.done).length>0 ? "" : "none";
-}
-
-/* ---------------- 开始关卡 ---------------- */
-function startLevel(i){
-  cur = parseLevel(i);
-  marks = new Array(cur.n*cur.n).fill(0);
-  undoStack = [];
-  hintsLeft = 3;
-  finished = false;
-  elapsed = 0; startTs = null;
-  clearInterval(timerId); timerId = null;
-  $("#timer").textContent = "0:00";
-  $("#hintLeft").textContent = hintsLeft;
-  $("#hintSub").textContent = "还剩 " + hintsLeft + " 次";
-  $("#hintSub").style.color = "";
-  renderBoard();
-  updateMeta();
-  $("#home").classList.add("hidden");
-  $("#game").classList.remove("hidden");
-  $("#lvTitle").textContent = "第 " + (i+1) + " 关";
-  const best = save.best[i];
-  $("#bestTime").textContent = best ? fmt(best) : "—";
-  save.last = i; saveNow();
-}
-
-/* ---------------- 棋盘渲染 ---------------- */
-function fitBoard(){
-  const box = document.querySelector(".boardbox");
-  const w = Math.min(box.clientWidth || 360, 520);
-  const cell = w / cur.n;
-  boardEl.style.width = w + "px";
-  boardEl.style.fontSize = (cell * 0.62) + "px";
-}
-function renderBoard(){
-  const n = cur.n;
-  boardEl.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
-  boardEl.style.fontSize = `calc(min(92vw, 520px) / ${n} * 0.62)`;
-  boardEl.innerHTML = "";
-  for(let r=0;r<n;r++){
-    for(let c=0;c<n;c++){
-      const i = r*n+c;
-      const cell = document.createElement("div");
-      cell.className = "cell";
-      cell.dataset.i = i;
-      cell.style.background = CAT_COLORS[cur.reg[r][c] % CAT_COLORS.length];
-      if(c<n-1 && cur.reg[r][c] !== cur.reg[r][c+1]) cell.classList.add("edge-r");
-      if(r<n-1 && cur.reg[r][c] !== cur.reg[r+1][c]) cell.classList.add("edge-b");
-      cell.onclick = ()=>onTap(i, cell);
-      boardEl.appendChild(cell);
-    }
-  }
-  redrawMarks();
-  fitBoard();
-}
-function redrawMarks(){
-  const n = cur.n;
-  for(let i=0;i<marks.length;i++){
-    const cell = boardEl.children[i];
-    if(!cell) continue;
-    const v = marks[i];
-    cell.innerHTML = v===1 ? '<span class="cow">🐮</span>' : v===-1 ? '<span class="x">✕</span>' : "";
-  }
+function drawHearts(){
+  let html = "";
+  for(let i=0;i<3;i++) html += `<span class="${i<hearts?"":"off"}">❤️</span>`;
+  $("#hearts").innerHTML = html;
 }
 function updateMeta(){
-  const n = cur.n;
-  const cows = marks.filter(v=>v===1).length;
-  $("#lvSub").textContent = `${n}×${n} · 已放 ${cows}/${n}`;
+  const n = lv.n;
+  $("#found").textContent = found.filter(Boolean).length + "/" + n;
+  $("#cleared").textContent = save.cleared;
 }
 
-/* ---------------- 交互 ---------------- */
+/* ============ 渲染棋盘 ============ */
+function fitBoard(){
+  const w = Math.min(boxEl.clientWidth || 360, 480);
+  boardEl.style.width = w + "px";
+  boardEl.style.fontSize = (w / lv.n * 0.62) + "px";
+}
+function renderBoard(){
+  const n = lv.n;
+  boardEl.style.gridTemplateColumns = `repeat(${n}, 1fr)`;
+  boardEl.innerHTML = "";
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    const i = r*n+c;
+    const cell = document.createElement("div");
+    cell.className = "cell";
+    cell.dataset.i = i;
+    cell.style.background = COLORS[lv.reg[r][c] % COLORS.length];
+    if(c < n-1 && lv.reg[r][c] !== lv.reg[r][c+1]) cell.classList.add("edge-r");
+    if(r < n-1 && lv.reg[r][c] !== lv.reg[r+1][c]) cell.classList.add("edge-b");
+    cell.addEventListener("click", () => tap(i, cell));
+    boardEl.appendChild(cell);
+  }
+  redraw();
+  fitBoard();
+}
+function redraw(){
+  for(let i=0;i<found.length;i++){
+    const cell = boardEl.children[i];
+    if(!cell) continue;
+    if(found[i]) cell.innerHTML = '<span class="cow">🐮</span>';
+    else if(excluded[i]) cell.innerHTML = '<span class="x">✕</span>';
+    else cell.innerHTML = "";
+    cell.classList.toggle("found", !!found[i]);
+  }
+}
+
+/* ============ 开局 ============ */
+function startLevel(i, keepReset){
+  levelNo = i;
+  document.querySelectorAll(".mask").forEach(m => m.remove());
+  lv = makeLevel(i);
+  const n = lv.n;
+  found = new Array(n*n).fill(false);
+  excluded = new Array(n*n).fill(false);
+  hearts = 3; hintsLeft = 3;
+  elapsed = 0; startTs = null; finished = false;
+  clearInterval(timerId); timerId = null;
+  $("#timer").textContent = "0:00";
+  $("#lvNo").textContent = i;
+  $("#lvSize").textContent = n + "×" + n;
+  $("#hintSub").textContent = "还剩 3 次";
+  drawHearts();
+  renderBoard();
+  updateMeta();
+  save.level = i; saveNow();
+  if(!lv.unique) toast("本关盘面备用生成（可能出现多解）");
+  setTimeout(() => { try{ makeLevel(i + 1); }catch(e){} }, 600);   // 提前备好下一关
+}
 function startTimer(){
   if(timerId || finished) return;
   if(startTs === null) startTs = Date.now();
-  timerId = setInterval(()=>{
-    elapsed = Math.floor((Date.now()-startTs)/1000);
+  timerId = setInterval(() => {
+    elapsed = Math.floor((Date.now() - startTs) / 1000);
     $("#timer").textContent = fmt(elapsed);
   }, 500);
 }
-function conflictReason(i){
-  const n = cur.n;
-  const r = Math.floor(i/n), c = i%n;
-  for(let k=0;k<n;k++){
-    if(marks[r*n+k]===1 && r*n+k!==i) return "这一行已经有牛了";
-    if(marks[k*n+c]===1 && k*n+c!==i) return "这一列已经有牛了";
-  }
-  const sameReg = cur.reg[r][c];
-  for(let rr=0;rr<n;rr++)for(let cc=0;cc<n;cc++){
-    const j = rr*n+cc;
-    if(j!==i && marks[j]===1 && cur.reg[rr][cc]===sameReg) return "这个颜色区域里已经有牛了";
-  }
-  for(const [dr,dc] of DIR8){
-    const nr=r+dr, nc=c+dc;
-    if(nr<0||nr>=n||nc<0||nc>=n) continue;
-    if(marks[nr*n+nc]===1) return "牛和牛不能挨着（包括斜角）";
-  }
-  return null;
-}
-function crossAround(i){
-  const n = cur.n, r = Math.floor(i/n), c = i%n, changes = [];
-  const put = (j)=>{
-    if(j===i) return;
-    if(marks[j]===0){ marks[j] = -1; changes.push([j,0]); }
-  };
-  for(let k=0;k<n;k++){ put(r*n+k); put(k*n+c); }
-  const reg = cur.reg[r][c];
-  for(let rr=0;rr<n;rr++)for(let cc=0;cc<n;cc++){
-    if(cur.reg[rr][cc]===reg) put(rr*n+cc);
-  }
-  for(const [dr,dc] of DIR8){
-    const nr=r+dr, nc=c+dc;
-    if(nr<0||nr>=n||nc<0||nc>=n) continue;
-    put(nr*n+nc);
-  }
-  return changes;
-}
-function onTap(i, cell){
-  if(finished) return;
+
+/* ============ 交互 ============ */
+function tap(i, cell){
+  if(finished || !lv) return;
   startTimer();
-  const entry = [];
-  if(mode === "cow"){
-    if(marks[i] === 1){
-      marks[i] = 0; entry.push([i,1]);
-    }else{
-      const why = conflictReason(i);
-      if(why){
-        cell.classList.add("bad");
-        setTimeout(()=>cell.classList.remove("bad"),400);
-        toast(why);
-        return;
-      }
-      entry.push([i, marks[i]]);
-      marks[i] = 1;
-      if(autoCross) entry.push(...crossAround(i));
-    }
+  if(found[i]){ toast("这头牛已经找到了"); return; }
+  if(excluded[i]){ toast("这格已经排除了"); return; }
+  if(lv.sol[Math.floor(i/lv.n)] === i % lv.n){
+    found[i] = true;
+    cell.innerHTML = '<span class="cow">🐮</span>';
+    cell.classList.add("found");
+    autoCross(i);
+    redraw(); updateMeta();
+    checkWin();
   }else{
-    if(marks[i] === -1){ marks[i]=0; entry.push([i,-1]); }
-    else { entry.push([i,marks[i]]); marks[i] = -1; }
+    excluded[i] = true;
+    hearts--;
+    drawHearts();
+    cell.classList.add("bad");
+    setTimeout(() => cell.classList.remove("bad"), 400);
+    cell.innerHTML = '<span class="x">✕</span>';
+    if(hearts <= 0){ setTimeout(lose, 300); }
+    else toast("这里没有牛，还剩 " + hearts + " 颗心");
   }
-  undoStack.push(entry);
-  redrawMarks(); updateMeta();
-  checkWin();
 }
-function undo(){
-  const e = undoStack.pop();
-  if(!e){ toast("没有可撤回的步骤"); return; }
-  for(let k=e.length-1;k>=0;k--){ marks[e[k][0]] = e[k][1]; }
-  redrawMarks(); updateMeta();
+function autoCross(i){
+  const n = lv.n, r = Math.floor(i/n), c = i%n, reg = lv.reg[r][c];
+  const mark = j => { if(j !== i && !found[j]) { excluded[j] = true; } };
+  for(let k=0;k<n;k++){ mark(r*n+k); mark(k*n+c); }
+  for(let rr=0;rr<n;rr++) for(let cc=0;cc<n;cc++) if(lv.reg[rr][cc] === reg) mark(rr*n+cc);
+  for(const [dr,dc] of DIR8){
+    const nr=r+dr, nc=c+dc;
+    if(nr<0||nr>=n||nc<0||nc>=n) continue;
+    mark(nr*n+nc);
+  }
 }
 function checkWin(){
-  const n = cur.n;
-  const cows = marks.filter(v=>v===1).length;
-  if(cows !== n) return;
-  // 复核规则
-  const rows=new Set(), cols=new Set(), regs=new Set();
-  for(let i=0;i<marks.length;i++){
-    if(marks[i]!==1) continue;
-    const r=Math.floor(i/n), c=i%n;
-    if(rows.has(r)||cols.has(c)||regs.has(cur.reg[r][c])) return;
-    rows.add(r);cols.add(c);regs.add(cur.reg[r][c]);
-    for(const [dr,dc] of DIR8){
-      const nr=r+dr,nc=c+dc;
-      if(nr<0||nr>=n||nc<0||nc>=n) continue;
-      if(marks[nr*n+nc]===1) return;
-    }
-  }
+  if(found.filter(Boolean).length !== lv.n) return;
   finished = true;
-  clearInterval(timerId); timerId=null;
-  const sec = elapsed || Math.floor((Date.now()-startTs)/1000);
-  const idx = cur.idx;
-  const isFirst = !save.done[idx];
-  save.done[idx] = true;
-  if(!save.best[idx] || sec < save.best[idx]) save.best[idx] = sec;
-  if(idx+1 >= save.unlocked) save.unlocked = Math.min(100, idx+2);
+  clearInterval(timerId); timerId = null;
+  const sec = elapsed || (startTs ? Math.floor((Date.now()-startTs)/1000) : 0);
+  save.cleared = Math.max(save.cleared, levelNo);
+  save.level = levelNo + 1;
   saveNow();
-  setTimeout(()=>showWin(sec), 380);
+  setTimeout(() => showWin(sec), 300);
+}
+function lose(){
+  finished = true;
+  clearInterval(timerId); timerId = null;
+  showLose();
+}
+
+/* ============ 提示 ============ */
+function hint(){
+  if(finished || !lv) return;
+  if(hintsLeft <= 0){ toast("本关提示用完了，重来可以恢复"); return; }
+  const rest = [];
+  for(let i=0;i<found.length;i++) if(!found[i] && lv.sol[Math.floor(i/lv.n)] === i%lv.n) rest.push(i);
+  if(!rest.length){ toast("牛已经全部找到了"); return; }
+  hintsLeft--;
+  $("#hintSub").textContent = hintsLeft ? "还剩 " + hintsLeft + " 次" : "已用完";
+  startTimer();
+  const pick = rest[Math.floor(Math.random()*rest.length)];
+  found[pick] = true;
+  autoCross(pick);
+  redraw(); updateMeta();
+  toast("提示：第 " + (Math.floor(pick/lv.n)+1) + " 行，第 " + (pick%lv.n+1) + " 列");
+  checkWin();
+}
+
+/* ============ 弹层 ============ */
+function overlay(html){
+  const mask = document.createElement("div");
+  mask.className = "mask";
+  mask.innerHTML = `<div class="modal">${html}</div>`;
+  document.body.appendChild(mask);
+  return mask;
 }
 function showWin(sec){
-  const idx = cur.idx;
-  const next = idx+1;
-  const isLast = next >= 100;
-  const mask = document.createElement("div");
-  mask.className = "mask";
-  mask.innerHTML = `
-    <div class="modal">
-      <h3>${isLast ? "全部通关！" : "过关！"}</h3>
-      <p style="text-align:center">第 ${idx+1} 关 · 用时 <b>${fmt(sec)}</b></p>
-      <p style="text-align:center;color:#7a7168">${isLast?"100 关全部完成，厉害。":"下一关是 " + LEVELS[next].n + "×" + LEVELS[next].n}</p>
-      <div class="row">
-        <button class="btn ghost" data-a="home">关卡列表</button>
-        <button class="btn ghost" data-a="again">再玩一次</button>
-        ${isLast?"":'<button class="btn primary" data-a="next">下一关</button>'}
-      </div>
-    </div>`;
-  document.body.appendChild(mask);
-  mask.addEventListener("click",(e)=>{
-    const act = e.target.dataset.a;
-    if(!act) return;
+  const mask = overlay(`
+    <h3>找到全部 ${lv.n} 头牛！</h3>
+    <p style="text-align:center">第 ${levelNo} 关 · 用时 <b>${fmt(sec)}</b> · 剩 ${hearts} 颗心</p>
+    <p style="text-align:center;color:#7a7168">下一关：${levelSize(levelNo+1)}×${levelSize(levelNo+1)}，牛的位置重新洗过</p>
+    <div class="row">
+      <button class="btn ghost" data-a="again">再玩本关</button>
+      <button class="btn primary" data-a="next">下一关</button>
+    </div>`);
+  mask.addEventListener("click", e => {
+    const a = e.target.dataset.a; if(!a) return;
     mask.remove();
-    if(act==="home"){ $("#game").classList.add("hidden"); $("#home").classList.remove("hidden"); renderHome(); }
-    if(act==="again") startLevel(idx);
-    if(act==="next") startLevel(next);
+    if(a === "again") startLevel(levelNo);
+    if(a === "next") startLevel(levelNo + 1);
   });
 }
-
-/* ---------------- 提示 ---------------- */
-function hint(){
-  if(finished) return;
-  if(hintsLeft<=0){ toast("本关提示用完了，重来可恢复"); return; }
-  const sol = findSolution(cur.n, cur.reg, marks);
-  if(!sol){ toast("现在的摆法走不通了，撤回几步再试"); return; }
-  const empty = sol.map((v,i)=>v===1?i:-1).filter(i=>i>=0 && marks[i]!==1);
-  if(!empty.length){ toast("已经全部放好了"); return; }
-  const pick = empty[Math.floor(Math.random()*empty.length)];
-  const entry = [[pick, marks[pick]]];
-  marks[pick] = 1;
-  if(autoCross) entry.push(...crossAround(pick));
-  undoStack.push(entry);
-  hintsLeft--;
-  $("#hintLeft").textContent = hintsLeft;
-  $("#hintSub").textContent = hintsLeft>0 ? "还剩 " + hintsLeft + " 次" : "已用完";
-  if(hintsLeft===0) $("#hintSub").style.color = "#c0533a";
-  redrawMarks(); updateMeta(); checkWin();
-  const r = Math.floor(pick/cur.n)+1, c = pick%cur.n+1;
-  toast(`提示：第 ${r} 行第 ${c} 列可以放牛`);
+function showLose(){
+  const mask = overlay(`
+    <h3>心用完了</h3>
+    <p style="text-align:center">第 ${levelNo} 关 · 已找到 ${found.filter(Boolean).length}/${lv.n}</p>
+    <p style="text-align:center;color:#7a7168">先把确定的位置推理出来，再点格子，别靠猜。</p>
+    <div class="row">
+      <button class="btn ghost" data-a="help">看技巧</button>
+      <button class="btn primary" data-a="again">重来本关</button>
+    </div>`);
+  mask.addEventListener("click", e => {
+    const a = e.target.dataset.a; if(!a) return;
+    mask.remove();
+    if(a === "again") startLevel(levelNo);
+    if(a === "help") showHelp();
+  });
 }
-
-/* ---------------- 事件绑定 ---------------- */
-$("#btnBack").onclick = ()=>{
-  clearInterval(timerId); timerId=null;
-  $("#game").classList.add("hidden"); $("#home").classList.remove("hidden");
-  renderHome();
-};
-$("#btnRestart").onclick = ()=>{ startLevel(cur.idx); toast("已重置本关"); };
-$("#btnUndo").onclick = undo;
-$("#btnHint").onclick = hint;
-$("#btnResume").onclick = ()=>{
-  const i = Math.min(99, Math.max(0, (save.last ?? save.unlocked-1)));
-  startLevel(i);
-};
-document.querySelectorAll(".tool[data-mode]").forEach(t=>{
-  t.onclick = ()=>{
-    mode = t.dataset.mode;
-    document.querySelectorAll(".tool[data-mode]").forEach(x=>x.classList.toggle("active", x===t));
-  };
-});
-$("#autoCross").onclick = ()=>{
-  autoCross = !autoCross;
-  $("#autoCross").classList.toggle("on", autoCross);
-  toast(autoCross ? "已开启：放牛后自动打叉" : "已关闭自动打叉");
-};
-$("#btnHelp").onclick = showHelp;
-
 function showHelp(){
-  const mask = document.createElement("div");
-  mask.className = "mask";
-  mask.innerHTML = `
-    <div class="modal">
-      <h3>怎么玩</h3>
-      <p>目标：在棋盘上放满牛，满足三条规则。</p>
-      <ul>
-        <li><b>每种颜色一头牛</b>：同一颜色区域只能有一头</li>
-        <li><b>每行每列一头牛</b>：行、列都不能重复</li>
-        <li><b>牛不能相邻</b>：上下左右和四个斜角都不能挨着</li>
-      </ul>
-      <p><b>操作</b>：点格子打叉（排除），切到「放牛」再点就是放牛；再点一次可取消。放错位置会提示冲突原因。</p>
-      <p><b>技巧</b>：先找只有一格的颜色区；两格的颜色区必占一格，可排除同行同列；某行只剩一个空格时直接放；放一头牛后立刻把同行、同列、同色和周围八格打叉。</p>
-      <p style="color:#7a7168">共 100 关，6×6 到 10×10 逐步变难；进度存在本机浏览器里。</p>
-      <div class="row"><button class="btn primary" data-a="close">知道了</button></div>
-    </div>`;
-  document.body.appendChild(mask);
-  mask.addEventListener("click",e=>{ if(e.target.dataset.a==="close"||e.target===mask) mask.remove(); });
+  const mask = overlay(`
+    <h3>怎么玩</h3>
+    <p>棋盘上藏着 <b>N 头牛</b>（N 等于边长），而且每关只有一种摆法。</p>
+    <ul>
+      <li><b>每种颜色一头牛</b>：同一颜色区域只能有一头</li>
+      <li><b>每行每列一头牛</b>：行、列都不能重复</li>
+      <li><b>牛不能相邻</b>：上下左右和四个斜角都不能挨着</li>
+    </ul>
+    <p><b>操作</b>：点一个格子就是在“找牛”。点对了牛会出现；点错了会打叉并掉一颗心，三颗心掉光本关失败。</p>
+    <p><b>推理顺序</b>：① 只有一格的颜色区，那格必是牛；② 某行/某列只剩一个空格，必是牛；③ 一头牛确定后，同行、同列、同色和周围八格全部排除；④ 两格的颜色区必占一格，可排除同行同列的其他格子。</p>
+    <p style="color:#7a7168">关卡无限，越往后盘面越大（6×6 → 10×10）。进度存在本机浏览器里。</p>
+    <div class="row"><button class="btn primary" data-a="close">知道了</button></div>`);
+  mask.addEventListener("click", e => { if(e.target.dataset.a === "close" || e.target === mask) mask.remove(); });
 }
 
-renderHome();
-addEventListener("resize", ()=>{ if(cur && !document.getElementById("game").classList.contains("hidden")) fitBoard(); });
+/* ============ 绑定 ============ */
+$("#btnHint").onclick = hint;
+$("#btnRestart").onclick = () => { startLevel(levelNo); toast("本关已重置"); };
+$("#btnHelp").onclick = showHelp;
+addEventListener("resize", () => { if(lv) fitBoard(); });
+
+startLevel(Math.max(1, save.level || 1));
 </script>
 </body>
 </html>
