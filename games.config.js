@@ -203,14 +203,4 @@ window.FISH_ARCADE_GAMES = [
         tone: 'amber',
         scoreKey: 'lava_guardian_best'
     },
-    {
-        file: 'heartbeat_resonance.html',
-        title: '心律共振 · 节奏解谜',
-        en: 'Heartbeat Resonance · Rhythm',
-        icon: '💓',
-        desc: '光圈收缩到判定线的瞬间按下方向键 —— PERFECT 精准命中拿高分，GOOD 勉强擦边，连击越长倍率越高。四阶段曲谱越来越密，漏拍太多心跳就乱了，5 条命陪你走完全程。',
-        tags: ['节奏', '音游', '反应'],
-        tone: 'purple',
-        scoreKey: 'resonance_best'
-    }
 ];

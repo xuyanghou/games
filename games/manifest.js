@@ -1,18 +1,12 @@
 /* 自动生成，请勿手改 —— 运行 node scan.js 或双击「刷新游戏列表.bat」更新 */
 window.FISH_ARCADE_MANIFEST = {
-  "generatedAt": "2026-11-21T03:58:10.535Z",
+  "generatedAt": "2026-11-21T06:12:50.563Z",
   "games": [
     {
       "file": "code_artifact.html",
       "title": "夜市大排档：美食合成",
       "desc": "",
       "size": 48715
-    },
-    {
-      "file": "heartbeat_resonance.html",
-      "title": "心律共振 · 节奏解谜",
-      "desc": "",
-      "size": 26595
     },
     {
       "file": "lava_guardian_td.html",
