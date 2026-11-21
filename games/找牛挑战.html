@@ -46,6 +46,11 @@ h1{font-size:20px;letter-spacing:2px;margin:0 0 3px}
 .tool small{display:block;font-size:10px;color:var(--sub);margin-top:2px}
 .hintline{margin-top:9px;font-size:11.5px;color:var(--sub);line-height:1.7}
 .hintline b{color:var(--ink)}
+.sw{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:8px 11px;border:1px solid var(--line);border-radius:12px;background:#fff;font-size:12.5px;color:#4a443c;cursor:pointer}
+.sw input{appearance:none;width:38px;height:21px;border-radius:11px;background:#ded6c9;position:relative;transition:.16s;cursor:pointer;flex:0 0 auto}
+.sw input:checked{background:var(--green)}
+.sw input::after{content:"";position:absolute;top:2.5px;left:2.5px;width:16px;height:16px;border-radius:50%;background:#fff;transition:.16s}
+.sw input:checked::after{left:19.5px}
 .mask{position:fixed;inset:0;background:rgba(30,25,18,.45);display:flex;align-items:center;justify-content:center;padding:18px;z-index:50}
 .modal{background:#fffdf9;border-radius:18px;max-width:420px;width:100%;padding:18px 18px 16px;box-shadow:0 20px 50px rgba(0,0,0,.2)}
 .modal h3{margin:0 0 8px;font-size:17px;text-align:center}
@@ -82,7 +87,8 @@ h1{font-size:20px;letter-spacing:2px;margin:0 0 3px}
       <div class="tool" id="btnRestart">↻ 重来<small>本关重置</small></div>
       <div class="tool" id="btnHelp">? 规则<small>玩法与技巧</small></div>
     </div>
-    <div class="hintline">点格子找牛：<b>点对了牛就出现</b>，点错了会打叉并掉一颗心。找到一头牛后，它所在的行、列、同色区域和周围八格会自动被排除。</div>
+    <label class="sw"><span>找到牛后自动打叉</span><input type="checkbox" id="chkAuto" checked></label>
+    <div class="hintline"><b>左键</b>=找牛（点对出牛，点错打叉、掉一颗心）；<b>右键</b>=自己打叉或取消叉，不扣心。每一关都能靠推理一步步推出来，不用猜。</div>
   </div>
 </div>
 <div class="toast" id="toast"></div>
@@ -117,6 +123,26 @@ function genSolution(n, rng){
   return dfs(0) ? sol : null;
 }
 
+/* 判断某色块在挖掉一格后是否仍然连通 */
+function regionConnected(n, reg, id, skip){
+  const cells = [];
+  for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+    const j = r*n+c;
+    if(reg[r][c] === id && j !== skip) cells.push(j);
+  }
+  if(!cells.length) return true;
+  const inSet = new Set(cells), seen = new Set([cells[0]]), q = [cells[0]];
+  while(q.length){
+    const i = q.pop(), r = Math.floor(i/n), c = i%n;
+    for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+      const nr = r+dr, nc = c+dc;
+      if(nr<0||nr>=n||nc<0||nc>=n) continue;
+      const j = nr*n+nc;
+      if(inSet.has(j) && !seen.has(j)){ seen.add(j); q.push(j); }
+    }
+  }
+  return seen.size === inSet.size;
+}
  /* 区域生成：先做一批 2~3 格的“小区域”（强制配对），其余长成不规则大块。
     小区域是唯一解的关键——它把“某两格必有一牛”变成可以推理的硬约束。 */
 function adjCands(n, reg, id){
@@ -128,18 +154,20 @@ function adjCands(n, reg, id){
   }
   return out;
 }
-function genRegions(n, sol, rng){
+function genRegions(n, sol, rng, ratio, minSmall, smallMax, singles){
+  const ratio0 = ratio || 0.55, min0 = minSmall || 2, max0 = smallMax || 3, single0 = singles || 0;
   const reg = Array.from({length:n}, () => new Array(n).fill(-1));
   const size = new Array(n).fill(1);
   for(let r=0;r<n;r++) reg[r][sol[r]] = r;   // 区域 id = 该区域牛所在的行号
   let left = n*n - n;
   const ids = [...Array(n).keys()];
-  const smallCount = Math.max(1, Math.round(n*0.55));
+  const smallCount = Math.max(1, Math.round(n*ratio0));
   const order = ids.slice().sort(() => rng() - 0.5);
   const smallIds = [];
   for(const id of order){
     if(smallIds.length >= smallCount) break;
-    const want = 2 + Math.floor(rng()*2);      // 2 或 3 格
+    // 前几个区域做成 1 格：开局就有“这格必是牛”的明显线索（只在前几关用）
+    const want = smallIds.length < single0 ? 1 : min0 + Math.floor(rng()*(max0-min0+1));
     while(size[id] < want && left > 0){
       const cands = adjCands(n, reg, id);
       if(!cands.length) break;
@@ -163,6 +191,25 @@ function genRegions(n, sol, rng){
       }
     }
     if(!moved) return null;
+  }
+  // 生成结束后把被挤成 1 格的区域补到 2 格（只保留设计好的 1 格区域）
+  const allowed = smallIds.slice(0, single0);
+  for(let id=0; id<n; id++){
+    if(size[id] !== 1 || allowed.indexOf(id) >= 0) continue;
+    let done = false;
+    for(let r=0;r<n && !done;r++) for(let c=0;c<n && !done;c++){
+      if(reg[r][c] !== id) continue;
+      for(const [dr,dc] of [[-1,0],[1,0],[0,-1],[0,1]]){
+        const nr=r+dr, nc=c+dc;
+        if(nr<0||nr>=n||nc<0||nc>=n) continue;
+        const from = reg[nr][nc];
+        if(from === id || size[from] <= 2) continue;
+        reg[nr][nc] = id;
+        if(!regionConnected(n, reg, from, nr*n+nc)){ reg[nr][nc] = from; continue; }
+        size[id]++; size[from]--; done = true; break;
+      }
+    }
+    // 修不动就留着（偶尔多一块单格=多一条线索，不影响唯一解）
   }
   return reg;
 }
@@ -229,37 +276,135 @@ function countUpTo(n, reg, cap){
   return cnt;
 }
 
+/* ============ 纯逻辑可解检查：只用“唯一格必牛/单元剩一格/排除”+“锁定候选”推理
+   全程不做猜测。能推完才发给玩家，保证每一步都有依据。 ============ */
+function logicSolve(n, reg){
+  const U = buildUnits(n, reg);
+  const st = new Array(n*n).fill(0);
+  if(!propagate(n, st, U)) return false;
+  for(let round=0; round<60; round++){
+    if(st.every(v => v !== 0)) return true;
+    let changed = false;
+    for(let k=0; k<3*n; k++){
+      const unit = U[k];
+      const cands = unit.filter(i => st[i] === 0);
+      if(cands.length < 2) continue;
+      const rows = new Set(cands.map(i => Math.floor(i/n)));
+      const cols = new Set(cands.map(i => i%n));
+      const regs = new Set(cands.map(i => reg[Math.floor(i/n)][i%n]));
+      if(k < 2*n && regs.size === 1){
+        // 这行/列的候选全在某色块里 → 该色块的牛就是这一行的牛，块内其余格排除
+        const rid = regs.values().next().value;
+        for(let r=0;r<n;r++) for(let c=0;c<n;c++){
+          const j = r*n+c;
+          if(reg[r][c] === rid && st[j] === 0 && unit.indexOf(j) < 0){ st[j] = -1; changed = true; }
+        }
+      }
+      if(k >= 2*n){
+        // 这块颜色的候选全在同一行/列 → 该行/列的牛就在这块里，行/列其余格排除
+        if(rows.size === 1){
+          const r0 = rows.values().next().value;
+          for(let c=0;c<n;c++){ const j = r0*n+c; if(st[j] === 0 && unit.indexOf(j) < 0){ st[j] = -1; changed = true; } }
+        }
+        if(cols.size === 1){
+          const c0 = cols.values().next().value;
+          for(let r=0;r<n;r++){ const j = r*n+c0; if(st[j] === 0 && unit.indexOf(j) < 0){ st[j] = -1; changed = true; } }
+        }
+      }
+    }
+    if(!changed) break;
+    if(!propagate(n, st, U)) return false;
+  }
+  return st.every(v => v !== 0);
+}
+
 /* ============ 无限关卡：按关卡号可复现生成唯一解盘面 ============ */
 const cache = new Map();
 function levelSize(i){
-  if(i <= 10) return 6;
-  if(i <= 25) return 7;
-  if(i <= 45) return 8;
-  if(i <= 70) return 9;
+  if(i <= 2) return 6;
+  if(i <= 5) return 7;
+  if(i <= 10) return 8;
+  if(i <= 18) return 9;
   return 10;
+}
+/* 难度曲线：小区域越少、盘面越大，需要推理的链条越长 */
+function levelStyle(i){
+  if(i <= 2)  return {ratio:0.9,  minS:1, maxS:2, singles:2};
+  if(i <= 6)  return {ratio:0.82, minS:2, maxS:2, singles:1};
+  if(i <= 12) return {ratio:0.78, minS:2, maxS:3, singles:1};
+  if(i <= 20) return {ratio:0.72, minS:2, maxS:3, singles:1};
+  if(i <= 35) return {ratio:0.65, minS:2, maxS:3, singles:1};
+  if(i <= 55) return {ratio:0.6,  minS:2, maxS:3, singles:1};
+  return {ratio:0.55, minS:2, maxS:3, singles:1};
+}
+function levelTargetOpen(i){
+  if(i <= 2)  return 0.02;
+  if(i <= 6)  return 0.18;
+  if(i <= 12) return 0.30;
+  if(i <= 20) return 0.40;
+  if(i <= 35) return 0.50;
+  if(i <= 55) return 0.58;
+  return 0.64;
+}
+function initialOpen(n, reg){
+  const st = new Array(n*n).fill(0);
+  if(!propagate(n, st, buildUnits(n, reg))) return 0.5;
+  return st.filter(v => v === 0).length / (n*n);
+}
+function levelStars(i){
+  if(i <= 2) return 1;
+  if(i <= 5) return 2;
+  if(i <= 10) return 3;
+  if(i <= 18) return 4;
+  if(i <= 30) return 5;
+  return 6;
+}
+function tryBuild(n, seed, ratio, minS, maxS, singles, cap, targetOpen){
+  const rng = mulberry32(seed);
+  let uniqueOnly = null, weakest = null, weakCount = 1e9;
+  let best = null, bestErr = 1e9;
+  for(let t=0;t<cap;t++){
+    const sol = genSolution(n, rng);
+    if(!sol) continue;
+    const reg = genRegions(n, sol, rng, ratio, minS, maxS, singles);
+    if(!reg) continue;
+    const c = countUpTo(n, reg, 2);
+    if(c === 1){
+      if(logicSolve(n, reg)){
+        const open = initialOpen(n, reg);
+        const err = Math.abs(open - targetOpen);
+        const tol = t < cap/3 ? 0.06 : t < cap*0.7 ? 0.11 : 0.17;   // 找不到更贴合的就算了，别让生成拖太久
+        if(err <= tol) return {n, reg, sol, unique:true, logic:true};
+        if(err < bestErr){ bestErr = err; best = {n, reg, sol, unique:true, logic:true}; }
+      }
+      if(!uniqueOnly) uniqueOnly = {n, reg, sol, unique:true, logic:false};
+    }
+    if(c < weakCount){ weakCount = c; weakest = {n, reg, sol, unique:false, logic:false}; }
+  }
+  return best || {uniqueOnly, weakest};
 }
 function makeLevel(i){
   if(cache.has(i)) return cache.get(i);
-  const n = levelSize(i);
-  const rng = mulberry32((i * 2654435761) ^ 0x9e3779b9);
-  let best = null, bestCount = 1e9;
-  for(let t=0;t<1500;t++){
-    const sol = genSolution(n, rng);
-    if(!sol) continue;
-    const reg = genRegions(n, sol, rng);
-    if(!reg) continue;
-    const c = countUpTo(n, reg, 2);
-    if(c === 1){ const lv = {n, reg, sol, unique:true, idx:i}; cache.set(i, lv); return lv; }
-    if(c < bestCount){          // 极少数情况下退化为“解最少的盘面”，保证可玩
-      bestCount = c; best = {n, reg, sol, unique:false, idx:i};
-    }
+  const n = levelSize(i), st = levelStyle(i);
+  const baseSeed = (i * 2654435761) ^ 0x9e3779b9;
+  let uniqueOnly = null;
+  // 第一遍按本关难度生成；万一太久找不到“纯逻辑可解”，就临时放宽成更简单的盘面，保证不用猜
+  const passes = [
+    [st.ratio, st.minS, st.maxS, st.singles, 3200],
+    [Math.min(0.95, st.ratio + 0.15), 2, 3, 0, 1600],
+    [0.92, 2, 3, 0, 700]
+  ];
+  for(let p=0;p<passes.length;p++){
+    const [ratio, minS, maxS, singles, cap] = passes[p];
+    const r = tryBuild(n, (baseSeed + p*0x85ebca6b) >>> 0, ratio, minS, maxS, singles, cap, levelTargetOpen(i));
+    if(r.n){ const lv = Object.assign({idx:i}, r); cache.set(i, lv); return lv; }
+    if(!uniqueOnly && r.uniqueOnly) uniqueOnly = r.uniqueOnly;
+    if(p === passes.length - 1 && r.weakest) uniqueOnly = uniqueOnly || r.weakest;
   }
-  const lv = best || (()=>{
-    const rng2 = mulberry32((i + 7) * 40503);
-    const sol = genSolution(n, rng2) || [...Array(n).keys()];
-    const reg = genRegions(n, sol, rng2) || Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>c));
-    return {n, reg, sol, unique:false, idx:i};
-  })();
+  const fallbackSol = [...Array(n).keys()];
+  const lv = Object.assign({idx:i}, uniqueOnly || {
+    n, reg:Array.from({length:n},(_,r)=>Array.from({length:n},(_,c)=>c)), sol:fallbackSol, unique:false, logic:false
+  });
   cache.set(i, lv);
   return lv;
 }
@@ -272,12 +417,14 @@ let found = [];              // 是否已找到牛
 let excluded = [];           // 是否已打叉
 let hearts = 3, hintsLeft = 3;
 let startTs = null, timerId = null, elapsed = 0, finished = false, levelNo = 1;
-let save = { level: 1, cleared: 0 };
+let autoCrossOn = true;      // 找到牛后是否自动排除同行列同色八邻
+let save = { level: 1, cleared: 0, auto: true };
 
 try{
   const raw = localStorage.getItem(KEY);
   if(raw) save = Object.assign(save, JSON.parse(raw));
 }catch(e){}
+autoCrossOn = save.auto !== false;
 function saveNow(){ try{ localStorage.setItem(KEY, JSON.stringify(save)); }catch(e){} }
 
 const $ = s => document.querySelector(s);
@@ -319,6 +466,7 @@ function renderBoard(){
     if(c < n-1 && lv.reg[r][c] !== lv.reg[r][c+1]) cell.classList.add("edge-r");
     if(r < n-1 && lv.reg[r][c] !== lv.reg[r+1][c]) cell.classList.add("edge-b");
     cell.addEventListener("click", () => tap(i, cell));
+    cell.addEventListener("contextmenu", e => { e.preventDefault(); mark(i); });
     boardEl.appendChild(cell);
   }
   redraw();
@@ -348,13 +496,15 @@ function startLevel(i, keepReset){
   clearInterval(timerId); timerId = null;
   $("#timer").textContent = "0:00";
   $("#lvNo").textContent = i;
-  $("#lvSize").textContent = n + "×" + n;
+  $("#lvSize").textContent = n + "×" + n + " · " + "★".repeat(levelStars(i));
   $("#hintSub").textContent = "还剩 3 次";
   drawHearts();
+  $("#chkAuto").checked = autoCrossOn;
   renderBoard();
   updateMeta();
   save.level = i; saveNow();
   if(!lv.unique) toast("本关盘面备用生成（可能出现多解）");
+  if(lv.unique && lv.logic === false) toast("本关为备用盘面：需要试探着推");
   setTimeout(() => { try{ makeLevel(i + 1); }catch(e){} }, 600);   // 提前备好下一关
 }
 function startTimer(){
@@ -371,12 +521,12 @@ function tap(i, cell){
   if(finished || !lv) return;
   startTimer();
   if(found[i]){ toast("这头牛已经找到了"); return; }
-  if(excluded[i]){ toast("这格已经排除了"); return; }
+  if(excluded[i]){ toast("这格已经打叉了，右键可以取消"); return; }
   if(lv.sol[Math.floor(i/lv.n)] === i % lv.n){
     found[i] = true;
     cell.innerHTML = '<span class="cow">🐮</span>';
     cell.classList.add("found");
-    autoCross(i);
+    if(autoCrossOn) autoCross(i);
     redraw(); updateMeta();
     checkWin();
   }else{
@@ -389,6 +539,13 @@ function tap(i, cell){
     if(hearts <= 0){ setTimeout(lose, 300); }
     else toast("这里没有牛，还剩 " + hearts + " 颗心");
   }
+}
+/* 右键：自己打叉 / 取消叉，不扣心、不计错 */
+function mark(i){
+  if(finished || !lv) return;
+  if(found[i]){ toast("这格已经有牛了"); return; }
+  excluded[i] = !excluded[i];
+  redraw();
 }
 function autoCross(i){
   const n = lv.n, r = Math.floor(i/n), c = i%n, reg = lv.reg[r][c];
@@ -484,9 +641,10 @@ function showHelp(){
       <li><b>每行每列一头牛</b>：行、列都不能重复</li>
       <li><b>牛不能相邻</b>：上下左右和四个斜角都不能挨着</li>
     </ul>
-    <p><b>操作</b>：点一个格子就是在“找牛”。点对了牛会出现；点错了会打叉并掉一颗心，三颗心掉光本关失败。</p>
-    <p><b>推理顺序</b>：① 只有一格的颜色区，那格必是牛；② 某行/某列只剩一个空格，必是牛；③ 一头牛确定后，同行、同列、同色和周围八格全部排除；④ 两格的颜色区必占一格，可排除同行同列的其他格子。</p>
-    <p style="color:#7a7168">关卡无限，越往后盘面越大（6×6 → 10×10）。进度存在本机浏览器里。</p>
+    <p><b>左键 = 找牛</b>：点对了牛会出现；点错了会打叉并掉一颗心，三颗心掉光本关失败。<br><b>右键 = 自己打叉</b>：用来记“这格肯定没有牛”，再点一下取消，不扣心。</p>
+    <p><b>自动打叉</b>：默认打开，找到一头牛就自动排除同行、同列、同色区域和周围八格。关掉后这些叉要自己右键点。</p>
+    <p><b>推理顺序</b>：① 只有一格的颜色区，那格必是牛；② 某行/某列只剩一个空格，必是牛；③ 一头牛确定后，同行、同列、同色和周围八格全部排除；④ 两格的颜色区必占一格；⑤ 某行（或某列）的候选格全在同一色块里，这块的牛就是这行的牛，块内其它格可排除。</p>
+    <p style="color:#7a7168"><b>难度是一路爬坡的，右上角星级就是当前难度。</b>第 1~2 关 6×6，专门给两块只有一格的色块，一眼就能定住两头牛，剩下的用行列排除顺手推完，属于入门教学。第 3 关起不再白送单格，一开局就有七八格拿不准，得想一两步。之后盘面按 7×7 → 8×8 → 9×9 → 10×10 往上长（第 19 关起固定 10×10），开局“拿不准的格子”从两三成一路涨到六成以上，小色块越来越稀，经常要连着用好几步排除加“候选锁定”才能落下一头牛。每一关都是唯一解、牛位固定、全程可推理，不用猜也不会卡死。</p>
     <div class="row"><button class="btn primary" data-a="close">知道了</button></div>`);
   mask.addEventListener("click", e => { if(e.target.dataset.a === "close" || e.target === mask) mask.remove(); });
 }
@@ -495,6 +653,11 @@ function showHelp(){
 $("#btnHint").onclick = hint;
 $("#btnRestart").onclick = () => { startLevel(levelNo); toast("本关已重置"); };
 $("#btnHelp").onclick = showHelp;
+$("#chkAuto").onchange = e => {
+  autoCrossOn = e.target.checked;
+  save.auto = autoCrossOn; saveNow();
+  toast(autoCrossOn ? "自动打叉已开启" : "自动打叉已关闭：用右键自己打叉");
+};
 addEventListener("resize", () => { if(lv) fitBoard(); });
 
 startLevel(Math.max(1, save.level || 1));
